@@ -45,6 +45,8 @@ export interface PortfolioSettings {
   categories: Category[];
   featured_video: Video;
   highlighted_videos: Video[];
+  about?: string;
+  specializations?: string[];
   created_at?: string;
   updated_at?: string;
 }

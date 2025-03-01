@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +8,8 @@ import {
   categories as defaultCategories, 
   Video, 
   parseJsonToCategory, 
-  parseJsonToVideo 
+  parseJsonToVideo,
+  PortfolioSettings 
 } from '@/types';
 import { 
   Heart, 
@@ -21,7 +21,13 @@ import {
   ArrowDown, 
   Star, 
   X, 
-  Loader2 
+  Loader2,
+  User,
+  Briefcase,
+  BadgePlus,
+  Save,
+  PlusCircle,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,6 +38,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 // Mock videos for portfolio
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
@@ -82,6 +90,15 @@ const Portfolio: React.FC = () => {
   const [selectedVideoForEdit, setSelectedVideoForEdit] = useState<Video | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Add state for about section and specializations
+  const [about, setAbout] = useState<string>('Professional video editor with expertise in various styles and techniques.');
+  const [specializations, setSpecializations] = useState<string[]>(['Cinematic', 'Motion Graphics', 'Color Grading', 'VFX']);
+  const [newSpecialization, setNewSpecialization] = useState<string>('');
+  
+  // Edit mode dialogs
+  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
+  const [specializationsDialogOpen, setSpecializationsDialogOpen] = useState(false);
   
   // Fetch portfolio settings on component mount
   useEffect(() => {
@@ -140,6 +157,15 @@ const Portfolio: React.FC = () => {
             } catch (e) {
               console.error('Failed to parse highlighted videos:', e);
             }
+          }
+
+          // Set about and specializations if available
+          if (data.about) {
+            setAbout(data.about);
+          }
+          
+          if (data.specializations && Array.isArray(data.specializations)) {
+            setSpecializations(data.specializations as string[]);
           }
         }
       } catch (error) {
@@ -212,6 +238,8 @@ const Portfolio: React.FC = () => {
         categories: prepareForDatabase(userCategories),
         featured_video: prepareForDatabase(featuredVideo),
         highlighted_videos: prepareForDatabase(highlightedVideos),
+        about: about,
+        specializations: specializations,
         updated_at: new Date().toISOString()
       };
       
@@ -284,6 +312,19 @@ const Portfolio: React.FC = () => {
     
     toast.success('Featured video updated');
   };
+
+  // Add new specialization
+  const handleAddSpecialization = () => {
+    if (newSpecialization.trim()) {
+      setSpecializations([...specializations, newSpecialization.trim()]);
+      setNewSpecialization('');
+    }
+  };
+
+  // Remove specialization
+  const handleRemoveSpecialization = (index: number) => {
+    setSpecializations(specializations.filter((_, i) => i !== index));
+  };
   
   // Get videos filtered by category if one is selected
   const filteredVideos = selectedCategory 
@@ -328,7 +369,7 @@ const Portfolio: React.FC = () => {
               ) : (
                 <>
                   Save Changes
-                  <Edit className="ml-2 h-4 w-4" />
+                  <Save className="ml-2 h-4 w-4" />
                 </>
               )
             ) : (
@@ -444,17 +485,102 @@ const Portfolio: React.FC = () => {
                   </div>
                   
                   <div className="border-t border-border pt-6">
-                    <h3 className="font-medium mb-2">About</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium flex items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        About
+                      </h3>
+                      {editMode && (
+                        <Dialog open={aboutDialogOpen} onOpenChange={setAboutDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 px-2">
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit About Section</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-4">
+                              <Textarea 
+                                value={about}
+                                onChange={(e) => setAbout(e.target.value)}
+                                placeholder="Write something about yourself..."
+                                className="min-h-[120px]"
+                              />
+                              <div className="flex justify-end">
+                                <Button onClick={() => setAboutDialogOpen(false)}>
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground mb-6">
-                      {currentUser?.bio || 'Professional video editor with expertise in various styles and techniques.'}
+                      {about || (currentUser?.bio || 'Professional video editor with expertise in various styles and techniques.')}
                     </p>
                     
-                    <h3 className="font-medium mb-2">Specializations</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium flex items-center">
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        Specializations
+                      </h3>
+                      {editMode && (
+                        <Dialog open={specializationsDialogOpen} onOpenChange={setSpecializationsDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 px-2">
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Specializations</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-4">
+                              <div>
+                                <h4 className="text-sm font-medium mb-2">Current Specializations</h4>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                  {specializations.map((spec, index) => (
+                                    <Badge key={index} variant="secondary" className="px-3 py-1 flex items-center gap-1">
+                                      {spec}
+                                      <button 
+                                        onClick={() => handleRemoveSpecialization(index)} 
+                                        className="ml-1 rounded-full hover:bg-background/20 p-0.5"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={newSpecialization}
+                                  onChange={(e) => setNewSpecialization(e.target.value)}
+                                  placeholder="Add new specialization"
+                                  className="flex-1"
+                                />
+                                <Button onClick={handleAddSpecialization} type="button">
+                                  <PlusCircle className="h-4 w-4 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                              <div className="flex justify-end mt-4">
+                                <Button onClick={() => setSpecializationsDialogOpen(false)}>
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2 mb-6">
-                      <Badge variant="secondary">Cinematic</Badge>
-                      <Badge variant="secondary">Motion Graphics</Badge>
-                      <Badge variant="secondary">Color Grading</Badge>
-                      <Badge variant="secondary">VFX</Badge>
+                      {specializations.map((spec, index) => (
+                        <Badge key={index} variant="secondary">{spec}</Badge>
+                      ))}
                     </div>
                     
                     <Button className="w-full">
