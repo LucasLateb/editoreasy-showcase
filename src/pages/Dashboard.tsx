@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,28 +27,16 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
-// Mock videos for the current user
-const mockUserVideos: Video[] = Array(5).fill(null).map((_, i) => ({
-  id: `user-video-${i}`,
-  title: `My ${categories[i % categories.length].name} Project`,
-  description: 'This is a project I created for a client.',
-  thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + i * 10}-9bc0b252726f`,
-  videoUrl: '#',
-  categoryId: categories[i % categories.length].id,
-  userId: '123', // Current user's ID
-  likes: Math.floor(Math.random() * 50),
-  views: Math.floor(Math.random() * 500),
-  createdAt: new Date()
-}));
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [videos, setVideos] = useState<Video[]>(mockUserVideos);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
   const [uploadData, setUploadData] = useState({
@@ -58,28 +47,109 @@ const Dashboard: React.FC = () => {
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
   
+  // Fetch user videos on component mount
+  useEffect(() => {
+    if (currentUser) {
+      fetchUserVideos();
+    }
+  }, [currentUser]);
+  
+  const fetchUserVideos = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('user_id', currentUser?.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform the data to match our Video type
+      const formattedVideos: Video[] = data.map(video => ({
+        id: video.id,
+        title: video.title,
+        description: video.description || '',
+        thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
+        videoUrl: video.video_url || '#',
+        categoryId: video.category_id,
+        userId: video.user_id,
+        likes: video.likes || 0,
+        views: video.views || 0,
+        createdAt: new Date(video.created_at),
+        isHighlighted: video.is_highlighted
+      }));
+      
+      setVideos(formattedVideos);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      toast({
+        title: "Failed to load videos",
+        description: "There was an error loading your videos. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleUploadVideo = () => {
     setUploadDialogOpen(true);
   };
   
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = async () => {
+    if (!currentUser?.id) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to upload videos.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setUploadDialogOpen(false);
     setIsUploading(true);
     
-    // Simulate upload delay
-    setTimeout(() => {
-      // Create a new video object
-      const newVideo: Video = {
-        id: `user-video-${Date.now()}`,
+    try {
+      // Generate a random thumbnail for now
+      const randomThumbnailUrl = `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`;
+      
+      // Create a new video object for the database
+      const newVideoData = {
         title: uploadData.title,
         description: uploadData.description,
-        thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
-        videoUrl: uploadType === 'link' ? uploadData.videoUrl : '#',
-        categoryId: uploadData.categoryId,
-        userId: currentUser?.id || '123',
-        likes: 0,
-        views: 0,
-        createdAt: new Date()
+        thumbnail_url: randomThumbnailUrl,
+        video_url: uploadType === 'link' ? uploadData.videoUrl : 'file://local-upload', // This would need to change if actually uploading files
+        category_id: uploadData.categoryId,
+        user_id: currentUser.id,
+      };
+      
+      // Insert the video into the database
+      const { data, error } = await supabase
+        .from('videos')
+        .insert(newVideoData)
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Create a new video object for the state
+      const newVideo: Video = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        thumbnailUrl: data.thumbnail_url,
+        videoUrl: data.video_url,
+        categoryId: data.category_id,
+        userId: data.user_id,
+        likes: data.likes || 0,
+        views: data.views || 0,
+        createdAt: new Date(data.created_at),
+        isHighlighted: data.is_highlighted || false
       };
       
       // Add the new video to the videos array
@@ -94,21 +164,50 @@ const Dashboard: React.FC = () => {
       });
       setVideoFile(null);
       setUploadType(null);
-      setIsUploading(false);
       
       toast({
         title: "Video uploaded successfully",
         description: "Your video is now available in your portfolio.",
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your video. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   
-  const handleDeleteVideo = (videoId: string) => {
-    setVideos(videos.filter(video => video.id !== videoId));
-    toast({
-      title: "Video deleted",
-      description: "The video has been removed from your portfolio.",
-    });
+  const handleDeleteVideo = async (videoId: string) => {
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', videoId);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update state
+      setVideos(videos.filter(video => video.id !== videoId));
+      
+      toast({
+        title: "Video deleted",
+        description: "The video has been removed from your portfolio.",
+      });
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast({
+        title: "Delete failed",
+        description: "There was an error deleting your video. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   // If not logged in, redirect to login
@@ -290,7 +389,11 @@ const Dashboard: React.FC = () => {
           </TabsList>
           
           <TabsContent value="videos">
-            {videos.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : videos.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
                   <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
