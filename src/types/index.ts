@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -40,7 +39,49 @@ export interface SubscriptionPlan {
   popular?: boolean;
 }
 
-// Mock data
+export interface PortfolioSettings {
+  id: string;
+  user_id: string;
+  categories: Category[];
+  featured_video: Video;
+  highlighted_videos: Video[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export function parseJsonToCategory(json: any): Category {
+  if (!json || typeof json !== 'object') {
+    throw new Error('Invalid JSON for Category');
+  }
+  
+  return {
+    id: String(json.id || ''),
+    name: String(json.name || ''),
+    description: String(json.description || ''),
+    thumbnailUrl: String(json.thumbnailUrl || '')
+  };
+}
+
+export function parseJsonToVideo(json: any): Video {
+  if (!json || typeof json !== 'object') {
+    throw new Error('Invalid JSON for Video');
+  }
+  
+  return {
+    id: String(json.id || ''),
+    title: String(json.title || ''),
+    description: String(json.description || ''),
+    thumbnailUrl: String(json.thumbnailUrl || ''),
+    videoUrl: String(json.videoUrl || ''),
+    categoryId: String(json.categoryId || ''),
+    userId: String(json.userId || ''),
+    likes: Number(json.likes || 0),
+    views: Number(json.views || 0),
+    createdAt: json.createdAt ? new Date(json.createdAt) : new Date(),
+    isHighlighted: Boolean(json.isHighlighted)
+  };
+}
+
 export const categories: Category[] = [
   {
     id: '1',
@@ -123,7 +164,6 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   }
 ];
 
-// Mock popular editors
 export const popularEditors: User[] = [
   {
     id: '1',

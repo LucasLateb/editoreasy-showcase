@@ -4,8 +4,25 @@ import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
-import { Category, categories as defaultCategories, Video } from '@/types';
-import { Heart, Eye, Mail, Play, Edit, ArrowUp, ArrowDown, Star, X, Loader2 } from 'lucide-react';
+import { 
+  Category, 
+  categories as defaultCategories, 
+  Video, 
+  parseJsonToCategory, 
+  parseJsonToVideo 
+} from '@/types';
+import { 
+  Heart, 
+  Eye, 
+  Mail, 
+  Play, 
+  Edit, 
+  ArrowUp, 
+  ArrowDown, 
+  Star, 
+  X, 
+  Loader2 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -88,22 +105,41 @@ const Portfolio: React.FC = () => {
         if (data) {
           // Apply stored settings if available
           if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-            setUserCategories(data.categories as Category[]);
+            try {
+              const parsedCategories = (data.categories as any[]).map(category => parseJsonToCategory(category));
+              setUserCategories(parsedCategories);
+            } catch (e) {
+              console.error('Failed to parse categories:', e);
+            }
           }
           
           if (data.featured_video && typeof data.featured_video === 'object') {
-            setFeaturedVideo(data.featured_video as Video);
+            try {
+              const parsedVideo = parseJsonToVideo(data.featured_video as any);
+              setFeaturedVideo(parsedVideo);
+            } catch (e) {
+              console.error('Failed to parse featured video:', e);
+            }
           }
           
           if (data.highlighted_videos && Array.isArray(data.highlighted_videos) && data.highlighted_videos.length > 0) {
-            // Merge with existing videos, maintaining the highlighted status
-            const highlightedIds = (data.highlighted_videos as Video[]).map(vid => vid.id);
-            setVideos(prevVideos => 
-              prevVideos.map(video => ({
-                ...video,
-                isHighlighted: highlightedIds.includes(video.id)
-              }))
-            );
+            try {
+              // Parse highlighted videos
+              const parsedHighlightedVideos = (data.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
+              
+              // Get IDs of highlighted videos
+              const highlightedIds = parsedHighlightedVideos.map(vid => vid.id);
+              
+              // Update existing videos with highlighted status
+              setVideos(prevVideos => 
+                prevVideos.map(video => ({
+                  ...video,
+                  isHighlighted: highlightedIds.includes(video.id)
+                }))
+              );
+            } catch (e) {
+              console.error('Failed to parse highlighted videos:', e);
+            }
           }
         }
       } catch (error) {
@@ -159,12 +195,23 @@ const Portfolio: React.FC = () => {
       // Get highlighted videos
       const highlightedVideos = videos.filter(video => video.isHighlighted);
       
-      // Prepare data to be saved - converting to plain objects for Supabase
+      // Prepare data for Supabase by converting Date objects to strings and flattening objects
+      const prepareForDatabase = (obj: any) => {
+        return JSON.parse(JSON.stringify(obj, (key, value) => {
+          // Convert Date objects to ISO strings
+          if (value instanceof Date) {
+            return value.toISOString();
+          }
+          return value;
+        }));
+      };
+      
+      // Prepare data to be saved using helper function
       const portfolioData = {
         user_id: currentUser.id,
-        categories: userCategories as any,
-        featured_video: featuredVideo as any,
-        highlighted_videos: highlightedVideos as any,
+        categories: prepareForDatabase(userCategories),
+        featured_video: prepareForDatabase(featuredVideo),
+        highlighted_videos: prepareForDatabase(highlightedVideos),
         updated_at: new Date().toISOString()
       };
       
