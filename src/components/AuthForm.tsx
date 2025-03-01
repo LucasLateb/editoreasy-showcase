@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AuthFormProps {
   type: 'login' | 'register';
@@ -20,10 +22,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
     
     try {
       if (type === 'login') {
@@ -36,15 +40,23 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         await register(name, email, password);
         toast({
           title: "Account created",
-          description: "Welcome to VideoCut!",
+          description: "Welcome to VideoCut! Please confirm your email to activate your account.",
         });
       }
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Authentication error:', error);
+      
+      // Handle specific Supabase auth errors
+      if (error.message) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Authentication failed. Please check your credentials and try again.");
+      }
+      
       toast({
         title: "Authentication failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive"
       });
     } finally {
@@ -62,6 +74,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             : 'Sign up to start showcasing your video editing work'}
         </p>
       </div>
+      
+      {errorMessage && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {type === 'register' && (
@@ -108,6 +127,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             onChange={(e) => setPassword(e.target.value)}
             required
             className="glass-input"
+            minLength={6}
           />
         </div>
         
