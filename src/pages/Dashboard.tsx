@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Film, Pencil, Trash2, UploadCloud, Link as LinkIcon, FileVideo } from 'lucide-react';
+import { PlusCircle, Film, Pencil, Trash2, UploadCloud, Link as LinkIcon, FileVideo, Image } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Dialog, 
@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -44,8 +45,25 @@ const Dashboard: React.FC = () => {
     description: '',
     videoUrl: '',
     categoryId: categories[0].id,
+    thumbnailUrl: '',
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
+
+  // Thumbnail preview
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  
+  // Predefined thumbnails for selection
+  const predefinedThumbnails = [
+    'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
+    'https://images.unsplash.com/photo-1550745166-9bc0b2527af',
+    'https://images.unsplash.com/photo-1550745167-9bc0b2528ab',
+    'https://images.unsplash.com/photo-1550745168-9bc0b2529ac',
+  ];
   
   // Fetch user videos on component mount
   useEffect(() => {
@@ -98,6 +116,22 @@ const Dashboard: React.FC = () => {
   const handleUploadVideo = () => {
     setUploadDialogOpen(true);
   };
+
+  const handleThumbnailSelect = (url: string) => {
+    setUploadData({...uploadData, thumbnailUrl: url});
+    setThumbnailPreview(url);
+    setThumbnailFile(null);
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setThumbnailPreview(objectUrl);
+      setUploadData({...uploadData, thumbnailUrl: ''});
+    }
+  };
   
   const handleUploadSubmit = async () => {
     if (!currentUser?.id) {
@@ -113,14 +147,38 @@ const Dashboard: React.FC = () => {
     setIsUploading(true);
     
     try {
-      // Generate a random thumbnail for now
-      const randomThumbnailUrl = `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`;
+      let thumbnailUrl = uploadData.thumbnailUrl;
+      
+      // If a thumbnail file was selected, upload it to Supabase storage
+      if (thumbnailFile) {
+        const fileExt = thumbnailFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `thumbnails/${fileName}`;
+        
+        const { data: storageData, error: storageError } = await supabase.storage
+          .from('videos')
+          .upload(filePath, thumbnailFile);
+        
+        if (storageError) {
+          throw storageError;
+        }
+        
+        // Get the public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('videos')
+          .getPublicUrl(filePath);
+        
+        thumbnailUrl = publicUrlData.publicUrl;
+      } else if (!thumbnailUrl) {
+        // If no thumbnail was selected, use a default one
+        thumbnailUrl = predefinedThumbnails[0];
+      }
       
       // Create a new video object for the database
       const newVideoData = {
         title: uploadData.title,
         description: uploadData.description,
-        thumbnail_url: randomThumbnailUrl,
+        thumbnail_url: thumbnailUrl,
         video_url: uploadType === 'link' ? uploadData.videoUrl : 'file://local-upload', // This would need to change if actually uploading files
         category_id: uploadData.categoryId,
         user_id: currentUser.id,
@@ -161,8 +219,11 @@ const Dashboard: React.FC = () => {
         description: '',
         videoUrl: '',
         categoryId: categories[0].id,
+        thumbnailUrl: '',
       });
       setVideoFile(null);
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
       setUploadType(null);
       
       toast({
@@ -181,20 +242,27 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  const handleDeleteVideo = async (videoId: string) => {
+  const handleDeleteConfirm = (videoId: string) => {
+    setVideoToDelete(videoId);
+    setDeleteConfirmOpen(true);
+  };
+  
+  const handleDeleteVideo = async () => {
+    if (!videoToDelete) return;
+    
     try {
       // Delete from Supabase
       const { error } = await supabase
         .from('videos')
         .delete()
-        .eq('id', videoId);
+        .eq('id', videoToDelete);
       
       if (error) {
         throw error;
       }
       
       // Update state
-      setVideos(videos.filter(video => video.id !== videoId));
+      setVideos(videos.filter(video => video.id !== videoToDelete));
       
       toast({
         title: "Video deleted",
@@ -207,6 +275,10 @@ const Dashboard: React.FC = () => {
         description: "There was an error deleting your video. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      // Clean up
+      setVideoToDelete(null);
+      setDeleteConfirmOpen(false);
     }
   };
   
@@ -246,7 +318,7 @@ const Dashboard: React.FC = () => {
         
         {/* Upload Video Dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Upload New Video</DialogTitle>
               <DialogDescription>
@@ -361,6 +433,76 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Thumbnail Selection Section */}
+              <div className="grid gap-2">
+                <Label>Thumbnail</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Predefined thumbnails */}
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground mb-2">Select a thumbnail:</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {predefinedThumbnails.map((thumbnail, index) => (
+                        <div 
+                          key={index}
+                          className={`cursor-pointer border-2 rounded-md overflow-hidden transition-all ${uploadData.thumbnailUrl === thumbnail ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-muted'}`}
+                          onClick={() => handleThumbnailSelect(thumbnail)}
+                        >
+                          <img 
+                            src={thumbnail} 
+                            alt={`Thumbnail ${index + 1}`} 
+                            className="w-full h-16 object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Upload custom thumbnail */}
+                  <div className="col-span-2 mt-2">
+                    <p className="text-sm text-muted-foreground mb-2">Or upload your own:</p>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="border-2 border-dashed border-input rounded-md p-3 flex flex-col items-center justify-center">
+                          <Image className="h-5 w-5 text-muted-foreground mb-1" />
+                          <p className="text-xs text-muted-foreground">
+                            {thumbnailFile ? thumbnailFile.name : 'Click to upload'}
+                          </p>
+                          <Input 
+                            id="thumbnailFile" 
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleThumbnailFileChange}
+                          />
+                        </div>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => document.getElementById('thumbnailFile')?.click()}
+                      >
+                        Select Image
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thumbnail Preview */}
+                {thumbnailPreview && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2">Preview:</p>
+                    <div className="border rounded-md overflow-hidden aspect-video">
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Thumbnail preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
             <DialogFooter>
@@ -373,13 +515,24 @@ const Dashboard: React.FC = () => {
               <Button 
                 type="submit" 
                 onClick={handleUploadSubmit}
-                disabled={!uploadData.title || (!uploadData.videoUrl && uploadType === 'link') || (!videoFile && uploadType === 'file') || !uploadType}
+                disabled={!uploadData.title || (!uploadData.videoUrl && uploadType === 'link') || (!videoFile && uploadType === 'file') || !uploadType || (!uploadData.thumbnailUrl && !thumbnailFile)}
               >
                 Upload Video
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+          onConfirm={handleDeleteVideo}
+          title="Delete Video"
+          description="Are you sure you want to delete this video? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+        />
         
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="mb-6">
@@ -443,7 +596,11 @@ const Dashboard: React.FC = () => {
                           <Pencil className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteVideo(video.id)}>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => handleDeleteConfirm(video.id)}
+                        >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Delete
                         </Button>
