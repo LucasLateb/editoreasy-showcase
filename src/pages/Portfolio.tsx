@@ -3,45 +3,28 @@ import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
-import VideoCard from '@/components/VideoCard';
 import { 
   Category, 
   categories as defaultCategories, 
   Video, 
   parseJsonToCategory, 
-  parseJsonToVideo,
-  PortfolioSettings 
+  parseJsonToVideo
 } from '@/types';
-import { 
-  Heart, 
-  Eye, 
-  Mail, 
-  Play, 
-  Edit, 
-  ArrowUp, 
-  ArrowDown, 
-  Star, 
-  X, 
-  Loader2,
-  User,
-  Briefcase,
-  BadgePlus,
-  Save,
-  PlusCircle,
-  Trash2,
-  Link
-} from 'lucide-react';
+import { Save, Edit, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
+
+// Import refactored components
+import ProfileCard from '@/components/portfolio/ProfileCard';
+import CategoryManager from '@/components/portfolio/CategoryManager';
+import HeaderSection from '@/components/portfolio/HeaderSection';
+import ShowreelSection from '@/components/portfolio/ShowreelSection';
+import VideoGrid from '@/components/portfolio/VideoGrid';
+import TestimonialsTab from '@/components/portfolio/TestimonialsTab';
+import LoadingState from '@/components/portfolio/LoadingState';
 
 // Mock videos for portfolio
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
@@ -362,14 +345,7 @@ const Portfolio: React.FC = () => {
   const highlightedVideos = videos.filter(video => video.isHighlighted);
   
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="mt-2 text-muted-foreground">Loading portfolio settings...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
   
   return (
@@ -409,244 +385,42 @@ const Portfolio: React.FC = () => {
         </div>
         
         {/* Featured video/header section */}
-        <section className="relative h-[60vh] md:h-[70vh] overflow-hidden group">
-          <div className="absolute inset-0">
-            <img 
-              src={featuredVideo.thumbnailUrl} 
-              alt="Featured work" 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
-          </div>
-          
-          {editMode && (
-            <div className="absolute top-4 right-4 z-10 space-x-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
-                    Change Thumbnail
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Choose a thumbnail</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    {thumbnailOptions.map(thumbnail => (
-                      <Card 
-                        key={thumbnail.id} 
-                        className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                        onClick={() => updateVideoThumbnail(featuredVideo.id, thumbnail.url)}
-                      >
-                        <CardContent className="p-2">
-                          <div className="aspect-video relative overflow-hidden rounded">
-                            <img 
-                              src={thumbnail.url} 
-                              alt={`Thumbnail option ${thumbnail.id}`} 
-                              className="w-full h-full object-cover" 
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-          
-          <div className="absolute inset-0 flex items-center">
-            <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-              <div className="max-w-3xl">
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.2s' }}>
-                  {currentUser?.name || 'Video Editor'} Portfolio
-                </h1>
-                <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl animate-slide-in-down opacity-0" style={{ animationDelay: '0.4s' }}>
-                  {currentUser?.bio || 'Professional video editor specializing in cinematic visuals, motion graphics, and compelling storytelling.'}
-                </p>
-                
-                <div className="flex flex-wrap gap-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.6s' }}>
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
-                    <Play className="h-4 w-4" />
-                    <span>Featured Work</span>
-                  </button>
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
-                    <Heart className="h-4 w-4" />
-                    <span>{featuredVideo.likes} Likes</span>
-                  </button>
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
-                    <Eye className="h-4 w-4" />
-                    <span>{featuredVideo.views} Views</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <HeaderSection 
+          featuredVideo={featuredVideo}
+          currentUser={currentUser}
+          editMode={editMode}
+          thumbnailOptions={thumbnailOptions}
+          updateVideoThumbnail={updateVideoThumbnail}
+        />
         
         {/* Info section */}
         <section className="py-12 bg-secondary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">
-                <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
-                  {/* Profile information */}
-                  <div className="flex items-center mb-6">
-                    <Avatar className="h-16 w-16 mr-4 border-2 border-background shadow-sm">
-                      <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.name} />
-                      <AvatarFallback className="text-lg">
-                        {currentUser?.name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h2 className="text-xl font-medium">{currentUser?.name || 'Video Editor'}</h2>
-                      <div className="flex items-center mt-1">
-                        <Badge variant="outline" className="mr-2">
-                          {currentUser?.subscriptionTier.charAt(0).toUpperCase() + currentUser?.subscriptionTier.slice(1)}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {currentUser?.likes || 0} likes
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t border-border pt-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium flex items-center">
-                        <User className="h-4 w-4 mr-2" />
-                        About
-                      </h3>
-                      {editMode && (
-                        <Dialog open={aboutDialogOpen} onOpenChange={setAboutDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 px-2">
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit About Section</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 mt-4">
-                              <Textarea 
-                                value={about}
-                                onChange={(e) => setAbout(e.target.value)}
-                                placeholder="Write something about yourself..."
-                                className="min-h-[120px]"
-                              />
-                              <div className="flex justify-end">
-                                <Button onClick={() => setAboutDialogOpen(false)}>
-                                  Save
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-6">
-                      {about || (currentUser?.bio || 'Professional video editor with expertise in various styles and techniques.')}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium flex items-center">
-                        <Briefcase className="h-4 w-4 mr-2" />
-                        Specializations
-                      </h3>
-                      {editMode && (
-                        <Dialog open={specializationsDialogOpen} onOpenChange={setSpecializationsDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 px-2">
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit Specializations</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 mt-4">
-                              <div>
-                                <h4 className="text-sm font-medium mb-2">Current Specializations</h4>
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                  {specializations.map((spec, index) => (
-                                    <Badge key={index} variant="secondary" className="px-3 py-1 flex items-center gap-1">
-                                      {spec}
-                                      <button 
-                                        onClick={() => handleRemoveSpecialization(index)} 
-                                        className="ml-1 rounded-full hover:bg-background/20 p-0.5"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Input
-                                  value={newSpecialization}
-                                  onChange={(e) => setNewSpecialization(e.target.value)}
-                                  placeholder="Add new specialization"
-                                  className="flex-1"
-                                />
-                                <Button onClick={handleAddSpecialization} type="button">
-                                  <PlusCircle className="h-4 w-4 mr-1" />
-                                  Add
-                                </Button>
-                              </div>
-                              <div className="flex justify-end mt-4">
-                                <Button onClick={() => setSpecializationsDialogOpen(false)}>
-                                  Save
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {specializations.map((spec, index) => (
-                        <Badge key={index} variant="secondary">{spec}</Badge>
-                      ))}
-                    </div>
-                    
-                    <Button className="w-full">
-                      <Mail className="mr-2 h-4 w-4" />
-                      Contact Me
-                    </Button>
-                  </div>
-                </div>
+                <ProfileCard
+                  currentUser={currentUser}
+                  about={about}
+                  setAbout={setAbout}
+                  specializations={specializations}
+                  setSpecializations={setSpecializations}
+                  newSpecialization={newSpecialization}
+                  setNewSpecialization={setNewSpecialization}
+                  editMode={editMode}
+                  aboutDialogOpen={aboutDialogOpen}
+                  setAboutDialogOpen={setAboutDialogOpen}
+                  specializationsDialogOpen={specializationsDialogOpen}
+                  setSpecializationsDialogOpen={setSpecializationsDialogOpen}
+                  handleAddSpecialization={handleAddSpecialization}
+                  handleRemoveSpecialization={handleRemoveSpecialization}
+                />
                 
                 {/* Category management - only visible in edit mode */}
                 {editMode && (
-                  <div className="mt-6 bg-background rounded-2xl shadow-sm p-6 border border-border">
-                    <h3 className="font-medium mb-4">Manage Categories</h3>
-                    <div className="space-y-2">
-                      {userCategories.map((category, index) => (
-                        <div key={category.id} className="flex items-center justify-between p-2 bg-secondary/50 rounded">
-                          <span>{category.name}</span>
-                          <div className="flex space-x-1">
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              onClick={() => moveCategory(index, 'up')}
-                              disabled={index === 0}
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              onClick={() => moveCategory(index, 'down')}
-                              disabled={index === userCategories.length - 1}
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <CategoryManager
+                    userCategories={userCategories}
+                    moveCategory={moveCategory}
+                  />
                 )}
               </div>
               
@@ -660,97 +434,18 @@ const Portfolio: React.FC = () => {
                     )}
                   </TabsList>
                   
-                  {/* Showreel Section - Added between tabs and categories */}
-                  <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
-                    <div className="flex justify-between items-center p-4 border-b border-border">
-                      <h3 className="text-lg font-medium">My Showreel</h3>
-                      {editMode && (
-                        <Dialog open={showreelDialogOpen} onOpenChange={setShowreelDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Showreel
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Update Showreel</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 mt-4">
-                              <div>
-                                <label htmlFor="showreel-url" className="text-sm font-medium mb-2 block">
-                                  Showreel URL (YouTube, Vimeo, etc.)
-                                </label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    id="showreel-url"
-                                    value={showreelUrl}
-                                    onChange={(e) => setShowreelUrl(e.target.value)}
-                                    placeholder="https://www.youtube.com/embed/your-video-id"
-                                    className="flex-1"
-                                  />
-                                  <Button onClick={() => updateShowreel(showreelUrl)}>
-                                    <Link className="h-4 w-4 mr-1" />
-                                    Update
-                                  </Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Use an embed URL from YouTube or Vimeo for best results
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="text-sm font-medium mb-2">Showreel Thumbnail</h4>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {thumbnailOptions.map(thumbnail => (
-                                    <Card 
-                                      key={thumbnail.id} 
-                                      className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                                      onClick={() => updateShowreelThumbnail(thumbnail.url)}
-                                    >
-                                      <CardContent className="p-1">
-                                        <div className="aspect-video relative overflow-hidden rounded">
-                                          <img 
-                                            src={thumbnail.url} 
-                                            alt={`Thumbnail option ${thumbnail.id}`} 
-                                            className="w-full h-full object-cover" 
-                                          />
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                    </div>
-                    <div className="aspect-video relative">
-                      {showreelUrl ? (
-                        <iframe 
-                          src={showreelUrl}
-                          title="Showreel" 
-                          className="w-full h-full"
-                          allowFullScreen
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        />
-                      ) : (
-                        <div className="relative w-full h-full">
-                          <img 
-                            src={showreelThumbnail} 
-                            alt="Showreel thumbnail" 
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer">
-                              <Play className="h-10 w-10 text-white" fill="white" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  {/* Showreel Section */}
+                  <ShowreelSection
+                    showreelUrl={showreelUrl}
+                    showreelThumbnail={showreelThumbnail}
+                    editMode={editMode}
+                    showreelDialogOpen={showreelDialogOpen}
+                    setShowreelDialogOpen={setShowreelDialogOpen}
+                    setShowreelUrl={setShowreelUrl}
+                    updateShowreel={updateShowreel}
+                    updateShowreelThumbnail={updateShowreelThumbnail}
+                    thumbnailOptions={thumbnailOptions}
+                  />
                   
                   <TabsContent value="portfolio" className="animate-fade-in opacity-0">
                     <div className="mb-6">
@@ -761,155 +456,29 @@ const Portfolio: React.FC = () => {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredVideos.map((video) => (
-                        <div key={video.id} className="relative group">
-                          <VideoCard video={video} />
-                          
-                          {editMode && (
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Video</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4 mt-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      {thumbnailOptions.map(thumbnail => (
-                                        <Card 
-                                          key={thumbnail.id} 
-                                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                                          onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
-                                        >
-                                          <CardContent className="p-2">
-                                            <div className="aspect-video relative overflow-hidden rounded">
-                                              <img 
-                                                src={thumbnail.url} 
-                                                alt={`Thumbnail option ${thumbnail.id}`} 
-                                                className="w-full h-full object-cover" 
-                                              />
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                      ))}
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <Button 
-                                        variant={video.isHighlighted ? "destructive" : "outline"}
-                                        onClick={() => toggleHighlight(video.id)}
-                                      >
-                                        {video.isHighlighted ? (
-                                          <>
-                                            <X className="mr-2 h-4 w-4" />
-                                            Remove Highlight
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Star className="mr-2 h-4 w-4" />
-                                            Highlight Video
-                                          </>
-                                        )}
-                                      </Button>
-                                      
-                                      <Button 
-                                        variant="default"
-                                        onClick={() => setAsFeatured(video)}
-                                      >
-                                        Set as Featured
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <VideoGrid
+                      videos={filteredVideos}
+                      editMode={editMode}
+                      thumbnailOptions={thumbnailOptions}
+                      updateVideoThumbnail={updateVideoThumbnail}
+                      toggleHighlight={toggleHighlight}
+                      setAsFeatured={setAsFeatured}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="highlights" className="animate-fade-in opacity-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {highlightedVideos.map((video) => (
-                        <div key={video.id} className="relative group">
-                          <VideoCard video={video} />
-                          
-                          {editMode && (
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Video</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4 mt-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      {thumbnailOptions.map(thumbnail => (
-                                        <Card 
-                                          key={thumbnail.id} 
-                                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                                          onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
-                                        >
-                                          <CardContent className="p-2">
-                                            <div className="aspect-video relative overflow-hidden rounded">
-                                              <img 
-                                                src={thumbnail.url} 
-                                                alt={`Thumbnail option ${thumbnail.id}`} 
-                                                className="w-full h-full object-cover" 
-                                              />
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                      ))}
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <Button 
-                                        variant="outline"
-                                        onClick={() => toggleHighlight(video.id)}
-                                      >
-                                        <X className="mr-2 h-4 w-4" />
-                                        Remove Highlight
-                                      </Button>
-                                      
-                                      <Button 
-                                        variant="default"
-                                        onClick={() => setAsFeatured(video)}
-                                      >
-                                        Set as Featured
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <VideoGrid
+                      videos={highlightedVideos}
+                      editMode={editMode}
+                      thumbnailOptions={thumbnailOptions}
+                      updateVideoThumbnail={updateVideoThumbnail}
+                      toggleHighlight={toggleHighlight}
+                      setAsFeatured={setAsFeatured}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="testimonials" className="animate-fade-in opacity-0">
-                    <div className="text-center py-12">
-                      <h3 className="text-xl font-medium mb-4">No testimonials yet</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Share your portfolio with clients to receive testimonials.
-                      </p>
-                      {editMode && (
-                        <Button variant="outline">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add Testimonial Manually
-                        </Button>
-                      )}
-                    </div>
+                    <TestimonialsTab editMode={editMode} />
                   </TabsContent>
                 </Tabs>
               </div>
