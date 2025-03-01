@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -434,20 +433,20 @@ const Portfolio: React.FC = () => {
                     )}
                   </TabsList>
                   
-                  {/* Showreel Section */}
-                  <ShowreelSection
-                    showreelUrl={showreelUrl}
-                    showreelThumbnail={showreelThumbnail}
-                    editMode={editMode}
-                    showreelDialogOpen={showreelDialogOpen}
-                    setShowreelDialogOpen={setShowreelDialogOpen}
-                    setShowreelUrl={setShowreelUrl}
-                    updateShowreel={updateShowreel}
-                    updateShowreelThumbnail={updateShowreelThumbnail}
-                    thumbnailOptions={thumbnailOptions}
-                  />
-                  
                   <TabsContent value="portfolio" className="animate-fade-in opacity-0">
+                    {/* Showreel Section - Moved inside the portfolio tab content */}
+                    <ShowreelSection
+                      showreelUrl={showreelUrl}
+                      showreelThumbnail={showreelThumbnail}
+                      editMode={editMode}
+                      showreelDialogOpen={showreelDialogOpen}
+                      setShowreelDialogOpen={setShowreelDialogOpen}
+                      setShowreelUrl={setShowreelUrl}
+                      updateShowreel={updateShowreel}
+                      updateShowreelThumbnail={updateShowreelThumbnail}
+                      thumbnailOptions={thumbnailOptions}
+                    />
+                    
                     <div className="mb-6">
                       <CategorySlider 
                         onSelectCategory={setSelectedCategory}
