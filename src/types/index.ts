@@ -21,6 +21,7 @@ export interface Video {
   likes: number;
   views: number;
   createdAt: Date;
+  isHighlighted?: boolean;
 }
 
 export interface Category {

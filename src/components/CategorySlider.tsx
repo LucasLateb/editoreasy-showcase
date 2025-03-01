@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { categories, Category } from '@/types';
+import { categories as defaultCategories, Category } from '@/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -8,11 +8,13 @@ import { cn } from '@/lib/utils';
 interface CategorySliderProps {
   onSelectCategory?: (category: Category) => void;
   selectedCategoryId?: string;
+  categories?: Category[];
 }
 
 const CategorySlider: React.FC<CategorySliderProps> = ({ 
   onSelectCategory,
-  selectedCategoryId 
+  selectedCategoryId,
+  categories = defaultCategories
 }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);

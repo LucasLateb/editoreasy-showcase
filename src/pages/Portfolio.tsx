@@ -1,33 +1,46 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
-import { Category, categories } from '@/types';
-import { Heart, Eye, Mail, Play } from 'lucide-react';
+import { Category, categories as defaultCategories, Video } from '@/types';
+import { Heart, Eye, Mail, Play, Edit, ArrowUp, ArrowDown, Star, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 // Mock videos for portfolio
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
   id: `portfolio-video-${i}`,
-  title: `${categories[i % categories.length].name} Project ${i + 1}`,
+  title: `${defaultCategories[i % defaultCategories.length].name} Project ${i + 1}`,
   description: 'Professional video editing project showcasing my skills.',
   thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + i * 10}-9bc0b252726f`,
   videoUrl: '#',
-  categoryId: categories[i % categories.length].id,
+  categoryId: defaultCategories[i % defaultCategories.length].id,
   userId: '123', // Current user's ID
   likes: Math.floor(Math.random() * 50),
   views: Math.floor(Math.random() * 500),
-  createdAt: new Date()
+  createdAt: new Date(),
+  isHighlighted: false
 }));
 
+// Sample thumbnail options
+const thumbnailOptions = [
+  { id: '1', url: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b' },
+  { id: '2', url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d' },
+  { id: '3', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158' },
+  { id: '4', url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085' },
+  { id: '5', url: 'https://images.unsplash.com/photo-1483058712412-4245e9b90334' },
+];
+
 // Featured video
-const featuredVideo = {
+const defaultFeaturedVideo = {
   id: 'featured',
   title: 'Cinematic Brand Commercial',
   description: 'A high-impact commercial video created for a luxury brand with cinematic visuals and professional color grading.',
@@ -37,25 +50,128 @@ const featuredVideo = {
   userId: '123',
   likes: 137,
   views: 1243,
-  createdAt: new Date()
+  createdAt: new Date(),
+  isHighlighted: true
 };
 
 const Portfolio: React.FC = () => {
   const { currentUser } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
+  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
+  const [videos, setVideos] = useState<Video[]>([...mockPortfolioVideos]);
+  const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedVideoForEdit, setSelectedVideoForEdit] = useState<Video | null>(null);
+  
+  // Reorder categories
+  const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) || 
+      (direction === 'down' && index === userCategories.length - 1)
+    ) {
+      return;
+    }
+    
+    const newCategories = [...userCategories];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const categoryToMove = newCategories[index];
+    
+    newCategories.splice(index, 1);
+    newCategories.splice(newIndex, 0, categoryToMove);
+    
+    setUserCategories(newCategories);
+    toast.success(`Category "${categoryToMove.name}" moved ${direction}`);
+  }, [userCategories]);
+  
+  // Toggle edit mode
+  const toggleEditMode = () => {
+    setEditMode(!editMode);
+    if (editMode) {
+      toast.success('Changes saved successfully');
+    }
+  };
+  
+  // Update video thumbnail
+  const updateVideoThumbnail = (videoId: string, newThumbnailUrl: string) => {
+    if (videoId === featuredVideo.id) {
+      setFeaturedVideo({
+        ...featuredVideo,
+        thumbnailUrl: newThumbnailUrl
+      });
+      setSelectedVideoForEdit(null);
+      toast.success('Featured video thumbnail updated');
+      return;
+    }
+    
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.id === videoId 
+          ? { ...video, thumbnailUrl: newThumbnailUrl } 
+          : video
+      )
+    );
+    setSelectedVideoForEdit(null);
+    toast.success('Video thumbnail updated');
+  };
+  
+  // Toggle video highlight
+  const toggleHighlight = (videoId: string) => {
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.id === videoId 
+          ? { ...video, isHighlighted: !video.isHighlighted } 
+          : video
+      )
+    );
+    toast.success('Video highlight status updated');
+  };
+  
+  // Set video as featured
+  const setAsFeatured = (video: Video) => {
+    const prevFeatured = featuredVideo;
+    setFeaturedVideo(video);
+    
+    // Add the previous featured video to regular videos
+    setVideos(prevVideos => {
+      const videoExists = prevVideos.some(v => v.id === prevFeatured.id);
+      if (!videoExists && prevFeatured.id !== video.id) {
+        return [...prevVideos, prevFeatured];
+      }
+      return prevVideos.filter(v => v.id !== video.id);
+    });
+    
+    toast.success('Featured video updated');
+  };
   
   // Get videos filtered by category if one is selected
   const filteredVideos = selectedCategory 
-    ? mockPortfolioVideos.filter(video => video.categoryId === selectedCategory.id)
-    : mockPortfolioVideos;
+    ? videos.filter(video => video.categoryId === selectedCategory.id)
+    : videos;
+  
+  // Get highlighted videos
+  const highlightedVideos = videos.filter(video => video.isHighlighted);
   
   return (
     <div className="min-h-screen">
       <Navbar />
       
       <main>
+        {/* Edit mode toggle */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button 
+            onClick={toggleEditMode} 
+            className={cn(
+              "rounded-full shadow-lg",
+              editMode ? "bg-green-500 hover:bg-green-600" : "bg-primary"
+            )}
+          >
+            {editMode ? 'Save Changes' : 'Edit Portfolio'}
+            <Edit className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+        
         {/* Featured video/header section */}
-        <section className="relative h-[60vh] md:h-[70vh] overflow-hidden">
+        <section className="relative h-[60vh] md:h-[70vh] overflow-hidden group">
           <div className="absolute inset-0">
             <img 
               src={featuredVideo.thumbnailUrl} 
@@ -64,6 +180,42 @@ const Portfolio: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
           </div>
+          
+          {editMode && (
+            <div className="absolute top-4 right-4 z-10 space-x-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
+                    Change Thumbnail
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Choose a thumbnail</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    {thumbnailOptions.map(thumbnail => (
+                      <Card 
+                        key={thumbnail.id} 
+                        className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                        onClick={() => updateVideoThumbnail(featuredVideo.id, thumbnail.url)}
+                      >
+                        <CardContent className="p-2">
+                          <div className="aspect-video relative overflow-hidden rounded">
+                            <img 
+                              src={thumbnail.url} 
+                              alt={`Thumbnail option ${thumbnail.id}`} 
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
           
           <div className="absolute inset-0 flex items-center">
             <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
@@ -100,6 +252,7 @@ const Portfolio: React.FC = () => {
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">
                 <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
+                  {/* Profile information */}
                   <div className="flex items-center mb-6">
                     <Avatar className="h-16 w-16 mr-4 border-2 border-background shadow-sm">
                       <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.name} />
@@ -140,6 +293,38 @@ const Portfolio: React.FC = () => {
                     </Button>
                   </div>
                 </div>
+                
+                {/* Category management - only visible in edit mode */}
+                {editMode && (
+                  <div className="mt-6 bg-background rounded-2xl shadow-sm p-6 border border-border">
+                    <h3 className="font-medium mb-4">Manage Categories</h3>
+                    <div className="space-y-2">
+                      {userCategories.map((category, index) => (
+                        <div key={category.id} className="flex items-center justify-between p-2 bg-secondary/50 rounded">
+                          <span>{category.name}</span>
+                          <div className="flex space-x-1">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => moveCategory(index, 'up')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => moveCategory(index, 'down')}
+                              disabled={index === userCategories.length - 1}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="md:w-2/3">
@@ -148,6 +333,9 @@ const Portfolio: React.FC = () => {
                     <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
                     <TabsTrigger value="showreel">Showreel</TabsTrigger>
                     <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+                    {highlightedVideos.length > 0 && (
+                      <TabsTrigger value="highlights">Highlights</TabsTrigger>
+                    )}
                   </TabsList>
                   
                   <TabsContent value="portfolio" className="animate-fade-in opacity-0">
@@ -155,12 +343,102 @@ const Portfolio: React.FC = () => {
                       <CategorySlider 
                         onSelectCategory={setSelectedCategory}
                         selectedCategoryId={selectedCategory?.id}
+                        categories={userCategories}
                       />
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredVideos.map((video) => (
-                        <VideoCard key={video.id} video={video} />
+                        <div key={video.id} className="relative group">
+                          <VideoCard video={video} />
+                          
+                          {editMode && (
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Video</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4 mt-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      {thumbnailOptions.map(thumbnail => (
+                                        <Card 
+                                          key={thumbnail.id} 
+                                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                                          onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
+                                        >
+                                          <CardContent className="p-2">
+                                            <div className="aspect-video relative overflow-hidden rounded">
+                                              <img 
+                                                src={thumbnail.url} 
+                                                alt={`Thumbnail option ${thumbnail.id}`} 
+                                                className="w-full h-full object-cover" 
+                                              />
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                      ))}
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <Button 
+                                        variant={video.isHighlighted ? "destructive" : "outline"}
+                                        onClick={() => toggleHighlight(video.id)}
+                                      >
+                                        {video.isHighlighted ? (
+                                          <>
+                                            <X className="mr-2 h-4 w-4" />
+                                            Remove Highlight
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Star className="mr-2 h-4 w-4" />
+                                            Highlight Video
+                                          </>
+                                        )}
+                                      </Button>
+                                      
+                                      <Button 
+                                        variant="default"
+                                        onClick={() => setAsFeatured(video)}
+                                      >
+                                        Set as Featured
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="highlights" className="animate-fade-in opacity-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {highlightedVideos.map((video) => (
+                        <div key={video.id} className="relative group">
+                          <VideoCard video={video} />
+                          
+                          {editMode && (
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => toggleHighlight(video.id)}
+                                className="bg-background/80 backdrop-blur-sm"
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Remove
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </TabsContent>

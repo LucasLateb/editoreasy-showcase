@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Video, Category, categories } from '@/types';
-import { Eye, Heart, Play } from 'lucide-react';
+import { Eye, Heart, Play, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface VideoCardProps {
@@ -15,7 +15,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   
   return (
     <div 
-      className="group relative rounded-lg overflow-hidden aspect-video hover-scale"
+      className={cn(
+        "group relative rounded-lg overflow-hidden aspect-video hover-scale",
+        video.isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+      )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -29,6 +32,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       
       {/* Overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-80"></div>
+      
+      {/* Highlight indicator */}
+      {video.isHighlighted && (
+        <div className="absolute top-2 left-2 z-10">
+          <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-primary text-white text-xs">
+            <Star className="h-3 w-3" fill="currentColor" />
+            <span>Highlighted</span>
+          </div>
+        </div>
+      )}
       
       {/* Play button that appears on hover */}
       <div className={cn(
