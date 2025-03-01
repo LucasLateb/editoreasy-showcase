@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -99,6 +99,12 @@ const Navbar: React.FC = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/portfolio" className="w-full cursor-pointer">My Portfolio</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="w-full cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Edit Profile</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer">

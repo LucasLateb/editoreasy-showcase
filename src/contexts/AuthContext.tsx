@@ -11,6 +11,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => void;
   isAuthenticated: boolean;
+  updateAvatar: (avatarUrl: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: data.email,
             avatarUrl: data.avatar_url,
             bio: data.bio,
-            subscriptionTier: data.subscription_tier,
+            subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
             likes: data.likes,
             createdAt: new Date(data.created_at)
           };
@@ -83,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: data.email,
             avatarUrl: data.avatar_url,
             bio: data.bio,
-            subscriptionTier: data.subscription_tier,
+            subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
             likes: data.likes,
             createdAt: new Date(data.created_at)
           };
@@ -131,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: profileData.email,
         avatarUrl: profileData.avatar_url,
         bio: profileData.bio,
-        subscriptionTier: profileData.subscription_tier,
+        subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
         createdAt: new Date(profileData.created_at)
       };
@@ -184,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: data.user.id,
           name: name,
           email: email,
-          subscriptionTier: 'free',
+          subscriptionTier: 'free' as const,
           likes: 0,
           createdAt: new Date()
         };
@@ -200,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: profileData.email,
         avatarUrl: profileData.avatar_url,
         bio: profileData.bio,
-        subscriptionTier: profileData.subscription_tier,
+        subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
         createdAt: new Date(profileData.created_at)
       };
@@ -229,13 +230,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateAvatar = async (avatarUrl: string) => {
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', currentUser.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update the current user state
+      setCurrentUser(prev => prev ? {...prev, avatarUrl} : null);
+      
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been successfully updated.",
+      });
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast({
+        title: "Update failed",
+        description: "There was an error updating your avatar.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
     loading,
     login,
     register,
     logout,
-    isAuthenticated: !!currentUser
+    isAuthenticated: !!currentUser,
+    updateAvatar
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
