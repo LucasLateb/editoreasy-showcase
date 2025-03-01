@@ -27,7 +27,8 @@ import {
   BadgePlus,
   Save,
   PlusCircle,
-  Trash2
+  Trash2,
+  Link
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -80,6 +81,9 @@ const defaultFeaturedVideo = {
   isHighlighted: true
 };
 
+// Default showreel URL
+const defaultShowreelUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+
 const Portfolio: React.FC = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
@@ -91,14 +95,17 @@ const Portfolio: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Add state for about section and specializations
+  // Add state for about section, specializations, and showreel
   const [about, setAbout] = useState<string>('Professional video editor with expertise in various styles and techniques.');
   const [specializations, setSpecializations] = useState<string[]>(['Cinematic', 'Motion Graphics', 'Color Grading', 'VFX']);
   const [newSpecialization, setNewSpecialization] = useState<string>('');
+  const [showreelUrl, setShowreelUrl] = useState<string>(defaultShowreelUrl);
+  const [showreelThumbnail, setShowreelThumbnail] = useState<string>('https://images.unsplash.com/photo-1550745165-9bc0b252726f');
   
   // Edit mode dialogs
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [specializationsDialogOpen, setSpecializationsDialogOpen] = useState(false);
+  const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
   
   // Fetch portfolio settings on component mount
   useEffect(() => {
@@ -166,6 +173,11 @@ const Portfolio: React.FC = () => {
           
           if (data.specializations && Array.isArray(data.specializations)) {
             setSpecializations(data.specializations as string[]);
+          }
+          
+          // Set showreel_url if available
+          if (data.showreel_url) {
+            setShowreelUrl(data.showreel_url);
           }
         }
       } catch (error) {
@@ -240,6 +252,7 @@ const Portfolio: React.FC = () => {
         highlighted_videos: prepareForDatabase(highlightedVideos),
         about: about,
         specializations: specializations,
+        showreel_url: showreelUrl,
         updated_at: new Date().toISOString()
       };
       
@@ -311,6 +324,19 @@ const Portfolio: React.FC = () => {
     });
     
     toast.success('Featured video updated');
+  };
+
+  // Update showreel URL
+  const updateShowreel = (url: string) => {
+    setShowreelUrl(url);
+    setShowreelDialogOpen(false);
+    toast.success('Showreel URL updated');
+  };
+  
+  // Update showreel thumbnail
+  const updateShowreelThumbnail = (newThumbnailUrl: string) => {
+    setShowreelThumbnail(newThumbnailUrl);
+    toast.success('Showreel thumbnail updated');
   };
 
   // Add new specialization
@@ -627,12 +653,103 @@ const Portfolio: React.FC = () => {
                 <Tabs defaultValue="portfolio" className="w-full">
                   <TabsList className="mb-6">
                     <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-                    <TabsTrigger value="showreel">Showreel</TabsTrigger>
                     <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
                     {highlightedVideos.length > 0 && (
                       <TabsTrigger value="highlights">Highlights</TabsTrigger>
                     )}
                   </TabsList>
+                  
+                  {/* Showreel Section - Added between tabs and categories */}
+                  <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center p-4 border-b border-border">
+                      <h3 className="text-lg font-medium">My Showreel</h3>
+                      {editMode && (
+                        <Dialog open={showreelDialogOpen} onOpenChange={setShowreelDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Showreel
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Update Showreel</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-4">
+                              <div>
+                                <label htmlFor="showreel-url" className="text-sm font-medium mb-2 block">
+                                  Showreel URL (YouTube, Vimeo, etc.)
+                                </label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    id="showreel-url"
+                                    value={showreelUrl}
+                                    onChange={(e) => setShowreelUrl(e.target.value)}
+                                    placeholder="https://www.youtube.com/embed/your-video-id"
+                                    className="flex-1"
+                                  />
+                                  <Button onClick={() => updateShowreel(showreelUrl)}>
+                                    <Link className="h-4 w-4 mr-1" />
+                                    Update
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Use an embed URL from YouTube or Vimeo for best results
+                                </p>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-2">Showreel Thumbnail</h4>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {thumbnailOptions.map(thumbnail => (
+                                    <Card 
+                                      key={thumbnail.id} 
+                                      className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                                      onClick={() => updateShowreelThumbnail(thumbnail.url)}
+                                    >
+                                      <CardContent className="p-1">
+                                        <div className="aspect-video relative overflow-hidden rounded">
+                                          <img 
+                                            src={thumbnail.url} 
+                                            alt={`Thumbnail option ${thumbnail.id}`} 
+                                            className="w-full h-full object-cover" 
+                                          />
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                    <div className="aspect-video relative">
+                      {showreelUrl ? (
+                        <iframe 
+                          src={showreelUrl}
+                          title="Showreel" 
+                          className="w-full h-full"
+                          allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      ) : (
+                        <div className="relative w-full h-full">
+                          <img 
+                            src={showreelThumbnail} 
+                            alt="Showreel thumbnail" 
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer">
+                              <Play className="h-10 w-10 text-white" fill="white" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   
                   <TabsContent value="portfolio" className="animate-fade-in opacity-0">
                     <div className="mb-6">
@@ -719,91 +836,3 @@ const Portfolio: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {highlightedVideos.map((video) => (
                         <div key={video.id} className="relative group">
-                          <VideoCard video={video} />
-                          
-                          {editMode && (
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => toggleHighlight(video.id)}
-                                className="bg-background/80 backdrop-blur-sm"
-                              >
-                                <X className="mr-2 h-4 w-4" />
-                                Remove
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="showreel" className="animate-fade-in opacity-0">
-                    <div className="bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
-                      <div className="aspect-video relative">
-                        <img 
-                          src="https://images.unsplash.com/photo-1550745165-9bc0b252726f" 
-                          alt="Showreel thumbnail" 
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer">
-                            <Play className="h-10 w-10 text-white" fill="white" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-xl font-medium mb-2">2023 Video Editing Showreel</h3>
-                        <p className="text-muted-foreground">
-                          A compilation of my best work from the past year, showcasing various styles and techniques.
-                        </p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="testimonials" className="animate-fade-in opacity-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {Array(4).fill(null).map((_, i) => (
-                        <div key={i} className={cn(
-                          "p-6 rounded-2xl border border-border bg-background shadow-sm",
-                          i === 0 && "md:col-span-2"
-                        )}>
-                          <div className="flex items-center mb-4">
-                            <Avatar className="h-10 w-10 mr-3">
-                              <AvatarFallback>
-                                {['JD', 'AM', 'TS', 'RK'][i % 4]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h4 className="font-medium">
-                                {['John Doe', 'Alice Miller', 'Tom Smith', 'Rachel Kim'][i % 4]}
-                              </h4>
-                              <p className="text-sm text-muted-foreground">
-                                {['Marketing Director', 'Film Producer', 'Brand Manager', 'Creative Director'][i % 4]}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="text-muted-foreground">
-                            {[
-                              "Working with this editor was a game-changer for our brand. The cinematic quality and storytelling brought our vision to life perfectly.",
-                              "Extremely professional and creative. Delivered the project ahead of schedule with excellent quality.",
-                              "The attention to detail and technical skills are outstanding. Will definitely hire again for future projects.",
-                              "A true professional who understands both the technical and creative aspects of video editing."
-                            ][i % 4]}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
-  );
-};
-
-export default Portfolio;

@@ -47,6 +47,7 @@ export interface PortfolioSettings {
   highlighted_videos: Video[];
   about?: string;
   specializations?: string[];
+  showreel_url?: string;
   created_at?: string;
   updated_at?: string;
 }

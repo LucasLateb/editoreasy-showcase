@@ -17,6 +17,7 @@ export type Database = {
           featured_video: Json | null
           highlighted_videos: Json | null
           id: string
+          showreel_url: string | null
           specializations: Json | null
           updated_at: string | null
           user_id: string
@@ -28,6 +29,7 @@ export type Database = {
           featured_video?: Json | null
           highlighted_videos?: Json | null
           id?: string
+          showreel_url?: string | null
           specializations?: Json | null
           updated_at?: string | null
           user_id: string
@@ -39,6 +41,7 @@ export type Database = {
           featured_video?: Json | null
           highlighted_videos?: Json | null
           id?: string
+          showreel_url?: string | null
           specializations?: Json | null
           updated_at?: string | null
           user_id?: string
