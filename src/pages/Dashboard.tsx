@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -14,8 +13,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Film, Pencil, Trash2, UploadCloud } from 'lucide-react';
+import { PlusCircle, Film, Pencil, Trash2, UploadCloud, Link as LinkIcon, FileVideo } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 // Mock videos for the current user
 const mockUserVideos: Video[] = Array(5).fill(null).map((_, i) => ({
@@ -38,13 +48,54 @@ const Dashboard: React.FC = () => {
   
   const [videos, setVideos] = useState<Video[]>(mockUserVideos);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
+  const [uploadData, setUploadData] = useState({
+    title: '',
+    description: '',
+    videoUrl: '',
+    categoryId: categories[0].id,
+  });
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   
   const handleUploadVideo = () => {
+    setUploadDialogOpen(true);
+  };
+  
+  const handleUploadSubmit = () => {
+    setUploadDialogOpen(false);
     setIsUploading(true);
     
     // Simulate upload delay
     setTimeout(() => {
+      // Create a new video object
+      const newVideo: Video = {
+        id: `user-video-${Date.now()}`,
+        title: uploadData.title,
+        description: uploadData.description,
+        thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
+        videoUrl: uploadType === 'link' ? uploadData.videoUrl : '#',
+        categoryId: uploadData.categoryId,
+        userId: currentUser?.id || '123',
+        likes: 0,
+        views: 0,
+        createdAt: new Date()
+      };
+      
+      // Add the new video to the videos array
+      setVideos([newVideo, ...videos]);
+      
+      // Reset form data
+      setUploadData({
+        title: '',
+        description: '',
+        videoUrl: '',
+        categoryId: categories[0].id,
+      });
+      setVideoFile(null);
+      setUploadType(null);
       setIsUploading(false);
+      
       toast({
         title: "Video uploaded successfully",
         description: "Your video is now available in your portfolio.",
@@ -93,6 +144,143 @@ const Dashboard: React.FC = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Upload Video Dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Upload New Video</DialogTitle>
+              <DialogDescription>
+                Add a new video to your portfolio. Fill out the details below.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Video Title</Label>
+                <Input 
+                  id="title" 
+                  value={uploadData.title} 
+                  onChange={(e) => setUploadData({...uploadData, title: e.target.value})}
+                  placeholder="Enter a title for your video"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category</Label>
+                <select 
+                  id="category"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={uploadData.categoryId}
+                  onChange={(e) => setUploadData({...uploadData, categoryId: e.target.value})}
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  value={uploadData.description} 
+                  onChange={(e) => setUploadData({...uploadData, description: e.target.value})}
+                  placeholder="Describe your video"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label>Video Source</Label>
+                <div className="flex gap-4 mt-1">
+                  <Button 
+                    type="button" 
+                    variant={uploadType === 'link' ? 'default' : 'outline'} 
+                    className="flex-1"
+                    onClick={() => setUploadType('link')}
+                  >
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Video Link
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant={uploadType === 'file' ? 'default' : 'outline'} 
+                    className="flex-1"
+                    onClick={() => setUploadType('file')}
+                  >
+                    <FileVideo className="mr-2 h-4 w-4" />
+                    Upload File
+                  </Button>
+                </div>
+              </div>
+              
+              {uploadType === 'link' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="videoUrl">Video URL</Label>
+                  <Input 
+                    id="videoUrl" 
+                    value={uploadData.videoUrl} 
+                    onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                    placeholder="Enter YouTube or Vimeo URL"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Supports YouTube, Vimeo, and other video hosting platforms
+                  </p>
+                </div>
+              )}
+              
+              {uploadType === 'file' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="videoFile">Video File</Label>
+                  <div className="border-2 border-dashed border-input rounded-md p-6 flex flex-col items-center justify-center">
+                    <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {videoFile ? videoFile.name : 'Drag and drop or click to upload'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Supports MP4, MOV, AVI (max 500MB)
+                    </p>
+                    <Input 
+                      id="videoFile" 
+                      type="file"
+                      className="hidden"
+                      accept=".mp4,.mov,.avi"
+                      onChange={(e) => setVideoFile(e.target.files ? e.target.files[0] : null)}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-4"
+                      onClick={() => document.getElementById('videoFile')?.click()}
+                    >
+                      Select File
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setUploadDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                onClick={handleUploadSubmit}
+                disabled={!uploadData.title || (!uploadData.videoUrl && uploadType === 'link') || (!videoFile && uploadType === 'file') || !uploadType}
+              >
+                Upload Video
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="mb-6">
