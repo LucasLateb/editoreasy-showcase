@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -836,3 +837,88 @@ const Portfolio: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {highlightedVideos.map((video) => (
                         <div key={video.id} className="relative group">
+                          <VideoCard video={video} />
+                          
+                          {editMode && (
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Video</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4 mt-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      {thumbnailOptions.map(thumbnail => (
+                                        <Card 
+                                          key={thumbnail.id} 
+                                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                                          onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
+                                        >
+                                          <CardContent className="p-2">
+                                            <div className="aspect-video relative overflow-hidden rounded">
+                                              <img 
+                                                src={thumbnail.url} 
+                                                alt={`Thumbnail option ${thumbnail.id}`} 
+                                                className="w-full h-full object-cover" 
+                                              />
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                      ))}
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => toggleHighlight(video.id)}
+                                      >
+                                        <X className="mr-2 h-4 w-4" />
+                                        Remove Highlight
+                                      </Button>
+                                      
+                                      <Button 
+                                        variant="default"
+                                        onClick={() => setAsFeatured(video)}
+                                      >
+                                        Set as Featured
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="testimonials" className="animate-fade-in opacity-0">
+                    <div className="text-center py-12">
+                      <h3 className="text-xl font-medium mb-4">No testimonials yet</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Share your portfolio with clients to receive testimonials.
+                      </p>
+                      {editMode && (
+                        <Button variant="outline">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add Testimonial Manually
+                        </Button>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+};
+
+export default Portfolio;
