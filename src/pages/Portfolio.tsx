@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -86,17 +87,17 @@ const Portfolio: React.FC = () => {
         
         if (data) {
           // Apply stored settings if available
-          if (data.categories && data.categories.length > 0) {
-            setUserCategories(data.categories);
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+            setUserCategories(data.categories as Category[]);
           }
           
-          if (data.featured_video && Object.keys(data.featured_video).length > 0) {
-            setFeaturedVideo(data.featured_video);
+          if (data.featured_video && typeof data.featured_video === 'object') {
+            setFeaturedVideo(data.featured_video as Video);
           }
           
-          if (data.highlighted_videos && data.highlighted_videos.length > 0) {
+          if (data.highlighted_videos && Array.isArray(data.highlighted_videos) && data.highlighted_videos.length > 0) {
             // Merge with existing videos, maintaining the highlighted status
-            const highlightedIds = data.highlighted_videos.map((vid: Video) => vid.id);
+            const highlightedIds = (data.highlighted_videos as Video[]).map(vid => vid.id);
             setVideos(prevVideos => 
               prevVideos.map(video => ({
                 ...video,
@@ -158,13 +159,13 @@ const Portfolio: React.FC = () => {
       // Get highlighted videos
       const highlightedVideos = videos.filter(video => video.isHighlighted);
       
-      // Prepare data to be saved
+      // Prepare data to be saved - converting to plain objects for Supabase
       const portfolioData = {
         user_id: currentUser.id,
-        categories: userCategories,
-        featured_video: featuredVideo,
-        highlighted_videos: highlightedVideos,
-        updated_at: new Date()
+        categories: userCategories as any,
+        featured_video: featuredVideo as any,
+        highlighted_videos: highlightedVideos as any,
+        updated_at: new Date().toISOString()
       };
       
       // Upsert (insert or update) portfolio settings
