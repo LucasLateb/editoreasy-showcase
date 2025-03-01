@@ -1,7 +1,6 @@
 
 import React from 'react';
 import Navbar from '@/components/Navbar';
-import { Footer } from '@/components/ui/sidebar';
 import { 
   Card, 
   CardContent, 
@@ -12,9 +11,47 @@ import {
 import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
 
+// Create a Footer component
+const Footer = () => {
+  return (
+    <footer className="bg-background py-6 border-t">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <p className="text-sm text-muted-foreground">
+            © 2023 VideoEditPro. All rights reserved.
+          </p>
+          <div className="flex space-x-4 mt-4 md:mt-0">
+            <a href="#" className="text-sm text-muted-foreground hover:text-foreground">Terms</a>
+            <a href="#" className="text-sm text-muted-foreground hover:text-foreground">Privacy</a>
+            <a href="#" className="text-sm text-muted-foreground hover:text-foreground">Contact</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+// Define the appropriate video type for this page
+type ExploreVideoType = {
+  id: string;
+  title: string;
+  editor: string;
+  thumbnail: string;
+  views: number;
+  likes: number;
+  date: string;
+  // Adding the missing properties to match the Video type
+  description: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+  categoryId: string;
+  userId: string;
+  createdAt: Date;
+};
+
 const Explore: React.FC = () => {
   // Sample data - in a real app, this would come from an API
-  const videos = [
+  const videos: ExploreVideoType[] = [
     {
       id: '1',
       title: 'Cinematic Travel Montage',
@@ -23,6 +60,12 @@ const Explore: React.FC = () => {
       views: 12453,
       likes: 854,
       date: '2023-08-15',
+      description: 'A breathtaking journey through exotic locations',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video1',
+      categoryId: '2',
+      userId: '1',
+      createdAt: new Date('2023-08-15')
     },
     {
       id: '2',
@@ -32,6 +75,12 @@ const Explore: React.FC = () => {
       views: 7823,
       likes: 421,
       date: '2023-09-02',
+      description: 'Professional corporate promo video',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video2',
+      categoryId: '1',
+      userId: '2',
+      createdAt: new Date('2023-09-02')
     },
     {
       id: '3',
@@ -41,6 +90,12 @@ const Explore: React.FC = () => {
       views: 15932,
       likes: 1203,
       date: '2023-07-28',
+      description: 'Beautiful wedding day highlights',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video3',
+      categoryId: '3',
+      userId: '3',
+      createdAt: new Date('2023-07-28')
     },
     {
       id: '4',
@@ -50,6 +105,12 @@ const Explore: React.FC = () => {
       views: 8745,
       likes: 632,
       date: '2023-08-05',
+      description: 'Sleek product demonstration video',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video4',
+      categoryId: '1',
+      userId: '4',
+      createdAt: new Date('2023-08-05')
     },
   ];
 
