@@ -11,29 +11,35 @@ export type Database = {
     Tables: {
       portfolio_settings: {
         Row: {
+          about: string | null
           categories: Json | null
           created_at: string | null
           featured_video: Json | null
           highlighted_videos: Json | null
           id: string
+          specializations: Json | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          about?: string | null
           categories?: Json | null
           created_at?: string | null
           featured_video?: Json | null
           highlighted_videos?: Json | null
           id?: string
+          specializations?: Json | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          about?: string | null
           categories?: Json | null
           created_at?: string | null
           featured_video?: Json | null
           highlighted_videos?: Json | null
           id?: string
+          specializations?: Json | null
           updated_at?: string | null
           user_id?: string
         }
