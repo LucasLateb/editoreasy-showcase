@@ -1,11 +1,10 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
 import { Category, categories as defaultCategories, Video } from '@/types';
-import { Heart, Eye, Mail, Play, Edit, ArrowUp, ArrowDown, Star, X } from 'lucide-react';
+import { Heart, Eye, Mail, Play, Edit, ArrowUp, ArrowDown, Star, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock videos for portfolio
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
@@ -55,13 +55,66 @@ const defaultFeaturedVideo = {
 };
 
 const Portfolio: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
   const [videos, setVideos] = useState<Video[]>([...mockPortfolioVideos]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
   const [selectedVideoForEdit, setSelectedVideoForEdit] = useState<Video | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch portfolio settings on component mount
+  useEffect(() => {
+    const fetchPortfolioSettings = async () => {
+      if (!isAuthenticated || !currentUser) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('portfolio_settings')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          // Apply stored settings if available
+          if (data.categories && data.categories.length > 0) {
+            setUserCategories(data.categories);
+          }
+          
+          if (data.featured_video && Object.keys(data.featured_video).length > 0) {
+            setFeaturedVideo(data.featured_video);
+          }
+          
+          if (data.highlighted_videos && data.highlighted_videos.length > 0) {
+            // Merge with existing videos, maintaining the highlighted status
+            const highlightedIds = data.highlighted_videos.map((vid: Video) => vid.id);
+            setVideos(prevVideos => 
+              prevVideos.map(video => ({
+                ...video,
+                isHighlighted: highlightedIds.includes(video.id)
+              }))
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching portfolio settings:', error);
+        toast.error('Failed to load portfolio settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPortfolioSettings();
+  }, [currentUser, isAuthenticated]);
   
   // Reorder categories
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
@@ -83,11 +136,52 @@ const Portfolio: React.FC = () => {
     toast.success(`Category "${categoryToMove.name}" moved ${direction}`);
   }, [userCategories]);
   
-  // Toggle edit mode
-  const toggleEditMode = () => {
-    setEditMode(!editMode);
+  // Toggle edit mode and save changes when exiting edit mode
+  const toggleEditMode = async () => {
     if (editMode) {
-      toast.success('Changes saved successfully');
+      // Save changes to database when exiting edit mode
+      await saveChanges();
+    }
+    setEditMode(!editMode);
+  };
+  
+  // Save changes to database
+  const saveChanges = async () => {
+    if (!isAuthenticated || !currentUser) {
+      toast.error('You must be logged in to save changes');
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Get highlighted videos
+      const highlightedVideos = videos.filter(video => video.isHighlighted);
+      
+      // Prepare data to be saved
+      const portfolioData = {
+        user_id: currentUser.id,
+        categories: userCategories,
+        featured_video: featuredVideo,
+        highlighted_videos: highlightedVideos,
+        updated_at: new Date()
+      };
+      
+      // Upsert (insert or update) portfolio settings
+      const { error } = await supabase
+        .from('portfolio_settings')
+        .upsert(portfolioData, { onConflict: 'user_id' });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('Portfolio settings saved successfully');
+    } catch (error) {
+      console.error('Error saving portfolio settings:', error);
+      toast.error('Failed to save portfolio settings');
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -151,6 +245,17 @@ const Portfolio: React.FC = () => {
   // Get highlighted videos
   const highlightedVideos = videos.filter(video => video.isHighlighted);
   
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-muted-foreground">Loading portfolio settings...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -164,9 +269,26 @@ const Portfolio: React.FC = () => {
               "rounded-full shadow-lg",
               editMode ? "bg-green-500 hover:bg-green-600" : "bg-primary"
             )}
+            disabled={isSaving}
           >
-            {editMode ? 'Save Changes' : 'Edit Portfolio'}
-            <Edit className="ml-2 h-4 w-4" />
+            {editMode ? (
+              isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  Save Changes
+                  <Edit className="ml-2 h-4 w-4" />
+                </>
+              )
+            ) : (
+              <>
+                Edit Portfolio
+                <Edit className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
         </div>
         
