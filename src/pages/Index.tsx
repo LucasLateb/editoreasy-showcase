@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -81,7 +80,7 @@ const Index: React.FC = () => {
             selectedCategoryId={selectedCategory?.id}
           />
           
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 rounded-b-lg overflow-hidden pb-4">
             {filteredVideos.map((video) => (
               <VideoCard key={video.id} video={video} />
             ))}
