@@ -135,6 +135,10 @@ export default {
 				rotate: {
 					"0%": { transform: "rotate(0deg)" },
 					"100%": { transform: "rotate(360deg)" }
+				},
+				float: {
+					"0%, 100%": { transform: "translateY(0px)" },
+					"50%": { transform: "translateY(-20px)" }
 				}
 			},
 			animation: {
@@ -149,7 +153,8 @@ export default {
 				"slide-in-up": "slide-in-up 0.6s ease-out forwards",
 				"slide-in-down": "slide-in-down 0.6s ease-out forwards",
 				"pulse-subtle": "pulse-subtle 3s ease-in-out infinite",
-				"spin-slow": "rotate 8s linear infinite"
+				"spin-slow": "rotate 8s linear infinite",
+				"float": "float 6s ease-in-out infinite"
 			},
 			backdropFilter: {
 				"none": "none",
