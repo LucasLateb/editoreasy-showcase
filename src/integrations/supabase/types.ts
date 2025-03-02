@@ -17,6 +17,8 @@ export type Database = {
           featured_video: Json | null
           highlighted_videos: Json | null
           id: string
+          portfolio_description: string | null
+          portfolio_title: string | null
           showreel_url: string | null
           specializations: Json | null
           updated_at: string | null
@@ -29,6 +31,8 @@ export type Database = {
           featured_video?: Json | null
           highlighted_videos?: Json | null
           id?: string
+          portfolio_description?: string | null
+          portfolio_title?: string | null
           showreel_url?: string | null
           specializations?: Json | null
           updated_at?: string | null
@@ -41,6 +45,8 @@ export type Database = {
           featured_video?: Json | null
           highlighted_videos?: Json | null
           id?: string
+          portfolio_description?: string | null
+          portfolio_title?: string | null
           showreel_url?: string | null
           specializations?: Json | null
           updated_at?: string | null

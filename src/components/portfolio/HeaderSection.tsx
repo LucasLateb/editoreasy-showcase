@@ -52,87 +52,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
       </div>
       
-      {editMode && (
-        <div className="absolute top-4 right-4 z-10 space-x-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
-                Change Thumbnail
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Choose a thumbnail</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                {thumbnailOptions.map(thumbnail => (
-                  <Card 
-                    key={thumbnail.id} 
-                    className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                    onClick={() => updateVideoThumbnail(featuredVideo.id, thumbnail.url)}
-                  >
-                    <CardContent className="p-2">
-                      <div className="aspect-video relative overflow-hidden rounded">
-                        <img 
-                          src={thumbnail.url} 
-                          alt={`Thumbnail option ${thumbnail.id}`} 
-                          className="w-full h-full object-cover" 
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={titleDialogOpen} onOpenChange={setTitleDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
-                Edit Title & Description
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit Portfolio Header</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label htmlFor="portfolio-title" className="text-sm font-medium">
-                    Portfolio Title
-                  </label>
-                  <Input
-                    id="portfolio-title"
-                    value={editedTitle}
-                    onChange={(e) => setEditedTitle(e.target.value)}
-                    placeholder="Enter your portfolio title"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="portfolio-description" className="text-sm font-medium">
-                    Portfolio Description
-                  </label>
-                  <Textarea
-                    id="portfolio-description"
-                    value={editedDescription}
-                    onChange={(e) => setEditedDescription(e.target.value)}
-                    placeholder="Enter your portfolio description"
-                    className="min-h-[100px]"
-                  />
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveTitle}>
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
-      
       <div className="absolute inset-0 flex items-center">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
           <div className="max-w-3xl">
@@ -157,6 +76,87 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                 <span>{featuredVideo.views} Views</span>
               </button>
             </div>
+            
+            {editMode && (
+              <div className="mt-8 flex gap-3 animate-slide-in-down opacity-0" style={{ animationDelay: '0.8s' }}>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
+                      Change Thumbnail
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Choose a thumbnail</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {thumbnailOptions.map(thumbnail => (
+                        <Card 
+                          key={thumbnail.id} 
+                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                          onClick={() => updateVideoThumbnail(featuredVideo.id, thumbnail.url)}
+                        >
+                          <CardContent className="p-2">
+                            <div className="aspect-video relative overflow-hidden rounded">
+                              <img 
+                                src={thumbnail.url} 
+                                alt={`Thumbnail option ${thumbnail.id}`} 
+                                className="w-full h-full object-cover" 
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog open={titleDialogOpen} onOpenChange={setTitleDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
+                      Edit Title & Description
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Portfolio Header</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <label htmlFor="portfolio-title" className="text-sm font-medium">
+                          Portfolio Title
+                        </label>
+                        <Input
+                          id="portfolio-title"
+                          value={editedTitle}
+                          onChange={(e) => setEditedTitle(e.target.value)}
+                          placeholder="Enter your portfolio title"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="portfolio-description" className="text-sm font-medium">
+                          Portfolio Description
+                        </label>
+                        <Textarea
+                          id="portfolio-description"
+                          value={editedDescription}
+                          onChange={(e) => setEditedDescription(e.target.value)}
+                          placeholder="Enter your portfolio description"
+                          className="min-h-[100px]"
+                        />
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button onClick={handleSaveTitle}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
           </div>
         </div>
       </div>
