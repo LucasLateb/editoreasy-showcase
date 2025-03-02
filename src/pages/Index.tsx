@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -7,6 +6,7 @@ import EditorCard from '@/components/EditorCard';
 import VideoCard from '@/components/VideoCard';
 import PricingPlans from '@/components/PricingPlans';
 import { Category, categories, popularEditors } from '@/types';
+import { Separator } from '@/components/ui/separator';
 
 // Mock videos for demonstration
 const mockVideos = Array(6).fill(null).map((_, i) => ({
@@ -67,6 +67,10 @@ const Index: React.FC = () => {
             ))}
           </div>
         </section>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Separator className="my-8 border-dashed border-border/60" />
+        </div>
         
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center mb-12">
