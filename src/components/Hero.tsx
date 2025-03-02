@@ -12,7 +12,7 @@ const Hero: React.FC = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-pulse-subtle"></div>
       
       {/* Floating video editing objects - positioned on the sides */}
-      <div className="absolute top-[5%] left-[2%] w-16 h-16 bg-gradient-to-br from-[#F97316] to-[#FEC6A1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float">
+      <div className="absolute top-[18%] left-[4%] w-16 h-16 bg-gradient-to-br from-[#F97316] to-[#FEC6A1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float">
         <Film className="h-8 w-8 text-white drop-shadow-md" />
       </div>
       
@@ -24,7 +24,7 @@ const Hero: React.FC = () => {
         <Play className="h-6 w-6 text-white drop-shadow-md" fill="currentColor" />
       </div>
       
-      <div className="absolute top-[75%] right-[45%] w-16 h-16 bg-gradient-to-br from-[#8B5CF6] to-[#FFDEE2] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '1.5s' }}>
+      <div className="absolute top-[85%] right-[45%] w-16 h-16 bg-gradient-to-br from-[#8B5CF6] to-[#FFDEE2] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '1.5s' }}>
         <MonitorPlay className="h-8 w-8 text-white drop-shadow-md" />
       </div>
       
@@ -39,7 +39,7 @@ const Hero: React.FC = () => {
         </svg>
       </div>
       
-      <div className="absolute top-[30%] left-[28%] w-10 h-10 bg-gradient-to-br from-[#ee9ca7] to-[#ffdde1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '0.8s' }}>
+      <div className="absolute top-[24%] left-[23%] w-10 h-10 bg-gradient-to-br from-[#ee9ca7] to-[#ffdde1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '0.8s' }}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-white drop-shadow-md">
           <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" fill="#FEC6A1"></path>
           <circle cx="12" cy="13" r="3" fill="white"></circle>
