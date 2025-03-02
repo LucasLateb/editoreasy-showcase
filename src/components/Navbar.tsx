@@ -76,6 +76,28 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </Link>
+          {isAuthenticated && (
+            <>
+              <Link 
+                to="/dashboard" 
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/dashboard" ? "text-primary" : "text-foreground/80"
+                )}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/portfolio" 
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/portfolio" ? "text-primary" : "text-foreground/80"
+                )}
+              >
+                My Portfolio
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="flex items-center space-x-4">
