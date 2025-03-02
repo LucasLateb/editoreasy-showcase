@@ -27,7 +27,11 @@ const editorShowreels = {
   '1': 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   '2': 'https://www.youtube.com/embed/jNQXAC9IVRw',
   '3': 'https://www.youtube.com/embed/8ybW48rKBME',
-  '4': 'https://www.youtube.com/embed/j5a0jTc9S10'
+  '4': 'https://www.youtube.com/embed/j5a0jTc9S10',
+  '5': 'https://www.youtube.com/embed/CD-E-LDc384',
+  '6': 'https://www.youtube.com/embed/6B26asyGKDo',
+  '7': 'https://www.youtube.com/embed/ZEcqHA7dbwM',
+  '8': 'https://www.youtube.com/embed/7PCkvCPvDXk'
 };
 
 const Index: React.FC = () => {

@@ -207,5 +207,45 @@ export const popularEditors: User[] = [
     subscriptionTier: 'premium',
     likes: 289,
     createdAt: new Date('2021-07-30')
+  },
+  {
+    id: '5',
+    name: 'Emma Davis',
+    email: 'emma@example.com',
+    avatarUrl: 'https://images.unsplash.com/photo-1619946794135-5bc917a27793',
+    bio: 'Documentary filmmaker with a focus on environmental storytelling.',
+    subscriptionTier: 'pro',
+    likes: 456,
+    createdAt: new Date('2021-08-15')
+  },
+  {
+    id: '6',
+    name: 'Miguel Rodriguez',
+    email: 'miguel@example.com',
+    avatarUrl: 'https://images.unsplash.com/photo-1624224971170-2f84fed5eb5e',
+    bio: 'Expert in after effects and motion graphics for commercials.',
+    subscriptionTier: 'premium',
+    likes: 318,
+    createdAt: new Date('2021-09-22')
+  },
+  {
+    id: '7',
+    name: 'Aisha Khan',
+    email: 'aisha@example.com',
+    avatarUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
+    bio: 'Award-winning editor specialized in narrative storytelling.',
+    subscriptionTier: 'pro',
+    likes: 501,
+    createdAt: new Date('2021-04-10')
+  },
+  {
+    id: '8',
+    name: 'David Chen',
+    email: 'david@example.com',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+    bio: 'Vlog and YouTube content specialist with a modern style.',
+    subscriptionTier: 'premium',
+    likes: 342,
+    createdAt: new Date('2021-10-05')
   }
 ];
