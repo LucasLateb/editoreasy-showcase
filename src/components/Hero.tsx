@@ -6,7 +6,7 @@ import { ChevronRight, Film, Scissors, Play, MonitorPlay, Clapperboard } from 'l
 
 const Hero: React.FC = () => {
   return (
-    <div className="relative overflow-hidden pt-28 pb-20 md:pt-40 md:pb-32 bg-accent rounded-3xl md:rounded-[2rem] lg:rounded-[2.5rem]">
+    <div className="relative overflow-hidden pt-28 pb-20 md:pt-40 md:pb-32 bg-accent rounded-b-3xl md:rounded-b-[2rem] lg:rounded-b-[2.5rem]">
       {/* Background gradient decorations */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-pulse-subtle"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-pulse-subtle"></div>
