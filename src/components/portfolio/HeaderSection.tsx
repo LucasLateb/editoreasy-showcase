@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Play, Heart, Eye, Edit } from 'lucide-react';
 import { Video } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface HeaderSectionProps {
   featuredVideo: Video;
@@ -12,6 +14,10 @@ interface HeaderSectionProps {
   editMode: boolean;
   thumbnailOptions: Array<{ id: string; url: string }>;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
+  title: string;
+  setTitle: (title: string) => void;
+  description: string;
+  setDescription: (description: string) => void;
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({ 
@@ -19,8 +25,22 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   currentUser, 
   editMode, 
   thumbnailOptions,
-  updateVideoThumbnail
+  updateVideoThumbnail,
+  title,
+  setTitle,
+  description,
+  setDescription
 }) => {
+  const [titleDialogOpen, setTitleDialogOpen] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
+  const [editedDescription, setEditedDescription] = useState(description);
+
+  const handleSaveTitle = () => {
+    setTitle(editedTitle);
+    setDescription(editedDescription);
+    setTitleDialogOpen(false);
+  };
+
   return (
     <section className="relative h-[60vh] md:h-[70vh] overflow-hidden group">
       <div className="absolute inset-0">
@@ -65,6 +85,51 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               </div>
             </DialogContent>
           </Dialog>
+          
+          <Dialog open={titleDialogOpen} onOpenChange={setTitleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
+                Edit Title & Description
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Portfolio Header</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label htmlFor="portfolio-title" className="text-sm font-medium">
+                    Portfolio Title
+                  </label>
+                  <Input
+                    id="portfolio-title"
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    placeholder="Enter your portfolio title"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="portfolio-description" className="text-sm font-medium">
+                    Portfolio Description
+                  </label>
+                  <Textarea
+                    id="portfolio-description"
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    placeholder="Enter your portfolio description"
+                    className="min-h-[100px]"
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveTitle}>
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
       
@@ -72,10 +137,10 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.2s' }}>
-              {currentUser?.name || 'Video Editor'} Portfolio
+              {title}
             </h1>
             <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl animate-slide-in-down opacity-0" style={{ animationDelay: '0.4s' }}>
-              {currentUser?.bio || 'Professional video editor specializing in cinematic visuals, motion graphics, and compelling storytelling.'}
+              {description}
             </p>
             
             <div className="flex flex-wrap gap-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.6s' }}>

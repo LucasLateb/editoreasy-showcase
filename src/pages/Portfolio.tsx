@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Import refactored components
 import ProfileCard from '@/components/portfolio/ProfileCard';
 import CategoryManager from '@/components/portfolio/CategoryManager';
 import HeaderSection from '@/components/portfolio/HeaderSection';
@@ -25,7 +24,6 @@ import VideoGrid from '@/components/portfolio/VideoGrid';
 import TestimonialsTab from '@/components/portfolio/TestimonialsTab';
 import LoadingState from '@/components/portfolio/LoadingState';
 
-// Mock videos for portfolio
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
   id: `portfolio-video-${i}`,
   title: `${defaultCategories[i % defaultCategories.length].name} Project ${i + 1}`,
@@ -33,14 +31,13 @@ const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
   thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + i * 10}-9bc0b252726f`,
   videoUrl: '#',
   categoryId: defaultCategories[i % defaultCategories.length].id,
-  userId: '123', // Current user's ID
+  userId: '123',
   likes: Math.floor(Math.random() * 50),
   views: Math.floor(Math.random() * 500),
   createdAt: new Date(),
   isHighlighted: false
 }));
 
-// Sample thumbnail options
 const thumbnailOptions = [
   { id: '1', url: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b' },
   { id: '2', url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d' },
@@ -49,14 +46,13 @@ const thumbnailOptions = [
   { id: '5', url: 'https://images.unsplash.com/photo-1483058712412-4245e9b90334' },
 ];
 
-// Featured video
 const defaultFeaturedVideo = {
   id: 'featured',
   title: 'Cinematic Brand Commercial',
   description: 'A high-impact commercial video created for a luxury brand with cinematic visuals and professional color grading.',
   thumbnailUrl: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81',
   videoUrl: '#',
-  categoryId: '2', // Cinematic
+  categoryId: '2',
   userId: '123',
   likes: 137,
   views: 1243,
@@ -64,7 +60,6 @@ const defaultFeaturedVideo = {
   isHighlighted: true
 };
 
-// Default showreel URL
 const defaultShowreelUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
 
 const Portfolio: React.FC = () => {
@@ -78,19 +73,21 @@ const Portfolio: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Add state for about section, specializations, and showreel
   const [about, setAbout] = useState<string>('Professional video editor with expertise in various styles and techniques.');
   const [specializations, setSpecializations] = useState<string[]>(['Cinematic', 'Motion Graphics', 'Color Grading', 'VFX']);
   const [newSpecialization, setNewSpecialization] = useState<string>('');
   const [showreelUrl, setShowreelUrl] = useState<string>(defaultShowreelUrl);
   const [showreelThumbnail, setShowreelThumbnail] = useState<string>('https://images.unsplash.com/photo-1550745165-9bc0b252726f');
   
-  // Edit mode dialogs
+  const [portfolioTitle, setPortfolioTitle] = useState<string>(`${currentUser?.name || 'Video Editor'} Portfolio`);
+  const [portfolioDescription, setPortfolioDescription] = useState<string>(
+    currentUser?.bio || 'Professional video editor specializing in cinematic visuals, motion graphics, and compelling storytelling.'
+  );
+  
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [specializationsDialogOpen, setSpecializationsDialogOpen] = useState(false);
   const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
   
-  // Fetch portfolio settings on component mount
   useEffect(() => {
     const fetchPortfolioSettings = async () => {
       if (!isAuthenticated || !currentUser) {
@@ -110,7 +107,6 @@ const Portfolio: React.FC = () => {
         }
         
         if (data) {
-          // Apply stored settings if available
           if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
             try {
               const parsedCategories = (data.categories as any[]).map(category => parseJsonToCategory(category));
@@ -131,13 +127,10 @@ const Portfolio: React.FC = () => {
           
           if (data.highlighted_videos && Array.isArray(data.highlighted_videos) && data.highlighted_videos.length > 0) {
             try {
-              // Parse highlighted videos
               const parsedHighlightedVideos = (data.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
               
-              // Get IDs of highlighted videos
               const highlightedIds = parsedHighlightedVideos.map(vid => vid.id);
               
-              // Update existing videos with highlighted status
               setVideos(prevVideos => 
                 prevVideos.map(video => ({
                   ...video,
@@ -148,19 +141,13 @@ const Portfolio: React.FC = () => {
               console.error('Failed to parse highlighted videos:', e);
             }
           }
-
-          // Set about and specializations if available
-          if (data.about) {
-            setAbout(data.about);
+          
+          if (data.portfolio_title) {
+            setPortfolioTitle(data.portfolio_title);
           }
           
-          if (data.specializations && Array.isArray(data.specializations)) {
-            setSpecializations(data.specializations as string[]);
-          }
-          
-          // Set showreel_url if available
-          if (data.showreel_url) {
-            setShowreelUrl(data.showreel_url);
+          if (data.portfolio_description) {
+            setPortfolioDescription(data.portfolio_description);
           }
         }
       } catch (error) {
@@ -174,7 +161,6 @@ const Portfolio: React.FC = () => {
     fetchPortfolioSettings();
   }, [currentUser, isAuthenticated]);
   
-  // Reorder categories
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
       (direction === 'up' && index === 0) || 
@@ -194,16 +180,13 @@ const Portfolio: React.FC = () => {
     toast.success(`Category "${categoryToMove.name}" moved ${direction}`);
   }, [userCategories]);
   
-  // Toggle edit mode and save changes when exiting edit mode
   const toggleEditMode = async () => {
     if (editMode) {
-      // Save changes to database when exiting edit mode
       await saveChanges();
     }
     setEditMode(!editMode);
   };
   
-  // Save changes to database
   const saveChanges = async () => {
     if (!isAuthenticated || !currentUser) {
       toast.error('You must be logged in to save changes');
@@ -213,13 +196,10 @@ const Portfolio: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // Get highlighted videos
       const highlightedVideos = videos.filter(video => video.isHighlighted);
       
-      // Prepare data for Supabase by converting Date objects to strings and flattening objects
       const prepareForDatabase = (obj: any) => {
         return JSON.parse(JSON.stringify(obj, (key, value) => {
-          // Convert Date objects to ISO strings
           if (value instanceof Date) {
             return value.toISOString();
           }
@@ -227,7 +207,6 @@ const Portfolio: React.FC = () => {
         }));
       };
       
-      // Prepare data to be saved using helper function
       const portfolioData = {
         user_id: currentUser.id,
         categories: prepareForDatabase(userCategories),
@@ -236,10 +215,11 @@ const Portfolio: React.FC = () => {
         about: about,
         specializations: specializations,
         showreel_url: showreelUrl,
+        portfolio_title: portfolioTitle,
+        portfolio_description: portfolioDescription,
         updated_at: new Date().toISOString()
       };
       
-      // Upsert (insert or update) portfolio settings
       const { error } = await supabase
         .from('portfolio_settings')
         .upsert(portfolioData, { onConflict: 'user_id' });
@@ -257,7 +237,6 @@ const Portfolio: React.FC = () => {
     }
   };
   
-  // Update video thumbnail
   const updateVideoThumbnail = (videoId: string, newThumbnailUrl: string) => {
     if (videoId === featuredVideo.id) {
       setFeaturedVideo({
@@ -280,7 +259,6 @@ const Portfolio: React.FC = () => {
     toast.success('Video thumbnail updated');
   };
   
-  // Toggle video highlight
   const toggleHighlight = (videoId: string) => {
     setVideos(prevVideos => 
       prevVideos.map(video => 
@@ -292,12 +270,10 @@ const Portfolio: React.FC = () => {
     toast.success('Video highlight status updated');
   };
   
-  // Set video as featured
   const setAsFeatured = (video: Video) => {
     const prevFeatured = featuredVideo;
     setFeaturedVideo(video);
     
-    // Add the previous featured video to regular videos
     setVideos(prevVideos => {
       const videoExists = prevVideos.some(v => v.id === prevFeatured.id);
       if (!videoExists && prevFeatured.id !== video.id) {
@@ -309,20 +285,17 @@ const Portfolio: React.FC = () => {
     toast.success('Featured video updated');
   };
 
-  // Update showreel URL
   const updateShowreel = (url: string) => {
     setShowreelUrl(url);
     setShowreelDialogOpen(false);
     toast.success('Showreel URL updated');
   };
   
-  // Update showreel thumbnail
   const updateShowreelThumbnail = (newThumbnailUrl: string) => {
     setShowreelThumbnail(newThumbnailUrl);
     toast.success('Showreel thumbnail updated');
   };
 
-  // Add new specialization
   const handleAddSpecialization = () => {
     if (newSpecialization.trim()) {
       setSpecializations([...specializations, newSpecialization.trim()]);
@@ -330,17 +303,14 @@ const Portfolio: React.FC = () => {
     }
   };
 
-  // Remove specialization
   const handleRemoveSpecialization = (index: number) => {
     setSpecializations(specializations.filter((_, i) => i !== index));
   };
   
-  // Get videos filtered by category if one is selected
   const filteredVideos = selectedCategory 
     ? videos.filter(video => video.categoryId === selectedCategory.id)
     : videos;
   
-  // Get highlighted videos
   const highlightedVideos = videos.filter(video => video.isHighlighted);
   
   if (isLoading) {
@@ -352,7 +322,6 @@ const Portfolio: React.FC = () => {
       <Navbar />
       
       <main>
-        {/* Edit mode toggle */}
         <div className="fixed bottom-6 right-6 z-50">
           <Button 
             onClick={toggleEditMode} 
@@ -383,16 +352,18 @@ const Portfolio: React.FC = () => {
           </Button>
         </div>
         
-        {/* Featured video/header section */}
         <HeaderSection 
           featuredVideo={featuredVideo}
           currentUser={currentUser}
           editMode={editMode}
           thumbnailOptions={thumbnailOptions}
           updateVideoThumbnail={updateVideoThumbnail}
+          title={portfolioTitle}
+          setTitle={setPortfolioTitle}
+          description={portfolioDescription}
+          setDescription={setPortfolioDescription}
         />
         
-        {/* Info section */}
         <section className="py-12 bg-secondary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -414,7 +385,6 @@ const Portfolio: React.FC = () => {
                   handleRemoveSpecialization={handleRemoveSpecialization}
                 />
                 
-                {/* Category management - only visible in edit mode */}
                 {editMode && (
                   <CategoryManager
                     userCategories={userCategories}
@@ -434,7 +404,6 @@ const Portfolio: React.FC = () => {
                   </TabsList>
                   
                   <TabsContent value="portfolio" className="animate-fade-in opacity-0">
-                    {/* Showreel Section - Moved inside the portfolio tab content */}
                     <ShowreelSection
                       showreelUrl={showreelUrl}
                       showreelThumbnail={showreelThumbnail}
