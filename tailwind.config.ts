@@ -137,8 +137,9 @@ export default {
 					"100%": { transform: "rotate(360deg)" }
 				},
 				float: {
-					"0%, 100%": { transform: "translateY(0px)" },
-					"50%": { transform: "translateY(-20px)" }
+					"0%": { transform: "translateY(0px)" },
+					"50%": { transform: "translateY(-20px)" },
+					"100%": { transform: "translateY(0px)" }
 				}
 			},
 			animation: {
