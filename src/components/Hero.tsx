@@ -6,10 +6,10 @@ import { ChevronRight, Film, Scissors, Play, MonitorPlay, Clapperboard } from 'l
 
 const Hero: React.FC = () => {
   return (
-    <div className="relative overflow-hidden pt-28 pb-20 md:pt-40 md:pb-32 bg-accent rounded-3xl md:rounded-[2rem] lg:rounded-[2.5rem]">
+    <div className="relative overflow-hidden pt-28 pb-20 md:pt-40 md:pb-32 bg-[#121212] dark:bg-[#121212] rounded-3xl md:rounded-[2rem] lg:rounded-[2.5rem]">
       {/* Background gradient decorations */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-pulse-subtle"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-pulse-subtle"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl opacity-40 animate-pulse-subtle"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/30 rounded-full filter blur-3xl opacity-40 animate-pulse-subtle"></div>
       
       {/* Floating video editing objects - positioned on the sides */}
       <div className="absolute top-[5%] left-[2%] w-16 h-16 bg-gradient-to-br from-[#F97316] to-[#FEC6A1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float">
@@ -74,12 +74,12 @@ const Hero: React.FC = () => {
             </span>
           </div>
           
-          <h1 className="mt-8 text-4xl md:text-6xl font-bold tracking-tight text-balance animate-slide-in-down opacity-0" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+          <h1 className="mt-8 text-4xl md:text-6xl font-bold tracking-tight text-white text-balance animate-slide-in-down opacity-0" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
             Showcase Your Video Editing <br className="hidden md:inline" />
             <span className="text-primary">Projects & Skills</span>
           </h1>
           
-          <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto text-balance animate-slide-in-down opacity-0" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
+          <p className="mt-6 text-lg md:text-xl text-gray-300 max-w-3xl mx-auto text-balance animate-slide-in-down opacity-0" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
             Create an impressive portfolio to attract clients, organize your work by categories, 
             and join a community of professional video editors.
           </p>
@@ -92,7 +92,7 @@ const Hero: React.FC = () => {
               </Button>
             </Link>
             <Link to="/explore">
-              <Button size="lg" variant="outline" className="px-8 font-medium h-12 text-base">
+              <Button size="lg" variant="outline" className="px-8 font-medium h-12 text-base border-gray-700 hover:bg-gray-800 text-white">
                 Explore Portfolios
               </Button>
             </Link>

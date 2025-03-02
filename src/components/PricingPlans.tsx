@@ -8,11 +8,11 @@ import { cn } from '@/lib/utils';
 
 const PricingPlans: React.FC = () => {
   return (
-    <section className="py-16 md:py-24 bg-accent">
+    <section className="py-16 md:py-24 bg-[#121212]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Choose Your Plan</h2>
-          <p className="text-muted-foreground text-lg">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Choose Your Plan</h2>
+          <p className="text-gray-300 text-lg">
             Select the perfect plan to showcase your video editing skills and attract clients.
           </p>
         </div>
@@ -22,8 +22,10 @@ const PricingPlans: React.FC = () => {
             <div 
               key={plan.id}
               className={cn(
-                "rounded-2xl backdrop-blur-sm border border-border p-8 flex flex-col h-full animate-fade-in opacity-0",
-                plan.popular ? "shadow-lg ring-2 ring-primary relative z-10 bg-background" : "bg-background/50"
+                "rounded-2xl backdrop-blur-sm border p-8 flex flex-col h-full animate-fade-in opacity-0",
+                plan.popular 
+                  ? "shadow-lg ring-2 ring-primary relative z-10 bg-[#1a1a1a] border-primary/30" 
+                  : "bg-[#1a1a1a]/70 border-gray-800"
               )}
               style={{ animationDelay: `${0.2 + index * 0.1}s` }}
             >
@@ -34,15 +36,15 @@ const PricingPlans: React.FC = () => {
               )}
               
               <div>
-                <h3 className="text-xl font-bold">{plan.name}</h3>
-                <p className="text-muted-foreground mt-2">{plan.description}</p>
+                <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                <p className="text-gray-400 mt-2">{plan.description}</p>
                 
                 <div className="mt-6 flex items-baseline">
-                  <span className="text-4xl font-extrabold">
+                  <span className="text-4xl font-extrabold text-white">
                     ${plan.price}
                   </span>
                   {plan.price > 0 && (
-                    <span className="ml-1 text-muted-foreground">/month</span>
+                    <span className="ml-1 text-gray-400">/month</span>
                   )}
                 </div>
               </div>
@@ -53,7 +55,7 @@ const PricingPlans: React.FC = () => {
                     <div className="flex-shrink-0">
                       <Check className="h-5 w-5 text-primary" />
                     </div>
-                    <p className="ml-3 text-muted-foreground">{feature}</p>
+                    <p className="ml-3 text-gray-300">{feature}</p>
                   </li>
                 ))}
               </ul>
@@ -65,7 +67,7 @@ const PricingPlans: React.FC = () => {
                       "w-full", 
                       plan.popular 
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                        : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                        : "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
                     )}
                   >
                     {plan.id === 'free' ? 'Get Started' : 'Subscribe Now'}
