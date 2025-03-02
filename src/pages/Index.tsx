@@ -22,6 +22,14 @@ const mockVideos = Array(6).fill(null).map((_, i) => ({
   createdAt: new Date()
 }));
 
+// Mock showreel URLs for popular editors
+const editorShowreels = {
+  '1': 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  '2': 'https://www.youtube.com/embed/jNQXAC9IVRw',
+  '3': 'https://www.youtube.com/embed/8ybW48rKBME',
+  '4': 'https://www.youtube.com/embed/j5a0jTc9S10'
+};
+
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   
@@ -35,6 +43,26 @@ const Index: React.FC = () => {
       
       <main>
         <Hero />
+        
+        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Discover talented video editors with impressive portfolios
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {popularEditors.map((editor, index) => (
+              <EditorCard 
+                key={editor.id} 
+                editor={editor} 
+                index={index}
+                showreelUrl={editorShowreels[editor.id as keyof typeof editorShowreels]}
+              />
+            ))}
+          </div>
+        </section>
         
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -52,21 +80,6 @@ const Index: React.FC = () => {
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredVideos.map((video) => (
               <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
-        </section>
-        
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover talented video editors with impressive portfolios
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {popularEditors.map((editor, index) => (
-              <EditorCard key={editor.id} editor={editor} index={index} />
             ))}
           </div>
         </section>
