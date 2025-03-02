@@ -5,7 +5,8 @@ import VideoCard from '@/components/VideoCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, X, Star } from 'lucide-react';
+import { Edit, X, Star, Upload, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface VideoGridProps {
   videos: Video[];
@@ -24,6 +25,29 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   toggleHighlight,
   setAsFeatured
 }) => {
+  const navigate = useNavigate();
+  
+  const handleUploadClick = () => {
+    navigate('/dashboard');
+  };
+  
+  if (videos.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <div className="max-w-md mx-auto">
+          <h3 className="text-lg font-medium mb-2">No videos in your portfolio yet</h3>
+          <p className="text-muted-foreground mb-6">
+            Upload videos from your dashboard to showcase your work in your portfolio.
+          </p>
+          <Button onClick={handleUploadClick} className="mx-auto">
+            <Upload className="mr-2 h-4 w-4" />
+            Upload Videos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {videos.map((video) => (

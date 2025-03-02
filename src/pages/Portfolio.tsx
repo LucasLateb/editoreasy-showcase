@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,7 +67,7 @@ const Portfolio: React.FC = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
-  const [videos, setVideos] = useState<Video[]>([...mockPortfolioVideos]);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
   const [selectedVideoForEdit, setSelectedVideoForEdit] = useState<Video | null>(null);
@@ -89,6 +90,44 @@ const Portfolio: React.FC = () => {
   const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
   
   useEffect(() => {
+    const fetchUserVideos = async () => {
+      if (!isAuthenticated || !currentUser) {
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('videos')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Transform the data to match our Video type
+        const formattedVideos: Video[] = data.map(video => ({
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
+          videoUrl: video.video_url || '#',
+          categoryId: video.category_id,
+          userId: video.user_id,
+          likes: video.likes || 0,
+          views: video.views || 0,
+          createdAt: new Date(video.created_at),
+          isHighlighted: video.is_highlighted || false
+        }));
+        
+        setVideos(formattedVideos);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+        toast.error('Failed to load your videos');
+      }
+    };
+
     const fetchPortfolioSettings = async () => {
       if (!isAuthenticated || !currentUser) {
         setIsLoading(false);
@@ -158,7 +197,9 @@ const Portfolio: React.FC = () => {
       }
     };
     
-    fetchPortfolioSettings();
+    // Run both fetch operations
+    Promise.all([fetchPortfolioSettings(), fetchUserVideos()]);
+    
   }, [currentUser, isAuthenticated]);
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
