@@ -12,7 +12,7 @@ const Hero: React.FC = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-pulse-subtle"></div>
       
       {/* Floating video editing objects - positioned on the sides */}
-      <div className="absolute top-[15%] left-[8%] w-16 h-16 bg-gradient-to-br from-[#F97316] to-[#FEC6A1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float">
+      <div className="absolute top-[10%] left-[3%] w-16 h-16 bg-gradient-to-br from-[#F97316] to-[#FEC6A1] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float">
         <Film className="h-8 w-8 text-white drop-shadow-md" />
       </div>
       
@@ -24,7 +24,7 @@ const Hero: React.FC = () => {
         <Play className="h-6 w-6 text-white drop-shadow-md" fill="currentColor" />
       </div>
       
-      <div className="absolute top-[75%] right-[25%] w-16 h-16 bg-gradient-to-br from-[#8B5CF6] to-[#FFDEE2] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '1.5s' }}>
+      <div className="absolute top-[75%] right-[35%] w-16 h-16 bg-gradient-to-br from-[#8B5CF6] to-[#FFDEE2] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '1.5s' }}>
         <MonitorPlay className="h-8 w-8 text-white drop-shadow-md" />
       </div>
       
@@ -47,7 +47,7 @@ const Hero: React.FC = () => {
       </div>
       
       {/* Additional floating elements for more visual interest */}
-      <div className="absolute top-[55%] left-[40%] w-9 h-9 bg-gradient-to-br from-[#22c55e] to-[#bbf7d0] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '1.7s' }}>
+      <div className="absolute bottom-[10%] right-[5%] w-9 h-9 bg-gradient-to-br from-[#22c55e] to-[#bbf7d0] backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center animate-float" style={{ animationDelay: '1.7s' }}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-white drop-shadow-md">
           <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10" fill="#bbf7d0"></path>
         </svg>
