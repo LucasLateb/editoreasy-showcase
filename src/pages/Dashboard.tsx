@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Video, categories } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, UploadCloud, Film } from 'lucide-react';
+import { PlusCircle, UploadCloud, Film, Play } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -17,21 +17,25 @@ import AccountTab from '@/components/dashboard/AccountTab';
 interface ShowreelTabProps {
   videos: Video[];
   isLoading: boolean;
-  onSetShowreel: (videoUrl: string) => void;
+  onSetShowreel: (videoUrl: string, thumbnailUrl?: string) => void;
   currentShowreelUrl: string | null;
+  currentShowreelThumbnail: string | null;
 }
 
 const ShowreelTab: React.FC<ShowreelTabProps> = ({ 
   videos, 
   isLoading, 
   onSetShowreel,
-  currentShowreelUrl
+  currentShowreelUrl,
+  currentShowreelThumbnail
 }) => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [customUrl, setCustomUrl] = useState('');
+  const [customThumbnailUrl, setCustomThumbnailUrl] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [videoToConfirm, setVideoToConfirm] = useState<Video | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
   const { toast } = useToast();
   
   const handleSelectShowreel = (video: Video) => {
@@ -44,10 +48,10 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
       try {
         // Ensure the video URL is valid
         if (videoToConfirm.videoUrl.includes('<iframe')) {
-          onSetShowreel(videoToConfirm.videoUrl);
+          onSetShowreel(videoToConfirm.videoUrl, videoToConfirm.thumbnailUrl);
         } else if (videoToConfirm.videoUrl.startsWith('http://') || videoToConfirm.videoUrl.startsWith('https://')) {
           new URL(videoToConfirm.videoUrl);
-          onSetShowreel(videoToConfirm.videoUrl);
+          onSetShowreel(videoToConfirm.videoUrl, videoToConfirm.thumbnailUrl);
         } else {
           throw new Error('Invalid URL format');
         }
@@ -78,7 +82,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
           throw new Error('URL must start with http:// or https:// or be an iframe embed code');
         }
         
-        onSetShowreel(customUrl.trim());
+        onSetShowreel(customUrl.trim(), customThumbnailUrl || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81');
         toast({
           title: "Showreel updated",
           description: "Your portfolio showreel has been updated successfully."
@@ -92,6 +96,10 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         });
       }
     }
+  };
+
+  const handlePlayClick = () => {
+    setShowVideo(true);
   };
   
   if (isLoading) {
@@ -126,16 +134,34 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         <h2 className="text-xl font-semibold mb-4">Current Showreel</h2>
         {currentShowreelUrl ? (
           <div className="aspect-video relative mb-4">
-            {isEmbedCode ? (
-              <div dangerouslySetInnerHTML={{ __html: currentShowreelUrl }} className="w-full h-full" />
+            {showVideo ? (
+              isEmbedCode ? (
+                <div dangerouslySetInnerHTML={{ __html: currentShowreelUrl }} className="w-full h-full" />
+              ) : (
+                <iframe 
+                  src={displayUrl}
+                  title="Current Showreel" 
+                  className="w-full h-full border rounded-md"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+              )
             ) : (
-              <iframe 
-                src={displayUrl}
-                title="Current Showreel" 
-                className="w-full h-full border rounded-md"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
+              <div className="relative w-full h-full">
+                <img 
+                  src={currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'} 
+                  alt="Showreel thumbnail" 
+                  className="w-full h-full object-cover border rounded-md"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div 
+                    className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
+                    onClick={handlePlayClick}
+                  >
+                    <Play className="h-8 w-8 text-white" fill="white" />
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         ) : (
@@ -159,6 +185,19 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
           <Button onClick={handleCustomUrlSubmit} disabled={!customUrl.trim()}>
             Set as Showreel
           </Button>
+        </div>
+        <div className="mb-4">
+          <label className="text-sm font-medium mb-2 block">Custom Thumbnail URL (optional)</label>
+          <input 
+            type="text" 
+            value={customThumbnailUrl} 
+            onChange={(e) => setCustomThumbnailUrl(e.target.value)}
+            placeholder="https://example.com/your-thumbnail-image.jpg"
+            className="w-full px-3 py-2 border rounded-md"
+          />
+          <p className="text-sm text-muted-foreground mt-1">
+            Leave empty to use a default thumbnail
+          </p>
         </div>
         <p className="text-sm text-muted-foreground">
           Use an embed URL from YouTube or Vimeo for best results.
@@ -215,6 +254,7 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [currentShowreelUrl, setCurrentShowreelUrl] = useState<string | null>(null);
+  const [currentShowreelThumbnail, setCurrentShowreelThumbnail] = useState<string | null>(null);
   
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
@@ -234,7 +274,7 @@ const Dashboard: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('portfolio_settings')
-        .select('showreel_url')
+        .select('showreel_url, showreel_thumbnail')
         .eq('user_id', currentUser.id)
         .maybeSingle();
       
@@ -242,6 +282,8 @@ const Dashboard: React.FC = () => {
       
       if (data) {
         setCurrentShowreelUrl(data.showreel_url);
+        setCurrentShowreelThumbnail(data.showreel_thumbnail);
+        console.log('Loaded showreel settings:', { url: data.showreel_url, thumbnail: data.showreel_thumbnail });
       }
     } catch (error) {
       console.error('Error fetching portfolio settings:', error);
@@ -293,7 +335,7 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  const handleSetShowreel = async (url: string) => {
+  const handleSetShowreel = async (url: string, thumbnailUrl?: string) => {
     if (!currentUser?.id) {
       toast({
         title: "Authentication error",
@@ -309,12 +351,17 @@ const Dashboard: React.FC = () => {
         .upsert({
           user_id: currentUser.id,
           showreel_url: url,
+          showreel_thumbnail: thumbnailUrl || currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81',
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
       
       if (error) throw error;
       
       setCurrentShowreelUrl(url);
+      setCurrentShowreelThumbnail(thumbnailUrl || currentShowreelThumbnail);
+      
+      console.log('Showreel updated:', { url, thumbnail: thumbnailUrl || currentShowreelThumbnail });
+      
       toast({
         title: "Showreel updated",
         description: "Your showreel has been updated successfully and will be displayed on your portfolio page.",
@@ -537,6 +584,7 @@ const Dashboard: React.FC = () => {
               isLoading={isLoading}
               onSetShowreel={handleSetShowreel}
               currentShowreelUrl={currentShowreelUrl}
+              currentShowreelThumbnail={currentShowreelThumbnail}
             />
           </TabsContent>
           

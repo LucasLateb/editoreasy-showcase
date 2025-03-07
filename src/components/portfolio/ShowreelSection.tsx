@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,6 +29,8 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   updateShowreelThumbnail,
   thumbnailOptions
 }) => {
+  const [showVideo, setShowVideo] = useState(false);
+  
   // If there's no showreel URL and we're not in edit mode, don't render anything
   if (!showreelUrl && !editMode) {
     return null;
@@ -73,6 +75,10 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       console.error("Invalid URL format:", e);
       return false;
     }
+  };
+
+  const handlePlayClick = () => {
+    setShowVideo(true);
   };
 
   return (
@@ -142,7 +148,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
         )}
       </div>
       <div className="aspect-video relative">
-        {showreelUrl ? (
+        {showreelUrl && showVideo ? (
           isEmbedCode ? (
             <div 
               className="w-full h-full" 
@@ -169,7 +175,10 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer">
+              <div 
+                className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
+                onClick={handlePlayClick}
+              >
                 <Play className="h-10 w-10 text-white" fill="white" />
               </div>
             </div>
