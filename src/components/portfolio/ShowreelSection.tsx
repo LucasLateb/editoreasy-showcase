@@ -53,7 +53,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   if (isEmbedCode && showreelUrl) {
     iframeSrc = extractSrcFromEmbed(showreelUrl);
   } else if (showreelUrl) {
-    // Ensure the URL is properly formatted
+    // Just use the URL as is
     iframeSrc = showreelUrl;
   }
 

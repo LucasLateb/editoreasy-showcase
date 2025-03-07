@@ -61,8 +61,6 @@ const defaultFeaturedVideo = {
   isHighlighted: true
 };
 
-const defaultShowreelUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
-
 const Portfolio: React.FC = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
@@ -77,7 +75,7 @@ const Portfolio: React.FC = () => {
   const [about, setAbout] = useState<string>('Professional video editor with expertise in various styles and techniques.');
   const [specializations, setSpecializations] = useState<string[]>(['Cinematic', 'Motion Graphics', 'Color Grading', 'VFX']);
   const [newSpecialization, setNewSpecialization] = useState<string>('');
-  const [showreelUrl, setShowreelUrl] = useState<string>(defaultShowreelUrl);
+  const [showreelUrl, setShowreelUrl] = useState<string>('');  // Remove default value
   const [showreelThumbnail, setShowreelThumbnail] = useState<string>('https://images.unsplash.com/photo-1550745165-9bc0b252726f');
   
   const [portfolioTitle, setPortfolioTitle] = useState<string>(`${currentUser?.name || 'Video Editor'} Portfolio`);
@@ -187,6 +185,12 @@ const Portfolio: React.FC = () => {
           
           if (data.portfolio_description) {
             setPortfolioDescription(data.portfolio_description);
+          }
+          
+          // Make sure to set the showreel URL from the database
+          if (data.showreel_url) {
+            setShowreelUrl(data.showreel_url);
+            console.log('Loaded showreel URL from database:', data.showreel_url);
           }
         }
       } catch (error) {
@@ -327,6 +331,7 @@ const Portfolio: React.FC = () => {
   };
 
   const updateShowreel = (url: string) => {
+    console.log('Updating showreel URL to:', url);
     setShowreelUrl(url);
     setShowreelDialogOpen(false);
     toast.success('Showreel URL updated');
