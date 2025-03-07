@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -44,8 +43,15 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
     if (videoToConfirm) {
       try {
         // Ensure the video URL is valid
-        new URL(videoToConfirm.videoUrl);
-        onSetShowreel(videoToConfirm.videoUrl);
+        if (videoToConfirm.videoUrl.includes('<iframe')) {
+          onSetShowreel(videoToConfirm.videoUrl);
+        } else if (videoToConfirm.videoUrl.startsWith('http://') || videoToConfirm.videoUrl.startsWith('https://')) {
+          new URL(videoToConfirm.videoUrl);
+          onSetShowreel(videoToConfirm.videoUrl);
+        } else {
+          throw new Error('Invalid URL format');
+        }
+        
         setSelectedVideo(videoToConfirm);
         toast({
           title: "Showreel updated",
@@ -96,17 +102,35 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
     );
   }
   
+  const isEmbedCode = currentShowreelUrl && currentShowreelUrl.includes('<iframe');
+  const extractSrcFromEmbed = (embedCode: string) => {
+    try {
+      const srcMatch = embedCode.match(/src="([^"]+)"/);
+      return srcMatch && srcMatch[1] ? srcMatch[1] : '';
+    } catch (error) {
+      console.error('Error extracting src from embed code:', error);
+      return '';
+    }
+  };
+  
+  let displayUrl = '';
+  if (isEmbedCode && currentShowreelUrl) {
+    displayUrl = extractSrcFromEmbed(currentShowreelUrl);
+  } else if (currentShowreelUrl) {
+    displayUrl = currentShowreelUrl;
+  }
+  
   return (
     <div className="space-y-8">
       <div className="bg-background p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Current Showreel</h2>
         {currentShowreelUrl ? (
           <div className="aspect-video relative mb-4">
-            {currentShowreelUrl.includes('<iframe') ? (
+            {isEmbedCode ? (
               <div dangerouslySetInnerHTML={{ __html: currentShowreelUrl }} className="w-full h-full" />
             ) : (
               <iframe 
-                src={currentShowreelUrl}
+                src={displayUrl}
                 title="Current Showreel" 
                 className="w-full h-full border rounded-md"
                 allowFullScreen

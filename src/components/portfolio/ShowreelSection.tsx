@@ -54,28 +54,23 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     iframeSrc = extractSrcFromEmbed(showreelUrl);
   } else if (showreelUrl) {
     // Ensure the URL is properly formatted
-    try {
-      // Check if it's a valid URL
-      new URL(showreelUrl);
-      iframeSrc = showreelUrl;
-    } catch (e) {
-      // If not a valid URL, fallback to treating it as is
-      console.error('Invalid URL format:', e);
-      iframeSrc = showreelUrl; // Use as is, the browser will handle it
-    }
+    iframeSrc = showreelUrl;
   }
 
   // Validate the URL to prevent malformed URIs
   const isValidUrl = () => {
+    if (!iframeSrc) return false;
+    
     try {
-      if (iframeSrc) {
+      // Basic URL validation
+      if (iframeSrc.startsWith('http://') || iframeSrc.startsWith('https://')) {
         // This will throw if the URL is malformed
-        decodeURI(iframeSrc);
+        new URL(iframeSrc);
         return true;
       }
       return false;
     } catch (e) {
-      console.error("URI malformed error:", e);
+      console.error("Invalid URL format:", e);
       return false;
     }
   };
@@ -162,7 +157,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="flex items-center justify-center h-full bg-secondary">
               <p className="text-muted-foreground">Invalid showreel URL</p>
             </div>
           )
