@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Play, Edit, Link } from 'lucide-react';
+import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 
 interface ShowreelSectionProps {
   showreelUrl: string;
@@ -29,7 +30,8 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   updateShowreelThumbnail,
   thumbnailOptions
 }) => {
-  const [showVideo, setShowVideo] = useState(false);
+  // Use state to control the video player dialog
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   
   // If there's no showreel URL and we're not in edit mode, don't render anything
   if (!showreelUrl && !editMode) {
@@ -78,7 +80,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   };
 
   const handlePlayClick = () => {
-    setShowVideo(true);
+    setVideoPlayerOpen(true);
   };
 
   return (
@@ -148,43 +150,30 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
         )}
       </div>
       <div className="aspect-video relative">
-        {showreelUrl && showVideo ? (
-          isEmbedCode ? (
+        <div className="relative w-full h-full">
+          <img 
+            src={showreelThumbnail} 
+            alt="Showreel thumbnail" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
             <div 
-              className="w-full h-full" 
-              dangerouslySetInnerHTML={{ __html: showreelUrl }}
-            />
-          ) : isValidUrl() ? (
-            <iframe 
-              src={iframeSrc}
-              title="Showreel" 
-              className="w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full bg-secondary">
-              <p className="text-muted-foreground">Invalid showreel URL</p>
-            </div>
-          )
-        ) : (
-          <div className="relative w-full h-full">
-            <img 
-              src={showreelThumbnail} 
-              alt="Showreel thumbnail" 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div 
-                className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
-                onClick={handlePlayClick}
-              >
-                <Play className="h-10 w-10 text-white" fill="white" />
-              </div>
+              className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
+              onClick={handlePlayClick}
+            >
+              <Play className="h-10 w-10 text-white" fill="white" />
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Video Player Dialog */}
+      <VideoPlayerDialog
+        isOpen={videoPlayerOpen}
+        onClose={() => setVideoPlayerOpen(false)}
+        videoUrl={showreelUrl}
+        title="My Showreel"
+      />
     </div>
   );
 };
