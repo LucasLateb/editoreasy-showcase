@@ -4,7 +4,8 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogClose
+  DialogClose,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,10 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl w-[90vw] p-1 overflow-hidden">
+        <DialogDescription className="sr-only">
+          Video player for {title}
+        </DialogDescription>
+        
         <div className="absolute top-2 right-2 z-10">
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/60 backdrop-blur-sm">
