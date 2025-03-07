@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Video, categories } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, UploadCloud, Film, Play } from 'lucide-react';
+import { PlusCircle, UploadCloud, Film } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -13,6 +13,7 @@ import VideoUploadDialog, { UploadFormData } from '@/components/dashboard/VideoU
 import VideosTab from '@/components/dashboard/VideosTab';
 import AnalyticsTab from '@/components/dashboard/AnalyticsTab';
 import AccountTab from '@/components/dashboard/AccountTab';
+import ShowreelSection from '@/components/portfolio/ShowreelSection';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -29,50 +30,20 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   currentShowreelUrl,
   currentShowreelThumbnail
 }) => {
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [customUrl, setCustomUrl] = useState('');
   const [customThumbnailUrl, setCustomThumbnailUrl] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [videoToConfirm, setVideoToConfirm] = useState<Video | null>(null);
-  const [showVideo, setShowVideo] = useState(false);
+  const [isShowreelDialogOpen, setIsShowreelDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  const handleSelectShowreel = (video: Video) => {
-    setVideoToConfirm(video);
-    setConfirmDialogOpen(true);
-  };
-  
-  const handleConfirmShowreel = () => {
-    if (videoToConfirm) {
-      try {
-        // Ensure the video URL is valid
-        if (videoToConfirm.videoUrl.includes('<iframe')) {
-          onSetShowreel(videoToConfirm.videoUrl, videoToConfirm.thumbnailUrl);
-        } else if (videoToConfirm.videoUrl.startsWith('http://') || videoToConfirm.videoUrl.startsWith('https://')) {
-          new URL(videoToConfirm.videoUrl);
-          onSetShowreel(videoToConfirm.videoUrl, videoToConfirm.thumbnailUrl);
-        } else {
-          throw new Error('Invalid URL format');
-        }
-        
-        setSelectedVideo(videoToConfirm);
-        toast({
-          title: "Showreel updated",
-          description: "Your portfolio showreel has been updated successfully."
-        });
-      } catch (error) {
-        console.error("Invalid video URL:", error);
-        toast({
-          title: "Invalid URL",
-          description: "The selected video has an invalid URL format.",
-          variant: "destructive"
-        });
-      }
-    }
-    setConfirmDialogOpen(false);
-    setVideoToConfirm(null);
-  };
+  // Generate thumbnail options
+  const thumbnailOptions = [
+    { id: "1", url: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81" },
+    { id: "2", url: "https://images.unsplash.com/photo-1516469627018-7221da42e44b" },
+    { id: "3", url: "https://images.unsplash.com/photo-1534504225034-8c22efc98e10" },
+    { id: "4", url: "https://images.unsplash.com/photo-1593697972672-b1c1767b7576" },
+    { id: "5", url: "https://images.unsplash.com/photo-1536240478700-b869070f9279" },
+    { id: "6", url: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0" },
+  ];
   
   const handleCustomUrlSubmit = () => {
     if (customUrl.trim()) {
@@ -97,10 +68,6 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
       }
     }
   };
-
-  const handlePlayClick = () => {
-    setShowVideo(true);
-  };
   
   if (isLoading) {
     return (
@@ -110,67 +77,20 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
     );
   }
   
-  const isEmbedCode = currentShowreelUrl && currentShowreelUrl.includes('<iframe');
-  const extractSrcFromEmbed = (embedCode: string) => {
-    try {
-      const srcMatch = embedCode.match(/src="([^"]+)"/);
-      return srcMatch && srcMatch[1] ? srcMatch[1] : '';
-    } catch (error) {
-      console.error('Error extracting src from embed code:', error);
-      return '';
-    }
-  };
-  
-  let displayUrl = '';
-  if (isEmbedCode && currentShowreelUrl) {
-    displayUrl = extractSrcFromEmbed(currentShowreelUrl);
-  } else if (currentShowreelUrl) {
-    displayUrl = currentShowreelUrl;
-  }
-  
   return (
     <div className="space-y-8">
-      <div className="bg-background p-6 rounded-lg border shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Current Showreel</h2>
-        {currentShowreelUrl ? (
-          <div className="aspect-video relative mb-4">
-            {showVideo ? (
-              isEmbedCode ? (
-                <div dangerouslySetInnerHTML={{ __html: currentShowreelUrl }} className="w-full h-full" />
-              ) : (
-                <iframe 
-                  src={displayUrl}
-                  title="Current Showreel" 
-                  className="w-full h-full border rounded-md"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
-              )
-            ) : (
-              <div className="relative w-full h-full">
-                <img 
-                  src={currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'} 
-                  alt="Showreel thumbnail" 
-                  className="w-full h-full object-cover border rounded-md"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div 
-                    className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
-                    onClick={handlePlayClick}
-                  >
-                    <Play className="h-8 w-8 text-white" fill="white" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center bg-secondary aspect-video rounded-md mb-4">
-            <Film className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No showreel set</p>
-          </div>
-        )}
-      </div>
+      <ShowreelSection 
+        showreelUrl={currentShowreelUrl || ''}
+        showreelThumbnail={currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'}
+        editMode={true}
+        showreelDialogOpen={isShowreelDialogOpen}
+        setShowreelDialogOpen={setIsShowreelDialogOpen}
+        setShowreelUrl={setCustomUrl}
+        updateShowreel={onSetShowreel}
+        updateShowreelThumbnail={(url) => onSetShowreel(customUrl || currentShowreelUrl || '', url)}
+        thumbnailOptions={thumbnailOptions}
+        videos={videos}
+      />
       
       <div className="bg-background p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Set Custom Showreel URL</h2>
@@ -203,43 +123,6 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
           Use an embed URL from YouTube or Vimeo for best results.
         </p>
       </div>
-      
-      {videos.length > 0 && (
-        <div className="bg-background p-6 rounded-lg border shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Select from Your Videos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {videos.map((video) => (
-              <div 
-                key={video.id} 
-                className={`relative cursor-pointer border rounded-md overflow-hidden ${selectedVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => handleSelectShowreel(video)}
-              >
-                <div className="aspect-video">
-                  <img 
-                    src={video.thumbnailUrl} 
-                    alt={video.title} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-2 bg-background">
-                  <h3 className="font-medium text-sm truncate">{video.title}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
-        onConfirm={handleConfirmShowreel}
-        title="Set as Showreel"
-        description={`Are you sure you want to set "${videoToConfirm?.title}" as your showreel? This will replace your current showreel and be visible on your portfolio page.`}
-        confirmLabel="Set as Showreel"
-        cancelLabel="Cancel"
-      />
     </div>
   );
 };

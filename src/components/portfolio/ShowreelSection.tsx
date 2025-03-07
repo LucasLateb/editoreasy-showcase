@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Play, Edit, Link } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { Video } from '@/types';
 
 interface ShowreelSectionProps {
   showreelUrl: string;
@@ -17,6 +18,7 @@ interface ShowreelSectionProps {
   updateShowreel: (url: string) => void;
   updateShowreelThumbnail: (url: string) => void;
   thumbnailOptions: Array<{ id: string; url: string }>;
+  videos?: Video[]; // Added videos prop
 }
 
 const ShowreelSection: React.FC<ShowreelSectionProps> = ({
@@ -28,7 +30,8 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   setShowreelUrl,
   updateShowreel,
   updateShowreelThumbnail,
-  thumbnailOptions
+  thumbnailOptions,
+  videos = [] // Default to empty array
 }) => {
   // Use state to control the video player dialog
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
@@ -83,6 +86,12 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     setVideoPlayerOpen(true);
   };
 
+  const handleSelectVideo = (video: Video) => {
+    setShowreelUrl(video.videoUrl);
+    updateShowreel(video.videoUrl);
+    updateShowreelThumbnail(video.thumbnailUrl);
+  };
+
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
       <div className="flex justify-between items-center p-4 border-b border-border">
@@ -121,6 +130,35 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
                     Use an embed URL from YouTube or Vimeo for best results
                   </p>
                 </div>
+                
+                {/* Add the section to select from existing videos */}
+                {videos.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Select from Your Videos</h4>
+                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                      {videos.map(video => (
+                        <Card 
+                          key={video.id}
+                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                          onClick={() => handleSelectVideo(video)}
+                        >
+                          <CardContent className="p-2">
+                            <div className="aspect-video relative overflow-hidden rounded">
+                              <img 
+                                src={video.thumbnailUrl} 
+                                alt={video.title} 
+                                className="w-full h-full object-cover" 
+                              />
+                            </div>
+                            <div className="pt-1">
+                              <h5 className="text-xs font-medium truncate">{video.title}</h5>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <div>
                   <h4 className="text-sm font-medium mb-2">Showreel Thumbnail</h4>
