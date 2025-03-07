@@ -59,11 +59,26 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       new URL(showreelUrl);
       iframeSrc = showreelUrl;
     } catch (e) {
-      // If not a valid URL, it might be a relative path or malformed
+      // If not a valid URL, fallback to treating it as is
       console.error('Invalid URL format:', e);
       iframeSrc = showreelUrl; // Use as is, the browser will handle it
     }
   }
+
+  // Validate the URL to prevent malformed URIs
+  const isValidUrl = () => {
+    try {
+      if (iframeSrc) {
+        // This will throw if the URL is malformed
+        decodeURI(iframeSrc);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error("URI malformed error:", e);
+      return false;
+    }
+  };
 
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -138,7 +153,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               className="w-full h-full" 
               dangerouslySetInnerHTML={{ __html: showreelUrl }}
             />
-          ) : (
+          ) : isValidUrl() ? (
             <iframe 
               src={iframeSrc}
               title="Showreel" 
@@ -146,6 +161,10 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-gray-100">
+              <p className="text-muted-foreground">Invalid showreel URL</p>
+            </div>
           )
         ) : (
           <div className="relative w-full h-full">

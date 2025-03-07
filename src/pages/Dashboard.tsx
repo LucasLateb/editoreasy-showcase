@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -32,6 +33,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [videoToConfirm, setVideoToConfirm] = useState<Video | null>(null);
+  const { toast } = useToast();
   
   const handleSelectShowreel = (video: Video) => {
     setVideoToConfirm(video);
@@ -40,8 +42,23 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   
   const handleConfirmShowreel = () => {
     if (videoToConfirm) {
-      onSetShowreel(videoToConfirm.videoUrl);
-      setSelectedVideo(videoToConfirm);
+      try {
+        // Ensure the video URL is valid
+        new URL(videoToConfirm.videoUrl);
+        onSetShowreel(videoToConfirm.videoUrl);
+        setSelectedVideo(videoToConfirm);
+        toast({
+          title: "Showreel updated",
+          description: "Your portfolio showreel has been updated successfully."
+        });
+      } catch (error) {
+        console.error("Invalid video URL:", error);
+        toast({
+          title: "Invalid URL",
+          description: "The selected video has an invalid URL format.",
+          variant: "destructive"
+        });
+      }
     }
     setConfirmDialogOpen(false);
     setVideoToConfirm(null);
@@ -49,7 +66,25 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   
   const handleCustomUrlSubmit = () => {
     if (customUrl.trim()) {
-      onSetShowreel(customUrl.trim());
+      try {
+        // Basic validation to check if input looks like a URL
+        if (!customUrl.startsWith('http://') && !customUrl.startsWith('https://') && !customUrl.includes('<iframe')) {
+          throw new Error('URL must start with http:// or https:// or be an iframe embed code');
+        }
+        
+        onSetShowreel(customUrl.trim());
+        toast({
+          title: "Showreel updated",
+          description: "Your portfolio showreel has been updated successfully."
+        });
+      } catch (error) {
+        console.error("Invalid custom URL:", error);
+        toast({
+          title: "Invalid URL",
+          description: error instanceof Error ? error.message : "The URL format is invalid.",
+          variant: "destructive"
+        });
+      }
     }
   };
   
@@ -67,13 +102,17 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         <h2 className="text-xl font-semibold mb-4">Current Showreel</h2>
         {currentShowreelUrl ? (
           <div className="aspect-video relative mb-4">
-            <iframe 
-              src={currentShowreelUrl}
-              title="Current Showreel" 
-              className="w-full h-full border rounded-md"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
+            {currentShowreelUrl.includes('<iframe') ? (
+              <div dangerouslySetInnerHTML={{ __html: currentShowreelUrl }} className="w-full h-full" />
+            ) : (
+              <iframe 
+                src={currentShowreelUrl}
+                title="Current Showreel" 
+                className="w-full h-full border rounded-md"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center bg-secondary aspect-video rounded-md mb-4">
@@ -134,7 +173,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         onClose={() => setConfirmDialogOpen(false)}
         onConfirm={handleConfirmShowreel}
         title="Set as Showreel"
-        description={`Are you sure you want to set "${videoToConfirm?.title}" as your showreel? This will replace your current showreel.`}
+        description={`Are you sure you want to set "${videoToConfirm?.title}" as your showreel? This will replace your current showreel and be visible on your portfolio page.`}
         confirmLabel="Set as Showreel"
         cancelLabel="Cancel"
       />
@@ -182,6 +221,11 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching portfolio settings:', error);
+      toast({
+        title: "Error loading showreel",
+        description: "There was a problem loading your showreel settings.",
+        variant: "destructive"
+      });
     }
   };
   
@@ -249,7 +293,8 @@ const Dashboard: React.FC = () => {
       setCurrentShowreelUrl(url);
       toast({
         title: "Showreel updated",
-        description: "Your showreel has been updated successfully."
+        description: "Your showreel has been updated successfully and will be displayed on your portfolio page.",
+        duration: 3000
       });
     } catch (error) {
       console.error('Error updating showreel:', error);
