@@ -35,16 +35,35 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   }
 
   // Check if the URL is actually an embed code (contains iframe)
-  const isEmbedCode = showreelUrl && showreelUrl.includes('<iframe');
+  const isEmbedCode = showreelUrl && typeof showreelUrl === 'string' && showreelUrl.includes('<iframe');
   
   // Extract the src URL from an embed code if needed
   const extractSrcFromEmbed = (embedCode: string) => {
-    const srcMatch = embedCode.match(/src="([^"]+)"/);
-    return srcMatch && srcMatch[1] ? srcMatch[1] : '';
+    try {
+      const srcMatch = embedCode.match(/src="([^"]+)"/);
+      return srcMatch && srcMatch[1] ? srcMatch[1] : '';
+    } catch (error) {
+      console.error('Error extracting src from embed code:', error);
+      return '';
+    }
   };
   
   // Get the actual URL to use in the iframe
-  const iframeSrc = isEmbedCode ? extractSrcFromEmbed(showreelUrl) : showreelUrl;
+  let iframeSrc = '';
+  if (isEmbedCode && showreelUrl) {
+    iframeSrc = extractSrcFromEmbed(showreelUrl);
+  } else if (showreelUrl) {
+    // Ensure the URL is properly formatted
+    try {
+      // Check if it's a valid URL
+      new URL(showreelUrl);
+      iframeSrc = showreelUrl;
+    } catch (e) {
+      // If not a valid URL, it might be a relative path or malformed
+      console.error('Invalid URL format:', e);
+      iframeSrc = showreelUrl; // Use as is, the browser will handle it
+    }
+  }
 
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -70,12 +89,12 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
                   <div className="flex gap-2">
                     <Input
                       id="showreel-url"
-                      value={showreelUrl}
+                      value={showreelUrl || ''}
                       onChange={(e) => setShowreelUrl(e.target.value)}
                       placeholder="https://www.youtube.com/embed/your-video-id"
                       className="flex-1"
                     />
-                    <Button onClick={() => updateShowreel(showreelUrl)}>
+                    <Button onClick={() => updateShowreel(showreelUrl || '')}>
                       <Link className="h-4 w-4 mr-1" />
                       Update
                     </Button>
