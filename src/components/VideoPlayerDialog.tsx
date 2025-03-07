@@ -24,15 +24,27 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   title
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-
+  
   useEffect(() => {
-    // Auto-play video when dialog opens
+    // Auto-play video when dialog opens (for native video element)
     if (isOpen && videoRef.current) {
       videoRef.current.play().catch(err => {
         console.error('Error auto-playing video:', err);
       });
     }
   }, [isOpen]);
+
+  // Check if the videoUrl is an embed code (contains iframe)
+  const isEmbedCode = videoUrl.includes('<iframe');
+  
+  // If it's an embed code, extract the src URL
+  let embedSrc = '';
+  if (isEmbedCode) {
+    const srcMatch = videoUrl.match(/src="([^"]+)"/);
+    if (srcMatch && srcMatch[1]) {
+      embedSrc = srcMatch[1];
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -51,15 +63,27 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
         </div>
         
         <div className="overflow-hidden rounded">
-          <video 
-            ref={videoRef}
-            src={videoUrl} 
-            controls
-            autoPlay
-            className="w-full aspect-video"
-          >
-            Your browser does not support the video tag.
-          </video>
+          {isEmbedCode && embedSrc ? (
+            <div className="w-full aspect-video">
+              <iframe 
+                src={embedSrc}
+                className="w-full h-full"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                title={title}
+              />
+            </div>
+          ) : (
+            <video 
+              ref={videoRef}
+              src={videoUrl} 
+              controls
+              autoPlay
+              className="w-full aspect-video"
+            >
+              Your browser does not support the video tag.
+            </video>
+          )}
         </div>
         
         <DialogTitle className="px-3 pb-2">{title}</DialogTitle>
