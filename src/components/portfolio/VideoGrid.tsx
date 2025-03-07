@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Edit, X, Star, Upload, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface VideoGridProps {
   videos: Video[];
@@ -29,6 +31,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   const navigate = useNavigate();
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   
   const handleUploadClick = () => {
     navigate('/dashboard');
@@ -37,6 +40,43 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   const handleVideoClick = (video: Video) => {
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
+  };
+  
+  const handleToggleHighlight = async (videoId: string) => {
+    setIsUpdating(videoId);
+    
+    // First call the parent component's toggleHighlight to update the local state
+    toggleHighlight(videoId);
+    
+    // Find the video to get its current highlight status
+    const video = videos.find(v => v.id === videoId);
+    if (!video) {
+      setIsUpdating(null);
+      return;
+    }
+    
+    // The toggle has already been applied in the UI, so we want the opposite of what's currently shown
+    const newHighlightStatus = !video.isHighlighted;
+    
+    try {
+      // Update the is_highlighted field in the videos table
+      const { error } = await supabase
+        .from('videos')
+        .update({ is_highlighted: newHighlightStatus })
+        .eq('id', videoId);
+      
+      if (error) throw error;
+      
+      toast.success(`Video ${newHighlightStatus ? 'highlighted' : 'unhighlighted'} successfully`);
+    } catch (error) {
+      console.error('Error updating highlight status:', error);
+      toast.error('Failed to update highlight status');
+      
+      // Revert the UI change since the server update failed
+      toggleHighlight(videoId);
+    } finally {
+      setIsUpdating(null);
+    }
   };
   
   if (videos.length === 0) {
@@ -102,7 +142,8 @@ const VideoGrid: React.FC<VideoGridProps> = ({
                       <div className="flex justify-between">
                         <Button 
                           variant={video.isHighlighted ? "destructive" : "outline"}
-                          onClick={() => toggleHighlight(video.id)}
+                          onClick={() => handleToggleHighlight(video.id)}
+                          disabled={isUpdating === video.id}
                         >
                           {video.isHighlighted ? (
                             <>
@@ -120,6 +161,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
                         <Button 
                           variant="default"
                           onClick={() => setAsFeatured(video)}
+                          disabled={isUpdating === video.id}
                         >
                           Set as Featured
                         </Button>
