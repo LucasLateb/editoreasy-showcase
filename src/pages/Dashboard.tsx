@@ -30,10 +30,21 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [customUrl, setCustomUrl] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [videoToConfirm, setVideoToConfirm] = useState<Video | null>(null);
   
-  const handleSetShowreel = async (video: Video) => {
-    setSelectedVideo(video);
-    onSetShowreel(video.videoUrl);
+  const handleSelectShowreel = (video: Video) => {
+    setVideoToConfirm(video);
+    setConfirmDialogOpen(true);
+  };
+  
+  const handleConfirmShowreel = () => {
+    if (videoToConfirm) {
+      onSetShowreel(videoToConfirm.videoUrl);
+      setSelectedVideo(videoToConfirm);
+    }
+    setConfirmDialogOpen(false);
+    setVideoToConfirm(null);
   };
   
   const handleCustomUrlSubmit = () => {
@@ -99,7 +110,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
               <div 
                 key={video.id} 
                 className={`relative cursor-pointer border rounded-md overflow-hidden ${selectedVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => handleSetShowreel(video)}
+                onClick={() => handleSelectShowreel(video)}
               >
                 <div className="aspect-video">
                   <img 
@@ -116,6 +127,17 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
           </div>
         </div>
       )}
+      
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        onConfirm={handleConfirmShowreel}
+        title="Set as Showreel"
+        description={`Are you sure you want to set "${videoToConfirm?.title}" as your showreel? This will replace your current showreel.`}
+        confirmLabel="Set as Showreel"
+        cancelLabel="Cancel"
+      />
     </div>
   );
 };
@@ -131,11 +153,9 @@ const Dashboard: React.FC = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [currentShowreelUrl, setCurrentShowreelUrl] = useState<string | null>(null);
   
-  // Delete confirmation state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
   
-  // Fetch user videos and portfolio settings on component mount
   useEffect(() => {
     if (currentUser) {
       Promise.all([
@@ -178,7 +198,6 @@ const Dashboard: React.FC = () => {
         throw error;
       }
       
-      // Transform the data to match our Video type
       const formattedVideos: Video[] = data.map(video => ({
         id: video.id,
         title: video.title,
@@ -266,7 +285,6 @@ const Dashboard: React.FC = () => {
     try {
       let thumbnailUrl = uploadData.thumbnailUrl;
       
-      // If a thumbnail file was selected, upload it to Supabase storage
       if (thumbnailFile) {
         const fileExt = thumbnailFile.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -280,7 +298,6 @@ const Dashboard: React.FC = () => {
           throw storageError;
         }
         
-        // Get the public URL
         const { data: publicUrlData } = supabase.storage
           .from('videos')
           .getPublicUrl(filePath);
@@ -288,7 +305,6 @@ const Dashboard: React.FC = () => {
         thumbnailUrl = publicUrlData.publicUrl;
       }
       
-      // Create a new video object for the database
       const newVideoData = {
         title: uploadData.title,
         description: uploadData.description,
@@ -298,7 +314,6 @@ const Dashboard: React.FC = () => {
         user_id: currentUser.id,
       };
       
-      // Insert the video into the database
       const { data, error } = await supabase
         .from('videos')
         .insert(newVideoData)
@@ -309,7 +324,6 @@ const Dashboard: React.FC = () => {
         throw error;
       }
       
-      // Create a new video object for the state
       const newVideo: Video = {
         id: data.id,
         title: data.title,
@@ -324,7 +338,6 @@ const Dashboard: React.FC = () => {
         isHighlighted: data.is_highlighted || false
       };
       
-      // Add the new video to the videos array
       setVideos([newVideo, ...videos]);
       
       toast({
@@ -352,7 +365,6 @@ const Dashboard: React.FC = () => {
     if (!videoToDelete) return;
     
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('videos')
         .delete()
@@ -362,7 +374,6 @@ const Dashboard: React.FC = () => {
         throw error;
       }
       
-      // Update state
       setVideos(videos.filter(video => video.id !== videoToDelete));
       
       toast({
@@ -377,13 +388,11 @@ const Dashboard: React.FC = () => {
         variant: "destructive"
       });
     } finally {
-      // Clean up
       setVideoToDelete(null);
       setDeleteConfirmOpen(false);
     }
   };
   
-  // If not logged in, redirect to login
   if (!currentUser) {
     navigate('/login');
     return null;
@@ -417,7 +426,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         
-        {/* Upload Video Dialog */}
         <VideoUploadDialog
           isOpen={uploadDialogOpen}
           onClose={() => setUploadDialogOpen(false)}
@@ -426,7 +434,6 @@ const Dashboard: React.FC = () => {
           isUploading={isUploading}
         />
         
-        {/* Delete Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={deleteConfirmOpen}
           onClose={() => setDeleteConfirmOpen(false)}
