@@ -34,6 +34,18 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     return null;
   }
 
+  // Check if the URL is actually an embed code (contains iframe)
+  const isEmbedCode = showreelUrl && showreelUrl.includes('<iframe');
+  
+  // Extract the src URL from an embed code if needed
+  const extractSrcFromEmbed = (embedCode: string) => {
+    const srcMatch = embedCode.match(/src="([^"]+)"/);
+    return srcMatch && srcMatch[1] ? srcMatch[1] : '';
+  };
+  
+  // Get the actual URL to use in the iframe
+  const iframeSrc = isEmbedCode ? extractSrcFromEmbed(showreelUrl) : showreelUrl;
+
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
       <div className="flex justify-between items-center p-4 border-b border-border">
@@ -102,13 +114,20 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       </div>
       <div className="aspect-video relative">
         {showreelUrl ? (
-          <iframe 
-            src={showreelUrl}
-            title="Showreel" 
-            className="w-full h-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          />
+          isEmbedCode ? (
+            <div 
+              className="w-full h-full" 
+              dangerouslySetInnerHTML={{ __html: showreelUrl }}
+            />
+          ) : (
+            <iframe 
+              src={iframeSrc}
+              title="Showreel" 
+              className="w-full h-full"
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          )
         ) : (
           <div className="relative w-full h-full">
             <img 
