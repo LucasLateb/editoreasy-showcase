@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ interface AuthFormProps {
 
 const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
   const [name, setName] = useState('');
@@ -24,39 +24,65 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isLoading) return; // Prevent multiple submissions
+    
     setIsLoading(true);
     setErrorMessage(null);
     
     try {
       if (type === 'login') {
-        await login(email, password);
-        toast({
-          title: "Logged in successfully",
-          description: "Welcome back to VideoCut!",
-        });
+        const result = await login(email, password);
+        if (result) {
+          toast({
+            title: "Logged in successfully",
+            description: "Welcome back to VideoCut!",
+          });
+          // Let the useEffect handle redirection to avoid race conditions
+        }
       } else {
-        await register(name, email, password);
-        toast({
-          title: "Account created",
-          description: "Welcome to VideoCut! Please confirm your email to activate your account.",
-        });
+        const result = await register(name, email, password);
+        if (result) {
+          toast({
+            title: "Account created",
+            description: "Welcome to VideoCut! Please confirm your email to activate your account.",
+          });
+          // Let the useEffect handle redirection to avoid race conditions
+        }
       }
-      navigate('/dashboard');
     } catch (error: any) {
       console.error('Authentication error:', error);
       
-      // Handle specific Supabase auth errors
+      // More comprehensive error handling
+      let errorMsg = "Authentication failed. Please check your credentials and try again.";
+      
       if (error.message) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Authentication failed. Please check your credentials and try again.");
+        // Handle specific known Supabase error messages
+        if (error.message.includes('Invalid login credentials')) {
+          errorMsg = "Invalid email or password. Please try again.";
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMsg = "Please confirm your email address before logging in.";
+        } else if (error.message.includes('User already registered')) {
+          errorMsg = "An account with this email already exists. Try logging in instead.";
+        } else {
+          errorMsg = error.message;
+        }
       }
+      
+      setErrorMessage(errorMsg);
       
       toast({
         title: "Authentication failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: errorMsg,
         variant: "destructive"
       });
     } finally {
@@ -93,6 +119,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
               onChange={(e) => setName(e.target.value)}
               required
               className="glass-input"
+              disabled={isLoading}
             />
           </div>
         )}
@@ -107,6 +134,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             onChange={(e) => setEmail(e.target.value)}
             required
             className="glass-input"
+            disabled={isLoading}
           />
         </div>
         
@@ -128,10 +156,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             required
             className="glass-input"
             minLength={6}
+            disabled={isLoading}
           />
         </div>
         
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isLoading}
+        >
           {isLoading 
             ? (type === 'login' ? 'Logging in...' : 'Creating account...') 
             : (type === 'login' ? 'Log in' : 'Create account')}

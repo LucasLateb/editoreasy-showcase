@@ -1,11 +1,23 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   return (
     <div className="min-h-screen bg-secondary">
       <Navbar />
