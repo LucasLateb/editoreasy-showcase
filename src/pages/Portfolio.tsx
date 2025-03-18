@@ -101,38 +101,38 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       }
       
       try {
-        const { data, error } = await supabase
+        const { data: portfolioSettings, error: portfolioError } = await supabase
           .from('portfolio_settings')
           .select('*')
           .eq('user_id', userId)
           .maybeSingle();
           
-        if (error) {
-          throw error;
+        if (portfolioError) {
+          throw portfolioError;
         }
         
-        if (data) {
-          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+        if (portfolioSettings) {
+          if (portfolioSettings.categories && Array.isArray(portfolioSettings.categories) && portfolioSettings.categories.length > 0) {
             try {
-              const parsedCategories = (data.categories as any[]).map(category => parseJsonToCategory(category));
+              const parsedCategories = (portfolioSettings.categories as any[]).map(category => parseJsonToCategory(category));
               setUserCategories(parsedCategories);
             } catch (e) {
               console.error('Failed to parse categories:', e);
             }
           }
           
-          if (data.featured_video && typeof data.featured_video === 'object') {
+          if (portfolioSettings.featured_video && typeof portfolioSettings.featured_video === 'object') {
             try {
-              const parsedVideo = parseJsonToVideo(data.featured_video as any);
+              const parsedVideo = parseJsonToVideo(portfolioSettings.featured_video as any);
               setFeaturedVideo(parsedVideo);
             } catch (e) {
               console.error('Failed to parse featured video:', e);
             }
           }
           
-          if (data.highlighted_videos && Array.isArray(data.highlighted_videos) && data.highlighted_videos.length > 0) {
+          if (portfolioSettings.highlighted_videos && Array.isArray(portfolioSettings.highlighted_videos) && portfolioSettings.highlighted_videos.length > 0) {
             try {
-              const parsedHighlightedVideos = (data.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
+              const parsedHighlightedVideos = (portfolioSettings.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
               
               const highlightedIds = parsedHighlightedVideos.map(vid => vid.id);
               
@@ -147,65 +147,84 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             }
           }
           
-          if (data.portfolio_title) {
-            setPortfolioTitle(data.portfolio_title);
+          if (portfolioSettings.portfolio_title) {
+            setPortfolioTitle(portfolioSettings.portfolio_title);
           }
           
-          if (data.portfolio_description) {
-            setPortfolioDescription(data.portfolio_description);
+          if (portfolioSettings.portfolio_description) {
+            setPortfolioDescription(portfolioSettings.portfolio_description);
           }
           
-          if (data.showreel_url) {
-            setShowreelUrl(data.showreel_url);
-            console.log('Loaded showreel URL from database:', data.showreel_url);
+          if (portfolioSettings.showreel_url) {
+            setShowreelUrl(portfolioSettings.showreel_url);
+          }
+
+          if (portfolioSettings.about) {
+            setAbout(portfolioSettings.about);
+          }
+
+          if (portfolioSettings.specializations) {
+            setSpecializations(portfolioSettings.specializations as string[]);
           }
         }
+
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (userError) {
+          throw userError;
+        }
+
+        if (userData) {
+          setCurrentUser(userData);
+        }
+
       } catch (error) {
         console.error('Error fetching portfolio settings:', error);
         toast.error('Failed to load portfolio settings');
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    const fetchUserVideos = async () => {
-      if (!userId) {
-        return;
-      }
-      
       try {
-        const { data, error } = await supabase
+        const { data: videos, error: videosError } = await supabase
           .from('videos')
           .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
         
-        if (error) {
-          throw error;
+        if (videosError) {
+          throw videosError;
         }
         
-        const formattedVideos: Video[] = data.map(video => ({
-          id: video.id,
-          title: video.title,
-          description: video.description || '',
-          thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
-          videoUrl: video.video_url || '#',
-          categoryId: video.category_id,
-          userId: video.user_id,
-          likes: video.likes || 0,
-          views: video.views || 0,
-          createdAt: new Date(video.created_at),
-          isHighlighted: video.is_highlighted || false
-        }));
-        
-        setVideos(formattedVideos);
+        if (videos) {
+          const formattedVideos: Video[] = videos.map(video => ({
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
+            videoUrl: video.video_url || '#',
+            categoryId: video.category_id,
+            userId: video.user_id,
+            likes: video.likes || 0,
+            views: video.views || 0,
+            createdAt: new Date(video.created_at),
+            isHighlighted: video.is_highlighted || false
+          }));
+          
+          setVideos(formattedVideos);
+        }
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast.error('Failed to load videos');
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    Promise.all([fetchPortfolioSettings(), fetchUserVideos()]);
+    setIsLoading(true);
+    fetchPortfolioSettings();
   }, [userId]);
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
