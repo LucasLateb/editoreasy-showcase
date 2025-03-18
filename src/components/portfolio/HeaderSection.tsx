@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,12 +40,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     setDescription(editedDescription);
     setTitleDialogOpen(false);
   };
-
-  // Update edited values when props change
-  useEffect(() => {
-    setEditedTitle(title);
-    setEditedDescription(description);
-  }, [title, description]);
 
   return (
     <section className="relative h-[60vh] md:h-[70vh] overflow-hidden group">
