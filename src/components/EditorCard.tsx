@@ -27,21 +27,8 @@ const EditorCard: React.FC<EditorCardProps> = ({
   // Extract video ID from YouTube URL for thumbnail as fallback
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
-    try {
-      // Handle various YouTube URL formats
-      let videoId;
-      if (url.includes('youtube.com/embed/')) {
-        videoId = url.split('/').pop();
-      } else if (url.includes('youtube.com/watch?v=')) {
-        videoId = new URL(url).searchParams.get('v');
-      } else if (url.includes('youtu.be/')) {
-        videoId = url.split('/').pop();
-      }
-      return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
-    } catch (error) {
-      console.error('Error extracting YouTube ID:', error);
-      return null;
-    }
+    const videoId = url.split('/').pop();
+    return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   };
 
   // Use the showreelThumbnail from the database if available, otherwise fall back to YouTube thumbnail
