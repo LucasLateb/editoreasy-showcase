@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import CategorySlider from '@/components/CategorySlider';
 import EditorCard from '@/components/EditorCard';
 import VideoCard from '@/components/VideoCard';
 import PricingPlans from '@/components/PricingPlans';
-import { Category, categories, popularEditors } from '@/types';
+import { Category, categories } from '@/types';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock videos for demonstration
 const mockVideos = Array(6).fill(null).map((_, i) => ({
@@ -16,7 +17,7 @@ const mockVideos = Array(6).fill(null).map((_, i) => ({
   thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + i * 10}-9bc0b252726f`,
   videoUrl: '#',
   categoryId: categories[i % categories.length].id,
-  userId: popularEditors[i % popularEditors.length].id,
+  userId: null,
   likes: Math.floor(Math.random() * 100),
   views: Math.floor(Math.random() * 1000),
   createdAt: new Date()
@@ -36,6 +37,38 @@ const editorShowreels = {
 
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
+  const [popularEditors, setPopularEditors] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchPopularEditors = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('likes', { ascending: false })
+          .limit(8);
+        
+        if (error) {
+          console.error('Error fetching popular editors:', error);
+          return;
+        }
+        
+        setPopularEditors(data.map(editor => ({
+          ...editor,
+          createdAt: new Date(editor.created_at),
+          subscriptionTier: editor.subscription_tier || 'free',
+          avatarUrl: editor.avatar_url,
+        })));
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPopularEditors();
+  }, []);
   
   const filteredVideos = selectedCategory 
     ? mockVideos.filter(video => video.categoryId === selectedCategory.id)
@@ -57,14 +90,30 @@ const Index: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
-            {popularEditors.map((editor, index) => (
-              <EditorCard 
-                key={editor.id} 
-                editor={editor} 
-                index={index}
-                showreelUrl={editorShowreels[editor.id as keyof typeof editorShowreels]}
-              />
-            ))}
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse">
+                  <div className="flex items-center mb-4">
+                    <div className="h-12 w-12 rounded-full bg-muted"></div>
+                    <div className="ml-3">
+                      <div className="h-4 w-24 bg-muted rounded"></div>
+                      <div className="h-3 w-32 bg-muted rounded mt-2"></div>
+                    </div>
+                  </div>
+                  <div className="h-4 w-full bg-muted rounded"></div>
+                </div>
+              ))
+            ) : (
+              popularEditors.map((editor, index) => (
+                <EditorCard 
+                  key={editor.id} 
+                  editor={editor} 
+                  index={index}
+                  showreelUrl={editorShowreels[editor.id as keyof typeof editorShowreels]}
+                />
+              ))
+            )}
           </div>
         </section>
         
