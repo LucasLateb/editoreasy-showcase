@@ -168,6 +168,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           }
         }
 
+        // Get user data without trying to set it in state
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select('*')
@@ -178,8 +179,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           throw userError;
         }
 
-        if (userData) {
-          setCurrentUser(userData);
+        // We don't need to set the user data as it's managed by AuthContext
+        // Just log any errors if the user data couldn't be fetched
+        if (!userData && isViewOnly) {
+          console.error('Could not find user profile');
         }
 
       } catch (error) {
