@@ -18,6 +18,13 @@ const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) =
   const animationDelay = `${0.1 + index * 0.1}s`;
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   
+  // Extract video ID from YouTube URL for thumbnail
+  const getYouTubeThumbnail = (url: string) => {
+    if (!url) return null;
+    const videoId = url.split('/').pop();
+    return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+  };
+
   return (
     <>
       <div 
@@ -50,21 +57,21 @@ const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) =
         
         {showreelUrl && (
           <div 
-            className="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black/5 cursor-pointer" 
+            className="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black/5 cursor-pointer group/video" 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setVideoPlayerOpen(true);
             }}
           >
-            <div className="w-full h-full relative flex items-center justify-center">
+            <div className="w-full h-full relative">
               <img 
-                src={`https://img.youtube.com/vi/${showreelUrl.split('/').pop()}/mqdefault.jpg`}
+                src={getYouTubeThumbnail(showreelUrl)}
                 alt={`${editor.name}'s showreel`}
-                className="w-full h-full object-cover opacity-90"
+                className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg">
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/video:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg transform scale-90 group-hover/video:scale-100 transition-transform">
                   <Play className="h-6 w-6 text-white fill-white ml-1" />
                 </div>
               </div>
@@ -105,3 +112,4 @@ const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) =
 };
 
 export default EditorCard;
+
