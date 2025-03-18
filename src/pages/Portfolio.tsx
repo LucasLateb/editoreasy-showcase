@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
@@ -67,7 +67,7 @@ const defaultFeaturedVideo = {
 
 const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams();
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const userId = isViewOnly ? editorId : currentUser?.id;
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
