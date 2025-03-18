@@ -77,11 +77,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [selectedVideoForEdit, setSelectedVideoForEdit] = useState<Video | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [editorProfile, setEditorProfile] = useState<any>(null);
   
   const [about, setAbout] = useState<string>('Professional video editor with expertise in various styles and techniques.');
   const [specializations, setSpecializations] = useState<string[]>(['Cinematic', 'Motion Graphics', 'Color Grading', 'VFX']);
   const [newSpecialization, setNewSpecialization] = useState<string>('');
-  const [showreelUrl, setShowreelUrl] = useState<string>('');  // Remove default value
+  const [showreelUrl, setShowreelUrl] = useState<string>('');
   const [showreelThumbnail, setShowreelThumbnail] = useState<string>('https://images.unsplash.com/photo-1550745165-9bc0b252726f');
   
   const [portfolioTitle, setPortfolioTitle] = useState<string>(`${currentUser?.name || 'Video Editor'} Portfolio`);
@@ -104,6 +105,30 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       }
       
       try {
+        if (isViewOnly) {
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+
+          if (userError) {
+            throw userError;
+          }
+
+          if (!userData) {
+            console.error('Could not find user profile');
+            toast.error('Could not find editor profile');
+            setIsLoading(false);
+            return;
+          }
+          
+          setEditorProfile(userData);
+          
+          setPortfolioTitle(`${userData.name || 'Video Editor'} Portfolio`);
+          setPortfolioDescription(userData.bio || 'Professional video editor specializing in cinematic visuals, motion graphics, and compelling storytelling.');
+        }
+        
         const { data: portfolioSettings, error: portfolioError } = await supabase
           .from('portfolio_settings')
           .select('*')
@@ -170,23 +195,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             setSpecializations(portfolioSettings.specializations as string[]);
           }
         }
-
-        if (isViewOnly) {
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-
-          if (userError) {
-            throw userError;
-          }
-
-          if (!userData) {
-            console.error('Could not find user profile');
-            toast.error('Could not find editor profile');
-          }
-        }
       } catch (error) {
         console.error('Error fetching portfolio settings:', error);
         toast.error('Failed to load portfolio settings');
@@ -230,7 +238,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     
     setIsLoading(true);
     fetchPortfolioSettings();
-  }, [userId, isViewOnly]);
+  }, [userId, isViewOnly, currentUser]);
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
@@ -405,6 +413,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     );
   }
   
+  const displayUser = isViewOnly ? editorProfile : currentUser;
+  
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -444,7 +454,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         
         <HeaderSection 
           featuredVideo={featuredVideo}
-          currentUser={currentUser}
+          currentUser={displayUser}
           editMode={editMode}
           thumbnailOptions={thumbnailOptions}
           updateVideoThumbnail={updateVideoThumbnail}
@@ -459,7 +469,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">
                 <ProfileCard
-                  currentUser={currentUser}
+                  currentUser={displayUser}
                   about={about}
                   setAbout={setAbout}
                   specializations={specializations}
