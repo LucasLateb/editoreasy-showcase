@@ -13,6 +13,7 @@ import VideoUploadDialog, { UploadFormData } from '@/components/dashboard/VideoU
 import VideosTab from '@/components/dashboard/VideosTab';
 import AnalyticsTab from '@/components/dashboard/AnalyticsTab';
 import AccountTab from '@/components/dashboard/AccountTab';
+import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -36,6 +37,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [videoToConfirm, setVideoToConfirm] = useState<Video | null>(null);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   const { toast } = useToast();
   
   const handleSelectShowreel = (video: Video) => {
@@ -46,7 +48,6 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   const handleConfirmShowreel = () => {
     if (videoToConfirm) {
       try {
-        // Ensure the video URL is valid
         if (videoToConfirm.videoUrl.includes('<iframe')) {
           onSetShowreel(videoToConfirm.videoUrl, videoToConfirm.thumbnailUrl);
         } else if (videoToConfirm.videoUrl.startsWith('http://') || videoToConfirm.videoUrl.startsWith('https://')) {
@@ -77,7 +78,6 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   const handleCustomUrlSubmit = () => {
     if (customUrl.trim()) {
       try {
-        // Basic validation to check if input looks like a URL
         if (!customUrl.startsWith('http://') && !customUrl.startsWith('https://') && !customUrl.includes('<iframe')) {
           throw new Error('URL must start with http:// or https:// or be an iframe embed code');
         }
@@ -134,35 +134,22 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         <h2 className="text-xl font-semibold mb-4">Current Showreel</h2>
         {currentShowreelUrl ? (
           <div className="aspect-video relative mb-4">
-            {showVideo ? (
-              isEmbedCode ? (
-                <div dangerouslySetInnerHTML={{ __html: currentShowreelUrl }} className="w-full h-full" />
-              ) : (
-                <iframe 
-                  src={displayUrl}
-                  title="Current Showreel" 
-                  className="w-full h-full border rounded-md"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
-              )
-            ) : (
-              <div className="relative w-full h-full">
-                <img 
-                  src={currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'} 
-                  alt="Showreel thumbnail" 
-                  className="w-full h-full object-cover border rounded-md"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div 
-                    className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
-                    onClick={handlePlayClick}
-                  >
-                    <Play className="h-8 w-8 text-white" fill="white" />
-                  </div>
+            <div className="relative w-full h-full">
+              <img 
+                src={currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'} 
+                alt="Showreel thumbnail" 
+                className="w-full h-full object-cover border rounded-md cursor-pointer"
+                onClick={() => setVideoPlayerOpen(true)}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div 
+                  className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
+                  onClick={() => setVideoPlayerOpen(true)}
+                >
+                  <Play className="h-8 w-8 text-white" fill="white" />
                 </div>
               </div>
-            )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center bg-secondary aspect-video rounded-md mb-4">
@@ -171,6 +158,15 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
           </div>
         )}
       </div>
+      
+      {currentShowreelUrl && (
+        <VideoPlayerDialog
+          isOpen={videoPlayerOpen}
+          onClose={() => setVideoPlayerOpen(false)}
+          videoUrl={currentShowreelUrl}
+          title="My Showreel"
+        />
+      )}
       
       <div className="bg-background p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Set Custom Showreel URL</h2>
