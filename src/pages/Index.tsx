@@ -38,28 +38,49 @@ const editorShowreels = {
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [popularEditors, setPopularEditors] = useState<any[]>([]);
+  const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string}}>({}); 
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: editorsData, error: editorsError } = await supabase
           .from('profiles')
           .select('*')
           .order('likes', { ascending: false })
           .limit(8);
         
-        if (error) {
-          console.error('Error fetching popular editors:', error);
+        if (editorsError) {
+          console.error('Error fetching popular editors:', editorsError);
           return;
         }
         
-        setPopularEditors(data.map(editor => ({
+        const editors = editorsData.map(editor => ({
           ...editor,
           createdAt: new Date(editor.created_at),
           subscriptionTier: editor.subscription_tier || 'free',
           avatarUrl: editor.avatar_url,
-        })));
+        }));
+        
+        setPopularEditors(editors);
+        
+        const { data: portfolioData, error: portfolioError } = await supabase
+          .from('portfolio_settings')
+          .select('user_id, showreel_url, showreel_thumbnail')
+          .in('user_id', editors.map(editor => editor.id));
+        
+        if (portfolioError) {
+          console.error('Error fetching portfolio settings:', portfolioError);
+        } else if (portfolioData) {
+          const showreelMap: {[key: string]: {url?: string, thumbnail?: string}} = {};
+          portfolioData.forEach(item => {
+            showreelMap[item.user_id] = {
+              url: item.showreel_url || undefined,
+              thumbnail: item.showreel_thumbnail || undefined
+            };
+          });
+          setShowreelData(showreelMap);
+        }
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -91,7 +112,6 @@ const Index: React.FC = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
             {isLoading ? (
-              // Loading skeleton
               Array.from({ length: 8 }).map((_, index) => (
                 <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse">
                   <div className="flex items-center mb-4">
@@ -105,14 +125,18 @@ const Index: React.FC = () => {
                 </div>
               ))
             ) : (
-              popularEditors.map((editor, index) => (
-                <EditorCard 
-                  key={editor.id} 
-                  editor={editor} 
-                  index={index}
-                  showreelUrl={editorShowreels[editor.id as keyof typeof editorShowreels]}
-                />
-              ))
+              popularEditors.map((editor, index) => {
+                const showreelInfo = showreelData[editor.id] || {};
+                return (
+                  <EditorCard 
+                    key={editor.id} 
+                    editor={editor} 
+                    index={index}
+                    showreelUrl={showreelInfo.url}
+                    showreelThumbnail={showreelInfo.thumbnail}
+                  />
+                );
+              })
             )}
           </div>
         </section>

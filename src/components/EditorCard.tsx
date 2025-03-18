@@ -12,18 +12,27 @@ interface EditorCardProps {
   editor: User;
   index: number;
   showreelUrl?: string;
+  showreelThumbnail?: string;
 }
 
-const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) => {
+const EditorCard: React.FC<EditorCardProps> = ({ 
+  editor, 
+  index, 
+  showreelUrl, 
+  showreelThumbnail 
+}) => {
   const animationDelay = `${0.1 + index * 0.1}s`;
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   
-  // Extract video ID from YouTube URL for thumbnail
+  // Extract video ID from YouTube URL for thumbnail as fallback
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
     const videoId = url.split('/').pop();
     return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   };
+
+  // Use the showreelThumbnail from the database if available, otherwise fall back to YouTube thumbnail
+  const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
 
   return (
     <>
@@ -55,7 +64,7 @@ const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) =
           </div>
         </div>
         
-        {showreelUrl && (
+        {(showreelUrl && thumbnailUrl) && (
           <div 
             className="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black/5 cursor-pointer group/video" 
             onClick={(e) => {
@@ -66,7 +75,7 @@ const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) =
           >
             <div className="w-full h-full relative">
               <img 
-                src={getYouTubeThumbnail(showreelUrl)}
+                src={thumbnailUrl}
                 alt={`${editor.name}'s showreel`}
                 className="w-full h-full object-cover"
               />
@@ -112,4 +121,3 @@ const EditorCard: React.FC<EditorCardProps> = ({ editor, index, showreelUrl }) =
 };
 
 export default EditorCard;
-
