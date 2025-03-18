@@ -1,13 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '@/components/Hero';
 import CategorySlider from '@/components/CategorySlider';
 import EditorCard from '@/components/EditorCard';
-import { categories, popularEditors } from '@/types';
+import { categories } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
   // Fetch editors with their portfolio data
@@ -61,24 +62,19 @@ const Index = () => {
         return Promise.all(portfolioPromises);
       } catch (error) {
         console.error('Error fetching editors with portfolios:', error);
-        // Fallback to static data in case of error
-        return popularEditors.map(editor => ({
-          editor,
-          showreelUrl: null,
-          showreelThumbnail: null,
-        }));
+        return [];
       }
     },
   });
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pt-16 md:pt-24 pb-16">
-        {/* Hero Section */}
-        <Hero />
+      {/* Hero Section */}
+      <Hero />
 
+      <div className="container mx-auto px-4 pb-16">
         {/* Categories Section */}
-        <section className="mt-20 mb-12">
+        <section className="mt-10 mb-12">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Explore Categories</h2>
             <Link to="/explore" className="text-primary hover:text-primary/80 text-sm font-medium">
@@ -104,11 +100,22 @@ const Index = () => {
                 <div 
                   key={index} 
                   className="p-5 rounded-2xl bg-muted/50 animate-pulse h-[250px]"
-                ></div>
+                >
+                  <div className="flex items-center mb-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="ml-3 space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="w-full h-32 rounded-lg mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
               ))
-            ) : (
+            ) : editorsWithPortfolios && editorsWithPortfolios.length > 0 ? (
               // Display editors with portfolio data
-              editorsWithPortfolios?.map(({ editor, showreelUrl, showreelThumbnail }, index) => (
+              editorsWithPortfolios.map(({ editor, showreelUrl, showreelThumbnail }, index) => (
                 <EditorCard 
                   key={editor.id} 
                   editor={editor} 
@@ -117,6 +124,11 @@ const Index = () => {
                   showreelThumbnail={showreelThumbnail || undefined}
                 />
               ))
+            ) : (
+              // Fallback if no editors are found
+              <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">No editors found. Check back later!</p>
+              </div>
             )}
           </div>
         </section>
