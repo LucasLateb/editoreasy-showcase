@@ -34,6 +34,10 @@ const EditorCard: React.FC<EditorCardProps> = ({
   // Use the showreelThumbnail from the database if available, otherwise fall back to YouTube thumbnail
   const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
 
+  // Safely handle the subscription tier
+  const subscriptionTier = editor.subscriptionTier || 'free';
+  const displayTier = subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1);
+
   return (
     <>
       <div 
@@ -41,8 +45,8 @@ const EditorCard: React.FC<EditorCardProps> = ({
         style={{ animationDelay }}
       >
         <div className="absolute -top-3 -right-1">
-          <Badge variant={editor.subscriptionTier === 'pro' ? 'default' : 'outline'} className="shadow-sm">
-            {editor.subscriptionTier === 'pro' ? 'PRO' : editor.subscriptionTier.charAt(0).toUpperCase() + editor.subscriptionTier.slice(1)}
+          <Badge variant={subscriptionTier === 'pro' ? 'default' : 'outline'} className="shadow-sm">
+            {displayTier}
           </Badge>
         </div>
         
@@ -54,12 +58,14 @@ const EditorCard: React.FC<EditorCardProps> = ({
           <div className="ml-3">
             <h3 className="font-medium">{editor.name}</h3>
             <p className="text-sm text-muted-foreground">
-              {editor.subscriptionTier === 'pro' && (
+              {subscriptionTier === 'pro' && (
                 <span className="inline-flex items-center mr-1">
                   <Star className="h-3 w-3 text-yellow-500 mr-1" fill="currentColor" />
                 </span>
               )}
-              Joined {editor.createdAt.toLocaleDateString()}
+              {editor.createdAt && (
+                <span>Joined {new Date(editor.createdAt).toLocaleDateString()}</span>
+              )}
             </p>
           </div>
         </div>
@@ -97,7 +103,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
             "h-4 w-4 mr-1",
             editor.likes > 400 ? "text-red-500" : "text-muted-foreground"
           )} fill={editor.likes > 400 ? "currentColor" : "none"} />
-          <span>{editor.likes} likes</span>
+          <span>{editor.likes || 0} likes</span>
         </div>
         
         <Link to={`/editor/${editor.id}`} className="absolute inset-0 z-10" aria-label={`View ${editor.name}'s profile`}></Link>
