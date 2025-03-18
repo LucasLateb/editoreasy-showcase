@@ -1,260 +1,126 @@
+
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
+import { Link } from 'react-router-dom';
 import Hero from '@/components/Hero';
 import CategorySlider from '@/components/CategorySlider';
 import EditorCard from '@/components/EditorCard';
-import VideoCard from '@/components/VideoCard';
-import PricingPlans from '@/components/PricingPlans';
-import { Category, categories } from '@/types';
-import { Separator } from '@/components/ui/separator';
+import { categories, popularEditors } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import LoadingState from '@/components/portfolio/LoadingState';
+import { User } from '@/types';
 
-// Mock videos for demonstration
-const mockVideos = Array(6).fill(null).map((_, i) => ({
-  id: `video-${i}`,
-  title: `Amazing ${categories[i % categories.length].name} Project`,
-  description: 'This is a sample video description.',
-  thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + i * 10}-9bc0b252726f`,
-  videoUrl: '#',
-  categoryId: categories[i % categories.length].id,
-  userId: null,
-  likes: Math.floor(Math.random() * 100),
-  views: Math.floor(Math.random() * 1000),
-  createdAt: new Date()
-}));
-
-// Mock showreel URLs for popular editors
-const editorShowreels = {
-  '1': 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  '2': 'https://www.youtube.com/embed/jNQXAC9IVRw',
-  '3': 'https://www.youtube.com/embed/8ybW48rKBME',
-  '4': 'https://www.youtube.com/embed/j5a0jTc9S10',
-  '5': 'https://www.youtube.com/embed/CD-E-LDc384',
-  '6': 'https://www.youtube.com/embed/6B26asyGKDo',
-  '7': 'https://www.youtube.com/embed/ZEcqHA7dbwM',
-  '8': 'https://www.youtube.com/embed/7PCkvCPvDXk'
-};
-
-const Index: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
-  const [popularEditors, setPopularEditors] = useState<any[]>([]);
-  const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string}}>({}); 
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const fetchPopularEditors = async () => {
+const Index = () => {
+  // Fetch editors with their portfolio data
+  const { data: editorsWithPortfolios, isLoading } = useQuery({
+    queryKey: ['popularEditors'],
+    queryFn: async () => {
       try {
-        setFetchError(null);
-        // Fetch popular editors
-        const { data: editorsData, error: editorsError } = await supabase
+        // First, get profiles data
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
           .order('likes', { ascending: false })
           .limit(8);
-        
-        if (editorsError) {
-          console.error('Error fetching popular editors:', editorsError);
-          setFetchError('Could not load popular editors. Please try again later.');
-          return;
-        }
-        
-        if (!editorsData || editorsData.length === 0) {
-          console.log('No editors found');
-          setPopularEditors([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        const editors = editorsData.map(editor => ({
-          ...editor,
-          id: editor.id,
-          createdAt: new Date(editor.created_at),
-          subscriptionTier: editor.subscription_tier || 'free',
-          avatarUrl: editor.avatar_url,
-        }));
-        
-        setPopularEditors(editors);
-        
-        // Fetch portfolio settings (including showreel information)
-        const { data: portfolioData, error: portfolioError } = await supabase
-          .from('portfolio_settings')
-          .select('user_id, showreel_url, showreel_thumbnail')
-          .in('user_id', editors.map(editor => editor.id));
-        
-        if (portfolioError) {
-          console.error('Error fetching portfolio settings:', portfolioError);
-          setFetchError('Could not load portfolio information. Please try again later.');
-        } else if (portfolioData) {
-          console.log('Portfolio data retrieved:', portfolioData);
-          
-          const showreelMap: {[key: string]: {url?: string, thumbnail?: string}} = {};
-          portfolioData.forEach(item => {
-            showreelMap[item.user_id] = {
-              url: item.showreel_url || undefined,
-              thumbnail: item.showreel_thumbnail || undefined
-            };
-          });
-          
-          setShowreelData(showreelMap);
-          console.log('Showreel data mapped:', showreelMap);
-        }
-      } catch (error) {
-        console.error('Unexpected error:', error);
-        setFetchError('An unexpected error occurred. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    fetchPopularEditors();
-  }, []);
-  
-  const filteredVideos = selectedCategory 
-    ? mockVideos.filter(video => video.categoryId === selectedCategory.id)
-    : mockVideos;
-  
+        if (profilesError) {
+          throw profilesError;
+        }
+
+        // Map the profiles to User type
+        const editors: User[] = profilesData.map((profile: any) => ({
+          id: profile.id,
+          name: profile.name || 'Unknown Editor',
+          email: profile.email || '',
+          avatarUrl: profile.avatar_url || '',
+          bio: profile.bio || '',
+          subscriptionTier: profile.subscription_tier || 'free',
+          likes: profile.likes || 0,
+          createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
+        }));
+
+        // Get portfolio settings for each editor
+        const portfolioPromises = editors.map(async (editor) => {
+          const { data: portfolioData, error: portfolioError } = await supabase
+            .from('portfolio_settings')
+            .select('showreel_url, showreel_thumbnail')
+            .eq('user_id', editor.id)
+            .maybeSingle();
+
+          if (portfolioError) {
+            console.error('Error fetching portfolio for editor', editor.id, portfolioError);
+            return { editor, showreelUrl: null, showreelThumbnail: null };
+          }
+
+          return {
+            editor,
+            showreelUrl: portfolioData?.showreel_url || null,
+            showreelThumbnail: portfolioData?.showreel_thumbnail || null,
+          };
+        });
+
+        return Promise.all(portfolioPromises);
+      } catch (error) {
+        console.error('Error fetching editors with portfolios:', error);
+        // Fallback to static data in case of error
+        return popularEditors.map(editor => ({
+          editor,
+          showreelUrl: null,
+          showreelThumbnail: null,
+        }));
+      }
+    },
+  });
+
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      
-      <main>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 pt-16 md:pt-24 pb-16">
+        {/* Hero Section */}
         <Hero />
-        
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover talented video editors with impressive portfolios
-            </p>
+
+        {/* Categories Section */}
+        <section className="mt-20 mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold">Explore Categories</h2>
+            <Link to="/explore" className="text-primary hover:text-primary/80 text-sm font-medium">
+              View All
+            </Link>
           </div>
-          
-          {fetchError && (
-            <div className="p-4 mb-6 rounded-lg bg-destructive/10 text-destructive text-center">
-              {fetchError}
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
+          <CategorySlider categories={categories} />
+        </section>
+
+        {/* Popular Editors Section */}
+        <section className="mt-16">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-semibold">Popular Editors</h2>
+            <Link to="/explore" className="text-primary hover:text-primary/80 text-sm font-medium">
+              Explore More
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {isLoading ? (
-              <div className="col-span-full">
-                <LoadingState message="Loading popular editors..." fullScreen={false} />
-              </div>
-            ) : popularEditors.length === 0 ? (
-              <div className="col-span-full text-center py-10">
-                <p className="text-muted-foreground">No editors found. Check back later!</p>
-              </div>
+              // Loading state
+              Array.from({ length: 8 }).map((_, index) => (
+                <div 
+                  key={index} 
+                  className="p-5 rounded-2xl bg-muted/50 animate-pulse h-[250px]"
+                ></div>
+              ))
             ) : (
-              popularEditors.map((editor, index) => {
-                const showreelInfo = showreelData[editor.id] || {};
-                console.log(`Editor ${editor.id} showreel info:`, showreelInfo);
-                return (
-                  <EditorCard 
-                    key={editor.id} 
-                    editor={editor} 
-                    index={index}
-                    showreelUrl={showreelInfo.url}
-                    showreelThumbnail={showreelInfo.thumbnail}
-                  />
-                );
-              })
+              // Display editors with portfolio data
+              editorsWithPortfolios?.map(({ editor, showreelUrl, showreelThumbnail }, index) => (
+                <EditorCard 
+                  key={editor.id} 
+                  editor={editor} 
+                  index={index}
+                  showreelUrl={showreelUrl || undefined}
+                  showreelThumbnail={showreelThumbnail || undefined}
+                />
+              ))
             )}
           </div>
         </section>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Separator className="my-8 border-dashed border-border/60" />
-        </div>
-        
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Browse Categories</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore different styles of video editing to find the perfect editor for your project
-            </p>
-          </div>
-          
-          <CategorySlider 
-            onSelectCategory={setSelectedCategory}
-            selectedCategoryId={selectedCategory?.id}
-          />
-          
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 rounded-b-lg overflow-hidden pb-4">
-            {filteredVideos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
-        </section>
-        
-        <PricingPlans />
-        
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6">Ready to Showcase Your Video Editing Skills?</h2>
-            <p className="text-muted-foreground mb-8 text-lg">
-              Join thousands of video editors who are using VideoCut to showcase their work, 
-              attract clients, and grow their business.
-            </p>
-            <div className="inline-block rounded-full bg-primary/10 p-1 backdrop-blur-sm animate-pulse-subtle">
-              <button className="rounded-full bg-primary px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-                Get Started Today
-              </button>
-            </div>
-          </div>
-        </section>
-      </main>
-      
-      <footer className="bg-secondary py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-medium mb-4">VideoCut</h3>
-              <p className="text-sm text-muted-foreground">
-                The portfolio platform for video editors.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Product</h3>
-              <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Features</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Pricing</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Testimonials</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Resources</h3>
-              <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Community</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Support</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Company</h3>
-              <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">About</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Careers</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Contact</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p>© 2023 VideoCut. All rights reserved.</p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <a href="#" className="hover:text-foreground">Terms</a>
-                <a href="#" className="hover:text-foreground">Privacy</a>
-                <a href="#" className="hover:text-foreground">Cookies</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 };

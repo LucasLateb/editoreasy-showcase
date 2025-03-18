@@ -47,9 +47,6 @@ const EditorCard: React.FC<EditorCardProps> = ({
   // Use the showreelThumbnail from the database if available, otherwise fall back to YouTube thumbnail
   const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
 
-  // Debug logging to check what data is being received
-  console.log('EditorCard props:', { editor: editor.id, showreelUrl, showreelThumbnail, thumbnailUrl });
-
   return (
     <>
       <div 
