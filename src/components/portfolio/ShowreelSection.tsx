@@ -150,21 +150,27 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
         )}
       </div>
       <div className="aspect-video relative">
-        <div className="relative w-full h-full">
-          <img 
-            src={showreelThumbnail} 
-            alt="Showreel thumbnail" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div 
-              className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
-              onClick={handlePlayClick}
-            >
-              <Play className="h-10 w-10 text-white" fill="white" />
+        {showreelThumbnail ? (
+          <div className="relative w-full h-full">
+            <img 
+              src={showreelThumbnail} 
+              alt="Showreel thumbnail" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div 
+                className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
+                onClick={handlePlayClick}
+              >
+                <Play className="h-10 w-10 text-white" fill="white" />
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <p className="text-muted-foreground">No showreel thumbnail available</p>
+          </div>
+        )}
       </div>
 
       {/* Video Player Dialog */}

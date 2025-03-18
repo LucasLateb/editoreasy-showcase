@@ -8,6 +8,7 @@ import PricingPlans from '@/components/PricingPlans';
 import { Category, categories } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
+import LoadingState from '@/components/portfolio/LoadingState';
 
 // Mock videos for demonstration
 const mockVideos = Array(6).fill(null).map((_, i) => ({
@@ -40,10 +41,13 @@ const Index: React.FC = () => {
   const [popularEditors, setPopularEditors] = useState<any[]>([]);
   const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string}}>({}); 
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
       try {
+        setFetchError(null);
+        // Fetch popular editors
         const { data: editorsData, error: editorsError } = await supabase
           .from('profiles')
           .select('*')
@@ -52,11 +56,20 @@ const Index: React.FC = () => {
         
         if (editorsError) {
           console.error('Error fetching popular editors:', editorsError);
+          setFetchError('Could not load popular editors. Please try again later.');
+          return;
+        }
+        
+        if (!editorsData || editorsData.length === 0) {
+          console.log('No editors found');
+          setPopularEditors([]);
+          setIsLoading(false);
           return;
         }
         
         const editors = editorsData.map(editor => ({
           ...editor,
+          id: editor.id,
           createdAt: new Date(editor.created_at),
           subscriptionTier: editor.subscription_tier || 'free',
           avatarUrl: editor.avatar_url,
@@ -64,6 +77,7 @@ const Index: React.FC = () => {
         
         setPopularEditors(editors);
         
+        // Fetch portfolio settings (including showreel information)
         const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolio_settings')
           .select('user_id, showreel_url, showreel_thumbnail')
@@ -71,7 +85,10 @@ const Index: React.FC = () => {
         
         if (portfolioError) {
           console.error('Error fetching portfolio settings:', portfolioError);
+          setFetchError('Could not load portfolio information. Please try again later.');
         } else if (portfolioData) {
+          console.log('Portfolio data retrieved:', portfolioData);
+          
           const showreelMap: {[key: string]: {url?: string, thumbnail?: string}} = {};
           portfolioData.forEach(item => {
             showreelMap[item.user_id] = {
@@ -79,10 +96,13 @@ const Index: React.FC = () => {
               thumbnail: item.showreel_thumbnail || undefined
             };
           });
+          
           setShowreelData(showreelMap);
+          console.log('Showreel data mapped:', showreelMap);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Unexpected error:', error);
+        setFetchError('An unexpected error occurred. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -110,23 +130,25 @@ const Index: React.FC = () => {
             </p>
           </div>
           
+          {fetchError && (
+            <div className="p-4 mb-6 rounded-lg bg-destructive/10 text-destructive text-center">
+              {fetchError}
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
             {isLoading ? (
-              Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse">
-                  <div className="flex items-center mb-4">
-                    <div className="h-12 w-12 rounded-full bg-muted"></div>
-                    <div className="ml-3">
-                      <div className="h-4 w-24 bg-muted rounded"></div>
-                      <div className="h-3 w-32 bg-muted rounded mt-2"></div>
-                    </div>
-                  </div>
-                  <div className="h-4 w-full bg-muted rounded"></div>
-                </div>
-              ))
+              <div className="col-span-full">
+                <LoadingState message="Loading popular editors..." fullScreen={false} />
+              </div>
+            ) : popularEditors.length === 0 ? (
+              <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">No editors found. Check back later!</p>
+              </div>
             ) : (
               popularEditors.map((editor, index) => {
                 const showreelInfo = showreelData[editor.id] || {};
+                console.log(`Editor ${editor.id} showreel info:`, showreelInfo);
                 return (
                   <EditorCard 
                     key={editor.id} 
