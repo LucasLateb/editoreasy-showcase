@@ -1,5 +1,5 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
@@ -24,6 +24,10 @@ import ShowreelSection from '@/components/portfolio/ShowreelSection';
 import VideoGrid from '@/components/portfolio/VideoGrid';
 import TestimonialsTab from '@/components/portfolio/TestimonialsTab';
 import LoadingState from '@/components/portfolio/LoadingState';
+
+interface PortfolioProps {
+  isViewOnly?: boolean;
+}
 
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
   id: `portfolio-video-${i}`,
@@ -61,8 +65,10 @@ const defaultFeaturedVideo = {
   isHighlighted: true
 };
 
-const Portfolio: React.FC = () => {
+const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
+  const { id: editorId } = useParams();
   const { currentUser, isAuthenticated } = useAuth();
+  const userId = isViewOnly ? editorId : currentUser?.id;
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
   const [videos, setVideos] = useState<Video[]>([]);
@@ -88,46 +94,8 @@ const Portfolio: React.FC = () => {
   const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
   
   useEffect(() => {
-    const fetchUserVideos = async () => {
-      if (!isAuthenticated || !currentUser) {
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('videos')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Transform the data to match our Video type
-        const formattedVideos: Video[] = data.map(video => ({
-          id: video.id,
-          title: video.title,
-          description: video.description || '',
-          thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
-          videoUrl: video.video_url || '#',
-          categoryId: video.category_id,
-          userId: video.user_id,
-          likes: video.likes || 0,
-          views: video.views || 0,
-          createdAt: new Date(video.created_at),
-          isHighlighted: video.is_highlighted || false
-        }));
-        
-        setVideos(formattedVideos);
-      } catch (error) {
-        console.error('Error fetching videos:', error);
-        toast.error('Failed to load your videos');
-      }
-    };
-
     const fetchPortfolioSettings = async () => {
-      if (!isAuthenticated || !currentUser) {
+      if (!userId) {
         setIsLoading(false);
         return;
       }
@@ -136,7 +104,7 @@ const Portfolio: React.FC = () => {
         const { data, error } = await supabase
           .from('portfolio_settings')
           .select('*')
-          .eq('user_id', currentUser.id)
+          .eq('user_id', userId)
           .maybeSingle();
           
         if (error) {
@@ -187,7 +155,6 @@ const Portfolio: React.FC = () => {
             setPortfolioDescription(data.portfolio_description);
           }
           
-          // Make sure to set the showreel URL from the database
           if (data.showreel_url) {
             setShowreelUrl(data.showreel_url);
             console.log('Loaded showreel URL from database:', data.showreel_url);
@@ -200,11 +167,46 @@ const Portfolio: React.FC = () => {
         setIsLoading(false);
       }
     };
+
+    const fetchUserVideos = async () => {
+      if (!userId) {
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('videos')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        const formattedVideos: Video[] = data.map(video => ({
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
+          videoUrl: video.video_url || '#',
+          categoryId: video.category_id,
+          userId: video.user_id,
+          likes: video.likes || 0,
+          views: video.views || 0,
+          createdAt: new Date(video.created_at),
+          isHighlighted: video.is_highlighted || false
+        }));
+        
+        setVideos(formattedVideos);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+        toast.error('Failed to load videos');
+      }
+    };
     
-    // Run both fetch operations
     Promise.all([fetchPortfolioSettings(), fetchUserVideos()]);
-    
-  }, [currentUser, isAuthenticated]);
+  }, [userId]);
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
@@ -368,35 +370,37 @@ const Portfolio: React.FC = () => {
       <Navbar />
       
       <main>
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button 
-            onClick={toggleEditMode} 
-            className={cn(
-              "rounded-full shadow-lg",
-              editMode ? "bg-green-500 hover:bg-green-600" : "bg-primary"
-            )}
-            disabled={isSaving}
-          >
-            {editMode ? (
-              isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
+        {!isViewOnly && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button 
+              onClick={toggleEditMode} 
+              className={cn(
+                "rounded-full shadow-lg",
+                editMode ? "bg-green-500 hover:bg-green-600" : "bg-primary"
+              )}
+              disabled={isSaving}
+            >
+              {editMode ? (
+                isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    Save Changes
+                    <Save className="ml-2 h-4 w-4" />
+                  </>
+                )
               ) : (
                 <>
-                  Save Changes
-                  <Save className="ml-2 h-4 w-4" />
+                  Edit Portfolio
+                  <Edit className="ml-2 h-4 w-4" />
                 </>
-              )
-            ) : (
-              <>
-                Edit Portfolio
-                <Edit className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </div>
+              )}
+            </Button>
+          </div>
+        )}
         
         <HeaderSection 
           featuredVideo={featuredVideo}
