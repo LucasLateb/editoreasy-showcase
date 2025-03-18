@@ -67,7 +67,7 @@ const defaultFeaturedVideo = {
 
 const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams();
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser } = useAuth();
   const userId = isViewOnly ? editorId : currentUser?.id;
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
@@ -97,6 +97,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     const fetchPortfolioSettings = async () => {
       if (!userId) {
         setIsLoading(false);
+        if (isViewOnly) {
+          toast.error('Editor not found');
+        }
         return;
       }
       
@@ -168,23 +171,22 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           }
         }
 
-        // Get user data without trying to set it in state
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
+        if (isViewOnly) {
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
 
-        if (userError) {
-          throw userError;
+          if (userError) {
+            throw userError;
+          }
+
+          if (!userData) {
+            console.error('Could not find user profile');
+            toast.error('Could not find editor profile');
+          }
         }
-
-        // We don't need to set the user data as it's managed by AuthContext
-        // Just log any errors if the user data couldn't be fetched
-        if (!userData && isViewOnly) {
-          console.error('Could not find user profile');
-        }
-
       } catch (error) {
         console.error('Error fetching portfolio settings:', error);
         toast.error('Failed to load portfolio settings');
@@ -228,7 +230,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     
     setIsLoading(true);
     fetchPortfolioSettings();
-  }, [userId]);
+  }, [userId, isViewOnly]);
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
@@ -384,7 +386,23 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const highlightedVideos = videos.filter(video => video.isHighlighted);
   
   if (isLoading) {
-    return <LoadingState />;
+    return <LoadingState message={isViewOnly ? "Loading editor portfolio..." : "Loading your portfolio..."} />;
+  }
+  
+  if (!userId && isViewOnly) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-card p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Editor Not Found</h2>
+          <p className="text-muted-foreground mb-4">
+            The editor you're looking for couldn't be found. Please check the URL and try again.
+          </p>
+          <Button asChild>
+            <Link to="/explore">Browse Editors</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
   
   return (
@@ -400,7 +418,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                 "rounded-full shadow-lg",
                 editMode ? "bg-green-500 hover:bg-green-600" : "bg-primary"
               )}
-              disabled={isSaving}
+              disabled={isSaving || !currentUser}
             >
               {editMode ? (
                 isSaving ? (
