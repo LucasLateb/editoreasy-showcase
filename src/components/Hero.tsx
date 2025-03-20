@@ -93,7 +93,7 @@ const Hero: React.FC = () => {
             </Link>
             <Link to="/explore">
               <Button size="lg" variant="outline" className="px-8 font-medium h-12 text-base">
-                Explore Portfolios
+                Explore Videos
               </Button>
             </Link>
           </div>
