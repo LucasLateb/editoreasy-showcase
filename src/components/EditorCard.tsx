@@ -69,6 +69,10 @@ const EditorCard: React.FC<EditorCardProps> = ({
           </div>
         </div>
         
+        {bioText && (
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{bioText}</p>
+        )}
+        
         {(showreelUrl && thumbnailUrl) && (
           <div 
             className="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black/5 cursor-pointer group/video" 
@@ -91,10 +95,6 @@ const EditorCard: React.FC<EditorCardProps> = ({
               </div>
             </div>
           </div>
-        )}
-        
-        {bioText && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{bioText}</p>
         )}
         
         <div className="flex items-center text-sm text-muted-foreground">
