@@ -73,6 +73,11 @@ export function parseJsonToVideo(json: any): Video {
     throw new Error('Invalid JSON for Video');
   }
   
+  let editorTier: 'free' | 'premium' | 'pro' = 'free';
+  if (json.editorTier === 'premium' || json.editorTier === 'pro') {
+    editorTier = json.editorTier;
+  }
+  
   return {
     id: String(json.id || ''),
     title: String(json.title || ''),
@@ -87,7 +92,7 @@ export function parseJsonToVideo(json: any): Video {
     isHighlighted: Boolean(json.isHighlighted),
     editorName: String(json.editorName || ''),
     editorAvatar: String(json.editorAvatar || ''),
-    editorTier: String(json.editorTier || 'free')
+    editorTier: editorTier
   };
 }
 
@@ -198,7 +203,7 @@ export const popularEditors: User[] = [
     id: '3',
     name: 'Taylor Swift',
     email: 'taylor@example.com',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956',
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-0a1dd7228f2d',
     bio: 'Specializing in animation and motion graphics.',
     subscriptionTier: 'pro',
     likes: 387,
@@ -208,7 +213,7 @@ export const popularEditors: User[] = [
     id: '4',
     name: 'Sam Wilson',
     email: 'sam@example.com',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-00dcc994a43e',
     bio: 'Vertical video expert for social media platforms.',
     subscriptionTier: 'premium',
     likes: 289,
