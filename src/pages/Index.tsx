@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -8,38 +9,20 @@ import PricingPlans from '@/components/PricingPlans';
 import { Category, categories } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-
-// Mock videos for demonstration
-const mockVideos = Array(6).fill(null).map((_, i) => ({
-  id: `video-${i}`,
-  title: `Amazing ${categories[i % categories.length].name} Project`,
-  description: 'This is a sample video description.',
-  thumbnailUrl: `https://images.unsplash.com/photo-${1550745165 + i * 10}-9bc0b252726f`,
-  videoUrl: '#',
-  categoryId: categories[i % categories.length].id,
-  userId: null,
-  likes: Math.floor(Math.random() * 100),
-  views: Math.floor(Math.random() * 1000),
-  createdAt: new Date()
-}));
-
-// Mock showreel URLs for popular editors
-const editorShowreels = {
-  '1': 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  '2': 'https://www.youtube.com/embed/jNQXAC9IVRw',
-  '3': 'https://www.youtube.com/embed/8ybW48rKBME',
-  '4': 'https://www.youtube.com/embed/j5a0jTc9S10',
-  '5': 'https://www.youtube.com/embed/CD-E-LDc384',
-  '6': 'https://www.youtube.com/embed/6B26asyGKDo',
-  '7': 'https://www.youtube.com/embed/ZEcqHA7dbwM',
-  '8': 'https://www.youtube.com/embed/7PCkvCPvDXk'
-};
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink 
+} from '@/components/ui/pagination';
 
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [popularEditors, setPopularEditors] = useState<any[]>([]);
   const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string}}>({}); 
   const [isLoading, setIsLoading] = useState(true);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [isVideosLoading, setIsVideosLoading] = useState(true);
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
@@ -91,9 +74,89 @@ const Index: React.FC = () => {
     fetchPopularEditors();
   }, []);
   
-  const filteredVideos = selectedCategory 
-    ? mockVideos.filter(video => video.categoryId === selectedCategory.id)
-    : mockVideos;
+  useEffect(() => {
+    const fetchVideos = async () => {
+      setIsVideosLoading(true);
+      try {
+        // First get all editor profiles to know their subscription tier
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, subscription_tier');
+        
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          return;
+        }
+        
+        // Create a mapping of user_id to subscription_tier
+        const tierMap = new Map();
+        profiles.forEach((profile) => {
+          tierMap.set(profile.id, profile.subscription_tier || 'free');
+        });
+        
+        // Now fetch videos with category filter if selected
+        let query = supabase
+          .from('videos')
+          .select(`
+            *,
+            profiles(name, avatar_url)
+          `);
+          
+        if (selectedCategory) {
+          query = query.eq('category_id', selectedCategory.id);
+        }
+        
+        const { data: videosData, error: videosError } = await query;
+        
+        if (videosError) {
+          console.error('Error fetching videos:', videosError);
+          return;
+        }
+        
+        if (videosData) {
+          // Map the data to match the Video format and add the subscription tier
+          const processedVideos = videosData.map(video => ({
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            thumbnailUrl: video.thumbnail_url || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
+            videoUrl: video.video_url || '#',
+            categoryId: video.category_id,
+            userId: video.user_id,
+            editorName: video.profiles?.name || 'Unknown Editor',
+            editorAvatar: video.profiles?.avatar_url || null,
+            editorTier: tierMap.get(video.user_id) || 'free',
+            likes: video.likes || 0,
+            views: video.views || 0,
+            createdAt: new Date(video.created_at),
+            isHighlighted: video.is_highlighted || false
+          }));
+          
+          // Sort videos to prioritize "pro" editors and limit to 30 videos
+          const sortedVideos = processedVideos.sort((a, b) => {
+            // First prioritize by subscription tier (pro first)
+            if (a.editorTier === 'pro' && b.editorTier !== 'pro') return -1;
+            if (a.editorTier !== 'pro' && b.editorTier === 'pro') return 1;
+            
+            // Then by highlighted status
+            if (a.isHighlighted && !b.isHighlighted) return -1;
+            if (!a.isHighlighted && b.isHighlighted) return 1;
+            
+            // Then by creation date (newest first)
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          }).slice(0, 30);
+          
+          setVideos(sortedVideos);
+        }
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+      } finally {
+        setIsVideosLoading(false);
+      }
+    };
+    
+    fetchVideos();
+  }, [selectedCategory]);
   
   return (
     <div className="min-h-screen">
@@ -159,10 +222,35 @@ const Index: React.FC = () => {
           />
           
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 rounded-b-lg overflow-hidden pb-4">
-            {filteredVideos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
+            {isVideosLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="aspect-video bg-muted rounded-lg animate-pulse" />
+              ))
+            ) : videos.length > 0 ? (
+              videos.map((video) => (
+                <VideoCard key={video.id} video={video} />
+              ))
+            ) : (
+              <div className="col-span-3 py-12 text-center">
+                <h3 className="text-lg font-medium mb-2">No videos found in this category</h3>
+                <p className="text-muted-foreground">
+                  Try selecting a different category or check back later
+                </p>
+              </div>
+            )}
           </div>
+          
+          {videos.length > 0 && (
+            <div className="mt-8">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationLink href="#" isActive>1</PaginationLink>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </section>
         
         <PricingPlans />

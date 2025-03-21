@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Video, Category, categories } from '@/types';
 import { Eye, Heart, Play, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface VideoCardProps {
   video: Video;
@@ -33,6 +34,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       {/* Overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-80"></div>
       
+      {/* Pro badge if editor is pro */}
+      {video.editorTier === 'pro' && (
+        <div className="absolute top-2 right-2 z-10">
+          <Badge variant="default" className="bg-amber-500 text-white font-semibold">
+            PRO
+          </Badge>
+        </div>
+      )}
+      
       {/* Highlight indicator */}
       {video.isHighlighted && (
         <div className="absolute top-2 left-2 z-10">
@@ -61,6 +71,22 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </span>
         )}
         <h3 className="font-medium text-white mb-1 line-clamp-1">{video.title}</h3>
+        
+        {/* Editor info if available */}
+        {video.editorName && (
+          <div className="flex items-center mb-2">
+            <div className="w-5 h-5 rounded-full bg-accent mr-2 overflow-hidden">
+              {video.editorAvatar ? (
+                <img src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
+                  {video.editorName.charAt(0)}
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-white/80">{video.editorName}</span>
+          </div>
+        )}
         
         <div className="flex items-center space-x-4 text-xs text-white/80">
           <div className="flex items-center">
