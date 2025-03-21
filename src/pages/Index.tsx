@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -6,6 +5,7 @@ import CategorySlider from '@/components/CategorySlider';
 import EditorCard from '@/components/EditorCard';
 import VideoCard from '@/components/VideoCard';
 import PricingPlans from '@/components/PricingPlans';
+import { Toaster } from '@/components/Toaster';
 import { Category, categories } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,7 +79,6 @@ const Index: React.FC = () => {
     const fetchVideos = async () => {
       setIsVideosLoading(true);
       try {
-        // First get all editor profiles to know their subscription tier
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, subscription_tier');
@@ -89,7 +88,6 @@ const Index: React.FC = () => {
           return;
         }
         
-        // Create a mapping of user_id to subscription_tier and other profile info
         const profileMap = new Map();
         profiles.forEach((profile) => {
           profileMap.set(profile.id, {
@@ -99,7 +97,6 @@ const Index: React.FC = () => {
           });
         });
         
-        // Now fetch videos with category filter if selected
         let query = supabase
           .from('videos')
           .select('*');
@@ -116,7 +113,6 @@ const Index: React.FC = () => {
         }
         
         if (videosData) {
-          // Map the data to match the Video format and add the editor information
           const processedVideos = videosData.map(video => {
             const profileInfo = profileMap.get(video.user_id) || { 
               tier: 'free', 
@@ -142,17 +138,11 @@ const Index: React.FC = () => {
             };
           });
           
-          // Sort videos to prioritize "pro" editors and limit to 30 videos
           const sortedVideos = processedVideos.sort((a, b) => {
-            // First prioritize by subscription tier (pro first)
             if (a.editorTier === 'pro' && b.editorTier !== 'pro') return -1;
             if (a.editorTier !== 'pro' && b.editorTier === 'pro') return 1;
-            
-            // Then by highlighted status
             if (a.isHighlighted && !b.isHighlighted) return -1;
             if (!a.isHighlighted && b.isHighlighted) return 1;
-            
-            // Then by creation date (newest first)
             return b.createdAt.getTime() - a.createdAt.getTime();
           }).slice(0, 30);
           
@@ -171,6 +161,7 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
+      <Toaster />
       
       <main>
         <Hero />

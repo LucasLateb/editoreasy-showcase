@@ -159,7 +159,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              className="px-2 py-1 h-8"
+              className="px-2 py-1 h-8 relative z-20"
               onClick={handleContact}
             >
               <Mail className="h-4 w-4 mr-1" />
@@ -168,7 +168,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              className="px-2 py-1 h-8"
+              className="px-2 py-1 h-8 relative z-20"
               onClick={handleShare}
             >
               <Share2 className="h-4 w-4 mr-1" />
