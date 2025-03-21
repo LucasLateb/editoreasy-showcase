@@ -21,6 +21,9 @@ export interface Video {
   views: number;
   createdAt: Date;
   isHighlighted?: boolean;
+  editorName?: string;
+  editorAvatar?: string;
+  editorTier?: 'free' | 'premium' | 'pro';
 }
 
 export interface Category {
@@ -81,7 +84,10 @@ export function parseJsonToVideo(json: any): Video {
     likes: Number(json.likes || 0),
     views: Number(json.views || 0),
     createdAt: json.createdAt ? new Date(json.createdAt) : new Date(),
-    isHighlighted: Boolean(json.isHighlighted)
+    isHighlighted: Boolean(json.isHighlighted),
+    editorName: String(json.editorName || ''),
+    editorAvatar: String(json.editorAvatar || ''),
+    editorTier: String(json.editorTier || 'free')
   };
 }
 

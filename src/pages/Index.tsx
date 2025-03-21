@@ -81,26 +81,27 @@ const Index: React.FC = () => {
         // First get all editor profiles to know their subscription tier
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, subscription_tier');
+          .select('id, name, avatar_url, subscription_tier');
         
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
           return;
         }
         
-        // Create a mapping of user_id to subscription_tier
-        const tierMap = new Map();
+        // Create a mapping of user_id to subscription_tier and other profile info
+        const profileMap = new Map();
         profiles.forEach((profile) => {
-          tierMap.set(profile.id, profile.subscription_tier || 'free');
+          profileMap.set(profile.id, {
+            tier: profile.subscription_tier || 'free',
+            name: profile.name || 'Unknown Editor',
+            avatar: profile.avatar_url
+          });
         });
         
         // Now fetch videos with category filter if selected
         let query = supabase
           .from('videos')
-          .select(`
-            *,
-            profiles(name, avatar_url)
-          `);
+          .select('*');
           
         if (selectedCategory) {
           query = query.eq('category_id', selectedCategory.id);
@@ -114,23 +115,31 @@ const Index: React.FC = () => {
         }
         
         if (videosData) {
-          // Map the data to match the Video format and add the subscription tier
-          const processedVideos = videosData.map(video => ({
-            id: video.id,
-            title: video.title,
-            description: video.description || '',
-            thumbnailUrl: video.thumbnail_url || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
-            videoUrl: video.video_url || '#',
-            categoryId: video.category_id,
-            userId: video.user_id,
-            editorName: video.profiles?.name || 'Unknown Editor',
-            editorAvatar: video.profiles?.avatar_url || null,
-            editorTier: tierMap.get(video.user_id) || 'free',
-            likes: video.likes || 0,
-            views: video.views || 0,
-            createdAt: new Date(video.created_at),
-            isHighlighted: video.is_highlighted || false
-          }));
+          // Map the data to match the Video format and add the editor information
+          const processedVideos = videosData.map(video => {
+            const profileInfo = profileMap.get(video.user_id) || { 
+              tier: 'free', 
+              name: 'Unknown Editor',
+              avatar: null
+            };
+            
+            return {
+              id: video.id,
+              title: video.title,
+              description: video.description || '',
+              thumbnailUrl: video.thumbnail_url || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
+              videoUrl: video.video_url || '#',
+              categoryId: video.category_id,
+              userId: video.user_id,
+              editorName: profileInfo.name,
+              editorAvatar: profileInfo.avatar,
+              editorTier: profileInfo.tier,
+              likes: video.likes || 0,
+              views: video.views || 0,
+              createdAt: new Date(video.created_at),
+              isHighlighted: video.is_highlighted || false
+            };
+          });
           
           // Sort videos to prioritize "pro" editors and limit to 30 videos
           const sortedVideos = processedVideos.sort((a, b) => {
