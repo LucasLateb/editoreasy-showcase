@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Star, Play } from 'lucide-react';
+import { Heart, Star, Play, Mail, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditorCardProps {
   editor: User;
@@ -25,6 +27,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
 }) => {
   const animationDelay = `${0.1 + index * 0.1}s`;
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const { toast } = useToast();
   
   // Extract video ID from YouTube URL for thumbnail as fallback
   const getYouTubeThumbnail = (url: string) => {
@@ -38,6 +41,52 @@ const EditorCard: React.FC<EditorCardProps> = ({
 
   // Decide which bio text to show - prefer the about from portfolio_settings, fallback to the bio from user profile
   const bioText = about || editor.bio || '';
+
+  const handleContact = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toast({
+      title: "Contact Request Sent",
+      description: `Your request to contact ${editor.name} has been sent.`,
+    });
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Create a share URL for this editor
+    const shareUrl = `${window.location.origin}/editor/${editor.id}`;
+    
+    // Try to use Web Share API if available
+    if (navigator.share) {
+      navigator.share({
+        title: `${editor.name} - Video Editor Profile`,
+        url: shareUrl,
+      }).catch(err => {
+        console.error('Error sharing:', err);
+        copyToClipboard(shareUrl);
+      });
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Link Copied",
+        description: "Profile link copied to clipboard",
+      });
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard",
+        variant: "destructive",
+      });
+    });
+  };
 
   return (
     <>
@@ -97,12 +146,35 @@ const EditorCard: React.FC<EditorCardProps> = ({
           </div>
         )}
         
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Heart className={cn(
-            "h-4 w-4 mr-1",
-            editor.likes > 400 ? "text-red-500" : "text-muted-foreground"
-          )} fill={editor.likes > 400 ? "currentColor" : "none"} />
-          <span>{editor.likes} likes</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Heart className={cn(
+              "h-4 w-4 mr-1",
+              editor.likes > 400 ? "text-red-500" : "text-muted-foreground"
+            )} fill={editor.likes > 400 ? "currentColor" : "none"} />
+            <span>{editor.likes} likes</span>
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 py-1 h-8"
+              onClick={handleContact}
+            >
+              <Mail className="h-4 w-4 mr-1" />
+              <span className="text-xs">Contact</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 py-1 h-8"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 mr-1" />
+              <span className="text-xs">Share</span>
+            </Button>
+          </div>
         </div>
         
         <Link to={`/editor/${editor.id}`} className="absolute inset-0 z-10" aria-label={`View ${editor.name}'s profile`}></Link>
