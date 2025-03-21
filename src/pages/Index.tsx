@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -45,7 +46,22 @@ const Index: React.FC = () => {
           avatarUrl: editor.avatar_url,
         }));
         
-        setPopularEditors(editors);
+        // Sort editors by subscription tier (pro > premium > free)
+        const sortedEditors = editors.sort((a, b) => {
+          const tierOrder = { pro: 1, premium: 2, free: 3 };
+          const aTierValue = tierOrder[a.subscriptionTier as keyof typeof tierOrder] || 3;
+          const bTierValue = tierOrder[b.subscriptionTier as keyof typeof tierOrder] || 3;
+          
+          // First by tier
+          if (aTierValue !== bTierValue) {
+            return aTierValue - bTierValue;
+          }
+          
+          // Then by likes (within the same tier)
+          return b.likes - a.likes;
+        });
+        
+        setPopularEditors(sortedEditors);
         
         const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolio_settings')
