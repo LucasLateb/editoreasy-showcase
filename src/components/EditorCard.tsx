@@ -13,13 +13,15 @@ interface EditorCardProps {
   index: number;
   showreelUrl?: string;
   showreelThumbnail?: string;
+  about?: string;
 }
 
 const EditorCard: React.FC<EditorCardProps> = ({ 
   editor, 
   index, 
   showreelUrl, 
-  showreelThumbnail 
+  showreelThumbnail,
+  about 
 }) => {
   const animationDelay = `${0.1 + index * 0.1}s`;
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
@@ -33,6 +35,9 @@ const EditorCard: React.FC<EditorCardProps> = ({
 
   // Use the showreelThumbnail from the database if available, otherwise fall back to YouTube thumbnail
   const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
+
+  // Decide which bio text to show - prefer the about from portfolio_settings, fallback to the bio from user profile
+  const bioText = about || editor.bio || '';
 
   return (
     <>
@@ -88,8 +93,8 @@ const EditorCard: React.FC<EditorCardProps> = ({
           </div>
         )}
         
-        {editor.bio && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{editor.bio}</p>
+        {bioText && (
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{bioText}</p>
         )}
         
         <div className="flex items-center text-sm text-muted-foreground">

@@ -19,7 +19,7 @@ import {
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [popularEditors, setPopularEditors] = useState<any[]>([]);
-  const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string}}>({}); 
+  const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string, about?: string}}>({}); 
   const [isLoading, setIsLoading] = useState(true);
   const [videos, setVideos] = useState<any[]>([]);
   const [isVideosLoading, setIsVideosLoading] = useState(true);
@@ -49,17 +49,18 @@ const Index: React.FC = () => {
         
         const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolio_settings')
-          .select('user_id, showreel_url, showreel_thumbnail')
+          .select('user_id, showreel_url, showreel_thumbnail, about')
           .in('user_id', editors.map(editor => editor.id));
         
         if (portfolioError) {
           console.error('Error fetching portfolio settings:', portfolioError);
         } else if (portfolioData) {
-          const showreelMap: {[key: string]: {url?: string, thumbnail?: string}} = {};
+          const showreelMap: {[key: string]: {url?: string, thumbnail?: string, about?: string}} = {};
           portfolioData.forEach(item => {
             showreelMap[item.user_id] = {
               url: item.showreel_url || undefined,
-              thumbnail: item.showreel_thumbnail || undefined
+              thumbnail: item.showreel_thumbnail || undefined,
+              about: item.about || undefined
             };
           });
           setShowreelData(showreelMap);
@@ -206,6 +207,7 @@ const Index: React.FC = () => {
                     index={index}
                     showreelUrl={showreelInfo.url}
                     showreelThumbnail={showreelInfo.thumbnail}
+                    about={showreelInfo.about}
                   />
                 );
               })
