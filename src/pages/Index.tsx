@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -16,6 +15,7 @@ import {
   PaginationItem, 
   PaginationLink 
 } from '@/components/ui/pagination';
+import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
@@ -24,6 +24,13 @@ const Index: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [videos, setVideos] = useState<any[]>([]);
   const [isVideosLoading, setIsVideosLoading] = useState(true);
+  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  
+  const handleVideoClick = (video: any) => {
+    setSelectedVideo(video);
+    setIsVideoDialogOpen(true);
+  };
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
@@ -246,7 +253,9 @@ const Index: React.FC = () => {
               ))
             ) : videos.length > 0 ? (
               videos.map((video) => (
-                <VideoCard key={video.id} video={video} />
+                <div key={video.id} onClick={() => handleVideoClick(video)}>
+                  <VideoCard key={video.id} video={video} />
+                </div>
               ))
             ) : (
               <div className="col-span-3 py-12 text-center">
@@ -339,6 +348,15 @@ const Index: React.FC = () => {
           </div>
         </div>
       </footer>
+      
+      {selectedVideo && (
+        <VideoPlayerDialog
+          isOpen={isVideoDialogOpen}
+          onClose={() => setIsVideoDialogOpen(false)}
+          videoUrl={selectedVideo.videoUrl}
+          title={selectedVideo.title}
+        />
+      )}
     </div>
   );
 };
