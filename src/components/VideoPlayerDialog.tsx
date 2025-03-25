@@ -48,7 +48,7 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[90vw] p-1 overflow-hidden">
+      <DialogContent className="max-w-6xl w-[95vw] p-1 overflow-hidden">
         <DialogDescription className="sr-only">
           Video player for {title}
         </DialogDescription>
