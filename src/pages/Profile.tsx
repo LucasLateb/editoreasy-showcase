@@ -10,8 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
 
 const Profile: React.FC = () => {
   const { currentUser, updateAvatar, isAuthenticated } = useAuth();
@@ -19,7 +21,16 @@ const Profile: React.FC = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUser?.avatarUrl || null);
+  
+  // Form setup
+  const form = useForm({
+    defaultValues: {
+      name: currentUser?.name || '',
+      bio: currentUser?.bio || '',
+    }
+  });
   
   // Sample avatar options
   const sampleAvatars = [
@@ -35,6 +46,17 @@ const Profile: React.FC = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+  
+  // Update form when user data changes
+  React.useEffect(() => {
+    if (currentUser) {
+      form.reset({
+        name: currentUser.name || '',
+        bio: currentUser.bio || '',
+      });
+      setPreviewUrl(currentUser.avatarUrl);
+    }
+  }, [currentUser, form]);
 
   if (!currentUser) {
     return null;
@@ -71,6 +93,18 @@ const Profile: React.FC = () => {
     try {
       setIsUploading(true);
       
+      // Create avatars bucket if it doesn't exist
+      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('avatars');
+      
+      if (bucketError && bucketError.message.includes('not found')) {
+        // Create the bucket if it doesn't exist
+        await supabase.storage.createBucket('avatars', {
+          public: true,
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
+          fileSizeLimit: 2097152, // 2MB in bytes
+        });
+      }
+      
       // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
@@ -96,11 +130,11 @@ const Profile: React.FC = () => {
         title: "Avatar updated",
         description: "Your profile picture has been successfully updated."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your avatar.",
+        description: error.message || "There was an error uploading your avatar.",
         variant: "destructive"
       });
     } finally {
@@ -114,13 +148,57 @@ const Profile: React.FC = () => {
 
   const selectSampleAvatar = async (url: string) => {
     setPreviewUrl(url);
+    setIsUploading(true);
     try {
-      setIsUploading(true);
       await updateAvatar(url);
-    } catch (error) {
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been successfully updated."
+      });
+    } catch (error: any) {
       console.error('Error setting sample avatar:', error);
+      toast({
+        title: "Update failed",
+        description: error.message || "There was an error updating your avatar.",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
+    }
+  };
+  
+  const handleSaveProfile = async (values: any) => {
+    if (!currentUser) return;
+    
+    setIsSaving(true);
+    try {
+      // Update the profile in the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: values.name,
+          bio: values.bio
+        })
+        .eq('id', currentUser.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been successfully saved."
+      });
+      
+      // Refresh current user data (this would ideally be handled by the auth context)
+      // This is a simple approach - in a real app, you might want to update the context state
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Save failed",
+        description: error.message || "There was an error saving your profile.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -185,26 +263,67 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4 mt-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue={currentUser.name} disabled />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" defaultValue={currentUser.email} disabled />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="subscription">Subscription Tier</Label>
-                <Input id="subscription" defaultValue={currentUser.subscriptionTier} disabled />
-              </div>
-            </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4 mt-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" value={currentUser.email} disabled />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          placeholder="Tell us about yourself..."
+                          className="min-h-[100px]"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="subscription">Subscription Tier</Label>
+                  <Input id="subscription" value={currentUser.subscriptionTier} disabled />
+                </div>
+                
+                <div className="flex justify-between pt-4">
+                  <Button variant="ghost" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="ghost" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
-          </CardFooter>
         </Card>
       </div>
     </div>
