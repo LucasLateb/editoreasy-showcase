@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Profile: React.FC = () => {
   const { currentUser, updateAvatar, isAuthenticated } = useAuth();
@@ -23,6 +24,7 @@ const Profile: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUser?.avatarUrl || null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Form setup
   const form = useForm({
@@ -58,6 +60,19 @@ const Profile: React.FC = () => {
     }
   }, [currentUser, form]);
 
+  // Reset success message after 3 seconds
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (saveSuccess) {
+      timer = setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [saveSuccess]);
+
   if (!currentUser) {
     return null;
   }
@@ -92,18 +107,6 @@ const Profile: React.FC = () => {
 
     try {
       setIsUploading(true);
-      
-      // Create avatars bucket if it doesn't exist
-      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('avatars');
-      
-      if (bucketError && bucketError.message.includes('not found')) {
-        // Create the bucket if it doesn't exist
-        await supabase.storage.createBucket('avatars', {
-          public: true,
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
-          fileSizeLimit: 2097152, // 2MB in bytes
-        });
-      }
       
       // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
@@ -183,13 +186,14 @@ const Profile: React.FC = () => {
       
       if (error) throw error;
       
+      // Show success message
+      setSaveSuccess(true);
+      
       toast({
         title: "Profile updated",
         description: "Your profile information has been successfully saved."
       });
       
-      // Refresh current user data (this would ideally be handled by the auth context)
-      // This is a simple approach - in a real app, you might want to update the context state
     } catch (error: any) {
       console.error('Error saving profile:', error);
       toast({
@@ -262,6 +266,15 @@ const Profile: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {saveSuccess && (
+              <Alert className="bg-green-50 border-green-200 text-green-800 mt-4">
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                <AlertDescription>
+                  Profile changes have been saved successfully!
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4 mt-6">
