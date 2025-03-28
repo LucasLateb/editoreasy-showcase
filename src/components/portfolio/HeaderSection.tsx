@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 interface HeaderSectionProps {
   featuredVideo: Video;
-  currentUser: any;
+  currentUser: any; // Changed to accept either the logged-in user or the editor being viewed
   editMode: boolean;
   thumbnailOptions: Array<{ id: string; url: string }>;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
@@ -41,6 +41,9 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     setTitleDialogOpen(false);
   };
 
+  // Display title based on the current user (could be the editor we're viewing)
+  const displayTitle = currentUser?.name ? `${currentUser.name}'s Portfolio` : title;
+
   return (
     <section className="relative h-[60vh] md:h-[70vh] overflow-hidden group">
       <div className="absolute inset-0">
@@ -56,7 +59,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.2s' }}>
-              {title}
+              {editMode ? title : displayTitle}
             </h1>
             <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl animate-slide-in-down opacity-0" style={{ animationDelay: '0.4s' }}>
               {description}

@@ -23,6 +23,8 @@ interface ProfileCardProps {
   setSpecializationsDialogOpen: (open: boolean) => void;
   handleAddSpecialization: () => void;
   handleRemoveSpecialization: (index: number) => void;
+  isViewOnly?: boolean;
+  editorData?: any; // This will hold the data of the editor whose portfolio is being viewed
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -39,26 +41,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   specializationsDialogOpen,
   setSpecializationsDialogOpen,
   handleAddSpecialization,
-  handleRemoveSpecialization
+  handleRemoveSpecialization,
+  isViewOnly = false,
+  editorData
 }) => {
+  // Determine which user data to display
+  const displayUser = isViewOnly ? editorData : currentUser;
+  
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
       {/* Profile information */}
       <div className="flex items-center mb-6">
         <Avatar className="h-16 w-16 mr-4 border-2 border-background shadow-sm">
-          <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.name} />
+          <AvatarImage src={displayUser?.avatarUrl} alt={displayUser?.name} />
           <AvatarFallback className="text-lg">
-            {currentUser?.name?.charAt(0) || 'U'}
+            {displayUser?.name?.charAt(0) || 'E'}
           </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="text-xl font-medium">{currentUser?.name || 'Video Editor'}</h2>
+          <h2 className="text-xl font-medium">{displayUser?.name || 'Video Editor'}</h2>
           <div className="flex items-center mt-1">
             <Badge variant="outline" className="mr-2">
-              {currentUser?.subscriptionTier.charAt(0).toUpperCase() + currentUser?.subscriptionTier.slice(1)}
+              {displayUser?.subscriptionTier?.charAt(0).toUpperCase() + displayUser?.subscriptionTier?.slice(1) || 'Professional'}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {currentUser?.likes || 0} likes
+              {displayUser?.likes || 0} likes
             </span>
           </div>
         </div>
@@ -99,7 +106,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           )}
         </div>
         <p className="text-sm text-muted-foreground mb-6">
-          {about || (currentUser?.bio || 'Professional video editor with expertise in various styles and techniques.')}
+          {about || (displayUser?.bio || 'Professional video editor with expertise in various styles and techniques.')}
         </p>
         
         <div className="flex items-center justify-between mb-2">

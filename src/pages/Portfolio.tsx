@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -81,7 +82,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [about, setAbout] = useState<string>('Professional video editor with expertise in various styles and techniques.');
   const [specializations, setSpecializations] = useState<string[]>(['Cinematic', 'Motion Graphics', 'Color Grading', 'VFX']);
   const [newSpecialization, setNewSpecialization] = useState<string>('');
-  const [showreelUrl, setShowreelUrl] = useState<string>('');  // Remove default value
+  const [showreelUrl, setShowreelUrl] = useState<string>('');
   const [showreelThumbnail, setShowreelThumbnail] = useState<string>('https://images.unsplash.com/photo-1550745165-9bc0b252726f');
   
   const [portfolioTitle, setPortfolioTitle] = useState<string>(`${currentUser?.name || 'Video Editor'} Portfolio`);
@@ -92,6 +93,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [specializationsDialogOpen, setSpecializationsDialogOpen] = useState(false);
   const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
+  
+  // Added state to store editor data when in view-only mode
+  const [editorData, setEditorData] = useState<any>(null);
   
   useEffect(() => {
     const fetchPortfolioSettings = async () => {
@@ -185,6 +189,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           if (!userData) {
             console.error('Could not find user profile');
             toast.error('Could not find editor profile');
+          } else {
+            setEditorData(userData);
           }
         }
       } catch (error) {
@@ -444,7 +450,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         
         <HeaderSection 
           featuredVideo={featuredVideo}
-          currentUser={currentUser}
+          currentUser={isViewOnly ? editorData : currentUser}
           editMode={editMode}
           thumbnailOptions={thumbnailOptions}
           updateVideoThumbnail={updateVideoThumbnail}
@@ -473,6 +479,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                   setSpecializationsDialogOpen={setSpecializationsDialogOpen}
                   handleAddSpecialization={handleAddSpecialization}
                   handleRemoveSpecialization={handleRemoveSpecialization}
+                  isViewOnly={isViewOnly}
+                  editorData={editorData}
                 />
                 
                 {editMode && (
