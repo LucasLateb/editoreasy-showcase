@@ -51,8 +51,23 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   // Function to format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
     if (!tier) return 'Free';
-    return tier.charAt(0).toUpperCase() + tier.slice(1);
+    
+    // Check for subscription_tier in database format
+    if (tier === 'free' || tier === 'premium' || tier === 'pro') {
+      return tier.charAt(0).toUpperCase() + tier.slice(1);
+    }
+    
+    // Handle possible database values that might be formatted differently
+    if (tier.toLowerCase() === 'free') return 'Free';
+    if (tier.toLowerCase() === 'premium') return 'Premium';
+    if (tier.toLowerCase() === 'pro') return 'Pro';
+    
+    // Default fallback
+    return 'Free';
   };
+  
+  // For debugging in development
+  console.log('Display user subscription tier:', displayUser?.subscriptionTier || displayUser?.subscription_tier);
   
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
@@ -68,7 +83,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <h2 className="text-xl font-medium">{displayUser?.name || 'Video Editor'}</h2>
           <div className="flex items-center mt-1">
             <Badge variant="outline" className="mr-2">
-              {formatSubscriptionTier(displayUser?.subscriptionTier)}
+              {formatSubscriptionTier(displayUser?.subscriptionTier || displayUser?.subscription_tier)}
             </Badge>
             <span className="text-sm text-muted-foreground">
               {displayUser?.likes || 0} likes
