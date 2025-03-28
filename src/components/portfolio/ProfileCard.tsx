@@ -48,6 +48,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
   
+  // Function to format the subscription tier for display
+  const formatSubscriptionTier = (tier: string) => {
+    if (!tier) return 'Free';
+    return tier.charAt(0).toUpperCase() + tier.slice(1);
+  };
+  
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
       {/* Profile information */}
@@ -62,7 +68,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <h2 className="text-xl font-medium">{displayUser?.name || 'Video Editor'}</h2>
           <div className="flex items-center mt-1">
             <Badge variant="outline" className="mr-2">
-              {displayUser?.subscriptionTier?.charAt(0).toUpperCase() + displayUser?.subscriptionTier?.slice(1) || 'Professional'}
+              {formatSubscriptionTier(displayUser?.subscriptionTier)}
             </Badge>
             <span className="text-sm text-muted-foreground">
               {displayUser?.likes || 0} likes
