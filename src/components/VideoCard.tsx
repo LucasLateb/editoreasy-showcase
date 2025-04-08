@@ -17,7 +17,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   return (
     <div 
       className={cn(
-        "group relative rounded-lg overflow-hidden aspect-video hover-scale",
+        "group relative rounded-lg overflow-hidden aspect-video hover-scale cursor-pointer",
         video.isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
       onMouseEnter={() => setIsHovering(true)}
