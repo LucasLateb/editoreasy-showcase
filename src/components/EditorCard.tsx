@@ -123,7 +123,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
             variant={editor.subscriptionTier === 'pro' ? 'default' : 'outline'} 
             className="shadow-sm"
           >
-            {formatSubscriptionTier(editor.subscriptionTier || editor.subscription_tier)}
+            {formatSubscriptionTier(editor.subscriptionTier)}
           </Badge>
         </div>
         

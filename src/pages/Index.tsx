@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -100,7 +99,10 @@ const Index: React.FC = () => {
                 if (typeof item.specializations === 'string') {
                   specializationsArray = JSON.parse(item.specializations);
                 } else if (Array.isArray(item.specializations)) {
-                  specializationsArray = item.specializations;
+                  // Check each item in the array and convert to string if needed
+                  specializationsArray = (item.specializations as any[]).map(spec => 
+                    typeof spec === 'string' ? spec : String(spec)
+                  );
                 }
               } catch (e) {
                 console.error('Error parsing specializations:', e);
