@@ -29,10 +29,15 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   onEdit
 }) => {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
-  const { isLiked, likesCount } = useVideoLikes(video.id, video.likes);
+  const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
 
   const handleVideoClick = () => {
     setIsVideoDialogOpen(true);
+  };
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLike();
   };
 
   return (
@@ -65,7 +70,10 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         <CardContent className="text-sm text-muted-foreground pb-0">
           <div className="flex space-x-4">
             <div>{video.views} views</div>
-            <div className="flex items-center">
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={handleLikeClick}
+            >
               <Heart 
                 className={cn(
                   "h-4 w-4 mr-1",
