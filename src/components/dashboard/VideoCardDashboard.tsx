@@ -10,8 +10,10 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Heart } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { useVideoLikes } from '@/hooks/useLikes';
+import { cn } from '@/lib/utils';
 
 interface VideoCardDashboardProps {
   video: Video;
@@ -27,6 +29,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   onEdit
 }) => {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const { isLiked, likesCount } = useVideoLikes(video.id, video.likes);
 
   const handleVideoClick = () => {
     setIsVideoDialogOpen(true);
@@ -62,7 +65,16 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         <CardContent className="text-sm text-muted-foreground pb-0">
           <div className="flex space-x-4">
             <div>{video.views} views</div>
-            <div>{video.likes} likes</div>
+            <div className="flex items-center">
+              <Heart 
+                className={cn(
+                  "h-4 w-4 mr-1",
+                  isLiked ? "text-red-500" : "text-muted-foreground"
+                )} 
+                fill={isLiked ? "currentColor" : "none"} 
+              />
+              <span>{likesCount} likes</span>
+            </div>
           </div>
         </CardContent>
         

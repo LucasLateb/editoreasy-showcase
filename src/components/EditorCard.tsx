@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { useProfileLikes } from '@/hooks/useLikes';
 
 interface EditorCardProps {
   editor: User;
@@ -31,6 +32,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
   const animationDelay = `${0.1 + index * 0.1}s`;
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   const { toast } = useToast();
+  const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(editor.id, editor.likes);
   
   // Extract video ID from YouTube URL for thumbnail as fallback
   const getYouTubeThumbnail = (url: string) => {
@@ -193,12 +195,23 @@ const EditorCard: React.FC<EditorCardProps> = ({
         </CardContent>
         
         <CardFooter className="p-5 pt-0 justify-between items-center">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Heart className={cn(
-              "h-4 w-4 mr-1",
-              editor.likes > 400 ? "text-red-500" : "text-muted-foreground"
-            )} fill={editor.likes > 400 ? "currentColor" : "none"} />
-            <span>{editor.likes} likes</span>
+          <div 
+            className="flex items-center text-sm text-muted-foreground"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleLike();
+            }}
+          >
+            <Heart 
+              className={cn(
+                "h-4 w-4 mr-1 transition-colors",
+                isLiked ? "text-red-500" : "text-muted-foreground",
+                !isLoading && "hover:text-red-400 cursor-pointer"
+              )} 
+              fill={isLiked ? "currentColor" : "none"} 
+            />
+            <span>{likesCount} likes</span>
           </div>
           
           <div className="flex space-x-2">

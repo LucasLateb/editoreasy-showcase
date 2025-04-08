@@ -4,6 +4,7 @@ import { Video, Category, categories } from '@/types';
 import { Eye, Heart, Play, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useVideoLikes } from '@/hooks/useLikes';
 
 interface VideoCardProps {
   video: Video;
@@ -11,8 +12,8 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
-  
   const category = categories.find(c => c.id === video.categoryId);
+  const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
   return (
     <div 
@@ -93,9 +94,22 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             <Eye className="h-3 w-3 mr-1" />
             <span>{video.views}</span>
           </div>
-          <div className="flex items-center">
-            <Heart className="h-3 w-3 mr-1" fill={video.likes > 50 ? "currentColor" : "none"} />
-            <span>{video.likes}</span>
+          <div 
+            className="flex items-center" 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike();
+            }}
+          >
+            <Heart 
+              className={cn(
+                "h-3 w-3 mr-1 transition-colors", 
+                isLiked ? "text-red-500" : "text-white/80",
+                !isLoading && "hover:text-red-400 cursor-pointer"
+              )} 
+              fill={isLiked ? "currentColor" : "none"} 
+            />
+            <span>{likesCount}</span>
           </div>
         </div>
       </div>

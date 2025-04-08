@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/card';
 import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
+import { useAuth } from '@/contexts/AuthContext';
+import { Toaster } from '@/components/ui/toaster';
 
 // Create a Footer component
 const Footer = () => {
@@ -50,6 +52,8 @@ type ExploreVideoType = {
 };
 
 const Explore: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
   // Sample data - in a real app, this would come from an API
   const videos: ExploreVideoType[] = [
     {
@@ -117,6 +121,7 @@ const Explore: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Toaster />
       <main className="flex-grow pt-24 pb-16 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <Card className="mb-8">
@@ -124,6 +129,11 @@ const Explore: React.FC = () => {
               <CardTitle className="text-2xl md:text-3xl">Explore Videos</CardTitle>
               <CardDescription>
                 Discover trending videos and talented editors
+                {!isAuthenticated && (
+                  <span className="block text-sm mt-1 text-primary">
+                    Sign in to like videos and interact with editors
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
