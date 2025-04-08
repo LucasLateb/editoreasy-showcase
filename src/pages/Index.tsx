@@ -423,7 +423,7 @@ const Index: React.FC = () => {
           
           <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
             <div className="flex flex-col md:flex-row justify-between items-center">
-              <p>© 2023 VideoCut. All rights reserved.</p>
+              <p>© 2025 VideoCut. All rights reserved.</p>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <a href="#" className="hover:text-foreground">Terms</a>
                 <a href="#" className="hover:text-foreground">Privacy</a>
