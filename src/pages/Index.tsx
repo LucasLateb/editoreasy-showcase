@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -20,7 +21,12 @@ import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [popularEditors, setPopularEditors] = useState<any[]>([]);
-  const [showreelData, setShowreelData] = useState<{[key: string]: {url?: string, thumbnail?: string, about?: string}}>({}); 
+  const [showreelData, setShowreelData] = useState<{[key: string]: {
+    url?: string, 
+    thumbnail?: string, 
+    about?: string,
+    specializations?: string[]
+  }}>({}); 
   const [isLoading, setIsLoading] = useState(true);
   const [videos, setVideos] = useState<any[]>([]);
   const [isVideosLoading, setIsVideosLoading] = useState(true);
@@ -72,18 +78,40 @@ const Index: React.FC = () => {
         
         const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolio_settings')
-          .select('user_id, showreel_url, showreel_thumbnail, about')
+          .select('user_id, showreel_url, showreel_thumbnail, about, specializations')
           .in('user_id', editors.map(editor => editor.id));
         
         if (portfolioError) {
           console.error('Error fetching portfolio settings:', portfolioError);
         } else if (portfolioData) {
-          const showreelMap: {[key: string]: {url?: string, thumbnail?: string, about?: string}} = {};
+          const showreelMap: {[key: string]: {
+            url?: string, 
+            thumbnail?: string, 
+            about?: string,
+            specializations?: string[]
+          }} = {};
+          
           portfolioData.forEach(item => {
+            // Parse specializations from the JSON array in the database
+            let specializationsArray: string[] = [];
+            if (item.specializations) {
+              try {
+                // Make sure we handle both string JSON and already parsed objects
+                if (typeof item.specializations === 'string') {
+                  specializationsArray = JSON.parse(item.specializations);
+                } else if (Array.isArray(item.specializations)) {
+                  specializationsArray = item.specializations;
+                }
+              } catch (e) {
+                console.error('Error parsing specializations:', e);
+              }
+            }
+            
             showreelMap[item.user_id] = {
               url: item.showreel_url || undefined,
               thumbnail: item.showreel_thumbnail || undefined,
-              about: item.about || undefined
+              about: item.about || undefined,
+              specializations: specializationsArray
             };
           });
           setShowreelData(showreelMap);
@@ -197,18 +225,27 @@ const Index: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
             {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse">
+                <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse min-h-[350px]">
                   <div className="flex items-center mb-4">
-                    <div className="h-12 w-12 rounded-full bg-muted"></div>
+                    <div className="h-16 w-16 rounded-full bg-muted"></div>
                     <div className="ml-3">
                       <div className="h-4 w-24 bg-muted rounded"></div>
                       <div className="h-3 w-32 bg-muted rounded mt-2"></div>
                     </div>
                   </div>
-                  <div className="h-4 w-full bg-muted rounded"></div>
+                  <div className="h-4 w-full bg-muted rounded mb-3"></div>
+                  <div className="h-4 w-3/4 bg-muted rounded mb-3"></div>
+                  <div className="h-[120px] w-full bg-muted rounded mb-4"></div>
+                  <div className="flex justify-between">
+                    <div className="h-6 w-16 bg-muted rounded"></div>
+                    <div className="flex gap-2">
+                      <div className="h-8 w-20 bg-muted rounded"></div>
+                      <div className="h-8 w-20 bg-muted rounded"></div>
+                    </div>
+                  </div>
                 </div>
               ))
             ) : (
@@ -222,6 +259,7 @@ const Index: React.FC = () => {
                     showreelUrl={showreelInfo.url}
                     showreelThumbnail={showreelInfo.thumbnail}
                     about={showreelInfo.about}
+                    specializations={showreelInfo.specializations}
                   />
                 );
               })
