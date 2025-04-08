@@ -25,7 +25,7 @@ export const useVideoLikes = (videoId: string, initialLikesCount: number) => {
           .rpc('check_video_like', {
             video_id_param: videoId,
             user_id_param: currentUser.id
-          })
+          } as any)
           .single();
 
         if (error) throw error;
@@ -51,7 +51,7 @@ export const useVideoLikes = (videoId: string, initialLikesCount: number) => {
       if (isLiked) {
         // Unlike
         const { error } = await supabase
-          .from('video_likes')
+          .from('video_likes' as any)
           .delete()
           .eq('video_id', videoId)
           .eq('user_id', currentUser.id);
@@ -62,7 +62,7 @@ export const useVideoLikes = (videoId: string, initialLikesCount: number) => {
       } else {
         // Like
         const { error } = await supabase
-          .from('video_likes')
+          .from('video_likes' as any)
           .insert({
             video_id: videoId,
             user_id: currentUser.id
@@ -110,7 +110,7 @@ export const useProfileLikes = (profileId: string, initialLikesCount: number) =>
           .rpc('check_profile_like', {
             profile_id_param: profileId,
             user_id_param: currentUser.id
-          })
+          } as any)
           .single();
 
         if (error) throw error;
@@ -141,7 +141,7 @@ export const useProfileLikes = (profileId: string, initialLikesCount: number) =>
       if (isLiked) {
         // Unlike
         const { error } = await supabase
-          .from('profile_likes')
+          .from('profile_likes' as any)
           .delete()
           .eq('profile_id', profileId)
           .eq('user_id', currentUser.id);
@@ -152,7 +152,7 @@ export const useProfileLikes = (profileId: string, initialLikesCount: number) =>
       } else {
         // Like
         const { error } = await supabase
-          .from('profile_likes')
+          .from('profile_likes' as any)
           .insert({
             profile_id: profileId,
             user_id: currentUser.id
