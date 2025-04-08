@@ -16,10 +16,14 @@ import {
   PaginationLink 
 } from '@/components/ui/pagination';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import SpecializationFilter from '@/components/SpecializationFilter';
 
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
+  const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [popularEditors, setPopularEditors] = useState<any[]>([]);
+  const [filteredEditors, setFilteredEditors] = useState<any[]>([]);
+  const [availableSpecializations, setAvailableSpecializations] = useState<string[]>([]);
   const [showreelData, setShowreelData] = useState<{[key: string]: {
     url?: string, 
     thumbnail?: string, 
@@ -58,20 +62,8 @@ const Index: React.FC = () => {
           avatarUrl: editor.avatar_url,
         }));
         
-        // Sort editors by subscription tier (pro > premium > free)
-        const sortedEditors = editors.sort((a, b) => {
-          const tierOrder = { pro: 1, premium: 2, free: 3 };
-          const aTierValue = tierOrder[a.subscriptionTier as keyof typeof tierOrder] || 3;
-          const bTierValue = tierOrder[b.subscriptionTier as keyof typeof tierOrder] || 3;
-          
-          // First by tier
-          if (aTierValue !== bTierValue) {
-            return aTierValue - bTierValue;
-          }
-          
-          // Then by likes (within the same tier)
-          return b.likes - a.likes;
-        });
+        // Sort editors by subscription tier (pro > premium > free) then by likes
+        const sortedEditors = sortEditorsByTierAndLikes(editors);
         
         setPopularEditors(sortedEditors);
         
@@ -90,6 +82,9 @@ const Index: React.FC = () => {
             specializations?: string[]
           }} = {};
           
+          // Collect all unique specializations
+          const allSpecializations = new Set<string>();
+          
           portfolioData.forEach(item => {
             // Parse specializations from the JSON array in the database
             let specializationsArray: string[] = [];
@@ -104,6 +99,9 @@ const Index: React.FC = () => {
                     typeof spec === 'string' ? spec : String(spec)
                   );
                 }
+                
+                // Add each specialization to the set
+                specializationsArray.forEach(spec => allSpecializations.add(spec));
               } catch (e) {
                 console.error('Error parsing specializations:', e);
               }
@@ -116,7 +114,9 @@ const Index: React.FC = () => {
               specializations: specializationsArray
             };
           });
+          
           setShowreelData(showreelMap);
+          setAvailableSpecializations(Array.from(allSpecializations).sort());
         }
       } catch (error) {
         console.error('Error:', error);
@@ -127,6 +127,36 @@ const Index: React.FC = () => {
 
     fetchPopularEditors();
   }, []);
+  
+  // Update filtered editors whenever popular editors or selected specialization changes
+  useEffect(() => {
+    if (selectedSpecialization) {
+      const filtered = popularEditors.filter(editor => {
+        const editorSpecializations = showreelData[editor.id]?.specializations || [];
+        return editorSpecializations.includes(selectedSpecialization);
+      });
+      setFilteredEditors(filtered);
+    } else {
+      setFilteredEditors(popularEditors);
+    }
+  }, [popularEditors, selectedSpecialization, showreelData]);
+  
+  // Helper function to sort editors by tier then by likes
+  const sortEditorsByTierAndLikes = (editors: any[]) => {
+    return editors.sort((a, b) => {
+      const tierOrder = { pro: 1, premium: 2, free: 3 };
+      const aTierValue = tierOrder[a.subscriptionTier as keyof typeof tierOrder] || 3;
+      const bTierValue = tierOrder[b.subscriptionTier as keyof typeof tierOrder] || 3;
+      
+      // First by tier
+      if (aTierValue !== bTierValue) {
+        return aTierValue - bTierValue;
+      }
+      
+      // Then by likes (within the same tier)
+      return b.likes - a.likes;
+    });
+  };
   
   useEffect(() => {
     const fetchVideos = async () => {
@@ -227,6 +257,14 @@ const Index: React.FC = () => {
             </p>
           </div>
           
+          {!isLoading && availableSpecializations.length > 0 && (
+            <SpecializationFilter
+              availableSpecializations={availableSpecializations}
+              selectedSpecialization={selectedSpecialization}
+              onSelectSpecialization={setSelectedSpecialization}
+            />
+          )}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
             {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
@@ -250,8 +288,8 @@ const Index: React.FC = () => {
                   </div>
                 </div>
               ))
-            ) : (
-              popularEditors.map((editor, index) => {
+            ) : filteredEditors.length > 0 ? (
+              filteredEditors.map((editor, index) => {
                 const showreelInfo = showreelData[editor.id] || {};
                 return (
                   <EditorCard 
@@ -265,6 +303,13 @@ const Index: React.FC = () => {
                   />
                 );
               })
+            ) : (
+              <div className="col-span-full py-8 text-center">
+                <h3 className="text-lg font-medium mb-2">No editors found with this specialization</h3>
+                <p className="text-muted-foreground">
+                  Try selecting a different specialization or clear the filter
+                </p>
+              </div>
             )}
           </div>
         </section>
