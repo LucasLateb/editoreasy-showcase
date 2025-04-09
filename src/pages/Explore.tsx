@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   Card, 
@@ -12,6 +12,20 @@ import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
+import { Input } from '@/components/ui/input';
+import { Search, Users } from 'lucide-react';
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import SpecializationFilter from '@/components/SpecializationFilter';
 
 // Create a Footer component
 const Footer = () => {
@@ -51,8 +65,43 @@ type ExploreVideoType = {
   createdAt: Date;
 };
 
+// Sample editor data for search
+type EditorType = {
+  id: string;
+  name: string;
+  specialization?: string;
+};
+
 const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Search functionality
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
+  // Sample data for editors - in a real app, this would come from an API
+  const editors: EditorType[] = [
+    { id: '1', name: 'Jane Filmmaker', specialization: 'Travel Videos' },
+    { id: '2', name: 'Mark Visual', specialization: 'Corporate' },
+    { id: '3', name: 'Emma Capture', specialization: 'Weddings' },
+    { id: '4', name: 'Alex Editor', specialization: 'Product Videos' },
+    { id: '5', name: 'Sarah Thompson', specialization: 'Music Videos' },
+    { id: '6', name: 'Michael Rodriguez', specialization: 'Short Films' },
+    { id: '7', name: 'David Chen', specialization: 'Documentary' },
+    { id: '8', name: 'Olivia Kim', specialization: 'Animation' },
+  ];
+
+  // Filter editors based on search term
+  const filteredEditors = editors.filter(editor => 
+    editor.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle navigation to editor profiles
+  const handleEditorSelect = (editorId: string) => {
+    setIsSearchOpen(false);
+    navigate(`/editor/${editorId}`);
+  };
 
   // Sample data - in a real app, this would come from an API
   const videos: ExploreVideoType[] = [
@@ -137,6 +186,20 @@ const Explore: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
+                <div className="relative w-full max-w-md">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsSearchOpen(true)}
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <Search className="mr-2 h-4 w-4" />
+                    <span>Search for video editors...</span>
+                  </Button>
+                </div>
+                <div className="hidden md:flex">{/* Spacer */}</div>
+              </div>
+              
               <CategorySlider />
             </CardContent>
           </Card>
@@ -149,6 +212,35 @@ const Explore: React.FC = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Editor Search Dialog */}
+      <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+        <CommandInput 
+          placeholder="Search for editors..." 
+          value={searchTerm}
+          onValueChange={setSearchTerm}
+        />
+        <CommandList>
+          <CommandEmpty>No editors found.</CommandEmpty>
+          <CommandGroup heading="Editors">
+            {filteredEditors.map((editor) => (
+              <CommandItem
+                key={editor.id}
+                onSelect={() => handleEditorSelect(editor.id)}
+                className="flex items-center"
+              >
+                <Users className="mr-2 h-4 w-4" />
+                <span>{editor.name}</span>
+                {editor.specialization && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    • {editor.specialization}
+                  </span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };
