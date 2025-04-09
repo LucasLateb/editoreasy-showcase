@@ -13,8 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Vimeo } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -31,6 +34,7 @@ export interface UploadFormData {
   categoryId: string;
   thumbnailUrl: string;
   uploadType?: 'link' | 'file' | null;
+  videoSource?: 'youtube' | 'vimeo' | 'other' | null;
 }
 
 const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
@@ -41,6 +45,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   isUploading
 }) => {
   const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
+  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'other' | null>(null);
   const [uploadData, setUploadData] = useState<UploadFormData>({
     title: '',
     description: '',
@@ -77,7 +82,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   };
 
   const handleSubmit = () => {
-    onSubmit({...uploadData, uploadType}, videoFile, thumbnailFile);
+    onSubmit({...uploadData, uploadType, videoSource}, videoFile, thumbnailFile);
     // Reset form data
     setUploadData({
       title: '',
@@ -90,6 +95,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     setThumbnailFile(null);
     setThumbnailPreview(null);
     setUploadType(null);
+    setVideoSource(null);
   };
 
   return (
@@ -148,7 +154,10 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   type="button" 
                   variant={uploadType === 'link' ? 'default' : 'outline'} 
                   className="flex-1"
-                  onClick={() => setUploadType('link')}
+                  onClick={() => {
+                    setUploadType('link');
+                    setVideoSource(null);
+                  }}
                 >
                   <LinkIcon className="mr-2 h-4 w-4" />
                   Video Link
@@ -157,7 +166,10 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   type="button" 
                   variant={uploadType === 'file' ? 'default' : 'outline'} 
                   className="flex-1"
-                  onClick={() => setUploadType('file')}
+                  onClick={() => {
+                    setUploadType('file');
+                    setVideoSource(null);
+                  }}
                 >
                   <FileVideo className="mr-2 h-4 w-4" />
                   Upload File
@@ -166,18 +178,146 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             </div>
             
             {uploadType === 'link' && (
-              <div className="grid gap-2">
-                <Label htmlFor="videoUrl">Video URL</Label>
-                <Input 
-                  id="videoUrl" 
-                  value={uploadData.videoUrl} 
-                  onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
-                  placeholder="Enter YouTube or Vimeo URL"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Supports YouTube, Vimeo, and other video hosting platforms
-                </p>
-              </div>
+              <>
+                <div className="grid gap-2">
+                  <Label>Select Platform</Label>
+                  <RadioGroup 
+                    value={videoSource || ''} 
+                    onValueChange={(value) => setVideoSource(value as 'youtube' | 'vimeo' | 'other' | null)}
+                    className="grid grid-cols-3 gap-4"
+                  >
+                    <div>
+                      <RadioGroupItem 
+                        value="youtube" 
+                        id="youtube" 
+                        className="peer sr-only" 
+                      />
+                      <Label
+                        htmlFor="youtube"
+                        className={cn(
+                          "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer",
+                          videoSource === 'youtube' ? "border-primary" : ""
+                        )}
+                      >
+                        <Youtube className="mb-2 h-6 w-6 text-red-600" />
+                        <span className="text-sm font-medium">YouTube</span>
+                      </Label>
+                    </div>
+                    
+                    <div>
+                      <RadioGroupItem 
+                        value="vimeo" 
+                        id="vimeo" 
+                        className="peer sr-only" 
+                      />
+                      <Label
+                        htmlFor="vimeo"
+                        className={cn(
+                          "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer",
+                          videoSource === 'vimeo' ? "border-primary" : ""
+                        )}
+                      >
+                        <Vimeo className="mb-2 h-6 w-6 text-blue-600" />
+                        <span className="text-sm font-medium">Vimeo</span>
+                      </Label>
+                    </div>
+                    
+                    <div>
+                      <RadioGroupItem 
+                        value="other" 
+                        id="other" 
+                        className="peer sr-only" 
+                      />
+                      <Label
+                        htmlFor="other"
+                        className={cn(
+                          "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer",
+                          videoSource === 'other' ? "border-primary" : ""
+                        )}
+                      >
+                        <LinkIcon className="mb-2 h-6 w-6 text-gray-600" />
+                        <span className="text-sm font-medium">Other</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                {videoSource === 'youtube' && (
+                  <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
+                    <div className="flex items-start gap-3">
+                      <Youtube className="h-6 w-6 text-red-600 mt-1" />
+                      <div>
+                        <h3 className="font-medium mb-1">YouTube Video</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Click the "Share" button under the video, then copy the URL. You can also use the embed code.
+                        </p>
+                        <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
+                          https://youtu.be/XXXXXXXXXXX
+                        </div>
+                        <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
+                          https://www.youtube.com/watch?v=XXXXXXXXXXX
+                        </div>
+                      </div>
+                    </div>
+                    <Label htmlFor="youtube-url">Enter YouTube URL</Label>
+                    <Input 
+                      id="youtube-url" 
+                      value={uploadData.videoUrl} 
+                      onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                      placeholder="https://youtu.be/XXXXXXXXXXX"
+                    />
+                  </div>
+                )}
+                
+                {videoSource === 'vimeo' && (
+                  <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
+                    <div className="flex items-start gap-3">
+                      <Vimeo className="h-6 w-6 text-blue-600 mt-1" />
+                      <div>
+                        <h3 className="font-medium mb-1">Vimeo Video</h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Click the "Share" button, go to the "Embed" tab, and copy the entire embed code.
+                          <span className="block mt-1 text-muted-foreground font-medium">
+                            Make sure your video is set to unlisted or public to allow others to view it.
+                          </span>
+                        </p>
+                        <div className="mb-2 bg-background p-2 rounded border text-xs font-mono overflow-hidden">
+                          &lt;div style="padding:56.25% 0 0 0;position:relative;"&gt;&lt;iframe src="https://player.vimeo.com/video/..."&gt;&lt;/iframe&gt;&lt;/div&gt;
+                        </div>
+                      </div>
+                    </div>
+                    <Label htmlFor="vimeo-embed">Enter Vimeo Embed Code</Label>
+                    <Textarea 
+                      id="vimeo-embed" 
+                      value={uploadData.videoUrl} 
+                      onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                      placeholder="<div style='padding:56.25% 0 0 0;position:relative;'><iframe src='https://player.vimeo.com/video/...'></iframe></div>"
+                      rows={3}
+                    />
+                  </div>
+                )}
+                
+                {videoSource === 'other' && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="videoUrl">Video URL</Label>
+                    <Input 
+                      id="videoUrl" 
+                      value={uploadData.videoUrl} 
+                      onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                      placeholder="Enter video URL or embed code"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Supports direct video URLs or embed codes from other video hosting platforms
+                    </p>
+                  </div>
+                )}
+                
+                {!videoSource && (
+                  <div className="bg-muted/30 p-4 rounded-md text-center border">
+                    <p className="text-muted-foreground">Please select a video platform</p>
+                  </div>
+                )}
+              </>
             )}
             
             {uploadType === 'file' && (
@@ -293,7 +433,13 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
           <Button 
             type="submit" 
             onClick={handleSubmit}
-            disabled={!uploadData.title || (!uploadData.videoUrl && uploadType === 'link') || (!videoFile && uploadType === 'file') || !uploadType || (!uploadData.thumbnailUrl && !thumbnailFile)}
+            disabled={
+              !uploadData.title || 
+              (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) || 
+              (uploadType === 'file' && !videoFile) || 
+              !uploadType || 
+              (!uploadData.thumbnailUrl && !thumbnailFile)
+            }
           >
             Upload Video
           </Button>
