@@ -1,4 +1,3 @@
-
 # VideoCut - Video Editor Portfolio Platform
 
 VideoCut is a comprehensive platform designed for video editors to showcase their work, build their professional brand, and connect with potential clients. This application serves as both a portfolio builder for editors and a discovery platform for those looking to hire video editing talent.
