@@ -350,28 +350,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
             <div className="grid gap-2">
               <Label>Thumbnail</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground mb-2">Select a thumbnail:</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {predefinedThumbnails.map((thumbnail, index) => (
-                      <div 
-                        key={index}
-                        className={`cursor-pointer border-2 rounded-md overflow-hidden transition-all ${uploadData.thumbnailUrl === thumbnail ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-muted'}`}
-                        onClick={() => handleThumbnailSelect(thumbnail)}
-                      >
-                        <img 
-                          src={thumbnail} 
-                          alt={`Thumbnail ${index + 1}`} 
-                          className="w-full h-16 object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="col-span-2 mt-2">
-                  <p className="text-sm text-muted-foreground mb-2">Or upload your own:</p>
+              <div className="grid gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Upload your own thumbnail:</p>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="border-2 border-dashed border-input rounded-md p-3 flex flex-col items-center justify-center">
@@ -396,6 +377,25 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     >
                       Select Image
                     </Button>
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground mb-2">Or select from our collection:</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {predefinedThumbnails.map((thumbnail, index) => (
+                      <div 
+                        key={index}
+                        className={`cursor-pointer border-2 rounded-md overflow-hidden transition-all ${uploadData.thumbnailUrl === thumbnail ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-muted'}`}
+                        onClick={() => handleThumbnailSelect(thumbnail)}
+                      >
+                        <img 
+                          src={thumbnail} 
+                          alt={`Thumbnail ${index + 1}`} 
+                          className="w-full h-16 object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
