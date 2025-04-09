@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   Card, 
@@ -26,8 +25,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import SpecializationFilter from '@/components/SpecializationFilter';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Create a Footer component
 const Footer = () => {
   return (
     <footer className="bg-background py-6 border-t">
@@ -47,7 +47,6 @@ const Footer = () => {
   );
 };
 
-// Define the appropriate video type for this page
 type ExploreVideoType = {
   id: string;
   title: string;
@@ -56,7 +55,6 @@ type ExploreVideoType = {
   views: number;
   likes: number;
   date: string;
-  // Adding the missing properties to match the Video type
   description: string;
   thumbnailUrl: string;
   videoUrl: string;
@@ -65,45 +63,68 @@ type ExploreVideoType = {
   createdAt: Date;
 };
 
-// Sample editor data for search
 type EditorType = {
   id: string;
-  name: string;
+  name: string | null;
+  subscription_tier: string | null;
   specialization?: string;
 };
 
 const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Search functionality
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   
-  // Sample data for editors - in a real app, this would come from an API
-  const editors: EditorType[] = [
-    { id: '1', name: 'Jane Filmmaker', specialization: 'Travel Videos' },
-    { id: '2', name: 'Mark Visual', specialization: 'Corporate' },
-    { id: '3', name: 'Emma Capture', specialization: 'Weddings' },
-    { id: '4', name: 'Alex Editor', specialization: 'Product Videos' },
-    { id: '5', name: 'Sarah Thompson', specialization: 'Music Videos' },
-    { id: '6', name: 'Michael Rodriguez', specialization: 'Short Films' },
-    { id: '7', name: 'David Chen', specialization: 'Documentary' },
-    { id: '8', name: 'Olivia Kim', specialization: 'Animation' },
-  ];
+  const [editors, setEditors] = useState<EditorType[]>([]);
+  const [isLoadingEditors, setIsLoadingEditors] = useState(false);
 
-  // Filter editors based on search term
+  useEffect(() => {
+    const fetchEditors = async () => {
+      setIsLoadingEditors(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, subscription_tier')
+          .order('name');
+        
+        if (error) {
+          throw error;
+        }
+        
+        const editorsData = data.map(profile => ({
+          id: profile.id,
+          name: profile.name || 'Unnamed Editor',
+          subscription_tier: profile.subscription_tier
+        }));
+        
+        setEditors(editorsData);
+      } catch (error) {
+        console.error('Error fetching editors:', error);
+        toast({
+          title: 'Failed to load editors',
+          description: 'Could not retrieve editor profiles from the database.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoadingEditors(false);
+      }
+    };
+
+    fetchEditors();
+  }, [toast]);
+
   const filteredEditors = editors.filter(editor => 
-    editor.name.toLowerCase().includes(searchTerm.toLowerCase())
+    editor.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Handle navigation to editor profiles
   const handleEditorSelect = (editorId: string) => {
     setIsSearchOpen(false);
     navigate(`/editor/${editorId}`);
   };
 
-  // Sample data - in a real app, this would come from an API
   const videos: ExploreVideoType[] = [
     {
       id: '1',
@@ -213,7 +234,6 @@ const Explore: React.FC = () => {
       </main>
       <Footer />
 
-      {/* Editor Search Dialog */}
       <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
         <CommandInput 
           placeholder="Search for editors..." 
@@ -221,24 +241,32 @@ const Explore: React.FC = () => {
           onValueChange={setSearchTerm}
         />
         <CommandList>
-          <CommandEmpty>No editors found.</CommandEmpty>
-          <CommandGroup heading="Editors">
-            {filteredEditors.map((editor) => (
-              <CommandItem
-                key={editor.id}
-                onSelect={() => handleEditorSelect(editor.id)}
-                className="flex items-center"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                <span>{editor.name}</span>
-                {editor.specialization && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    • {editor.specialization}
-                  </span>
-                )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {isLoadingEditors ? (
+            <div className="py-6 text-center">
+              <p className="text-sm text-muted-foreground">Loading editors...</p>
+            </div>
+          ) : (
+            <>
+              <CommandEmpty>No editors found.</CommandEmpty>
+              <CommandGroup heading="Editors">
+                {filteredEditors.map((editor) => (
+                  <CommandItem
+                    key={editor.id}
+                    onSelect={() => handleEditorSelect(editor.id)}
+                    className="flex items-center"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>{editor.name}</span>
+                    {editor.subscription_tier && editor.subscription_tier !== 'free' && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        • {editor.subscription_tier.charAt(0).toUpperCase() + editor.subscription_tier.slice(1)}
+                      </span>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
         </CommandList>
       </CommandDialog>
     </div>
