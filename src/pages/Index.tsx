@@ -370,14 +370,12 @@ const Index: React.FC = () => {
         
         <div className="bg-muted/30 py-12 border-y border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-              <div className="text-center md:text-left max-w-md">
-                <h2 className="text-2xl font-semibold mb-2">Find Video Editors</h2>
-                <p className="text-muted-foreground">
-                  Search for professional video editors by name and explore their portfolios
-                </p>
-              </div>
-              <div className="relative w-full max-w-md">
+            <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
+              <h2 className="text-2xl font-semibold mb-2">Find Video Editors</h2>
+              <p className="text-muted-foreground mb-6">
+                Search for professional video editors by name and explore their portfolios
+              </p>
+              <div className="w-full max-w-md">
                 <Button 
                   variant="outline" 
                   onClick={() => setIsSearchOpen(true)}
