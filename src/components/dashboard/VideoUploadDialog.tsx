@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -15,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Vimeo } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
@@ -57,7 +56,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   
-  // Predefined thumbnails for selection
   const predefinedThumbnails = [
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
     'https://images.unsplash.com/photo-1550745166-9bc0b2527af',
@@ -83,7 +81,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
   const handleSubmit = () => {
     onSubmit({...uploadData, uploadType, videoSource}, videoFile, thumbnailFile);
-    // Reset form data
     setUploadData({
       title: '',
       description: '',
@@ -217,7 +214,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                           videoSource === 'vimeo' ? "border-primary" : ""
                         )}
                       >
-                        <Vimeo className="mb-2 h-6 w-6 text-blue-600" />
+                        <Video className="mb-2 h-6 w-6 text-blue-600" />
                         <span className="text-sm font-medium">Vimeo</span>
                       </Label>
                     </div>
@@ -272,7 +269,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 {videoSource === 'vimeo' && (
                   <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
                     <div className="flex items-start gap-3">
-                      <Vimeo className="h-6 w-6 text-blue-600 mt-1" />
+                      <Video className="h-6 w-6 text-blue-600 mt-1" />
                       <div>
                         <h3 className="font-medium mb-1">Vimeo Video</h3>
                         <p className="text-sm text-muted-foreground mb-2">
@@ -351,11 +348,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               </div>
             )}
 
-            {/* Thumbnail Selection Section */}
             <div className="grid gap-2">
               <Label>Thumbnail</Label>
               <div className="grid grid-cols-2 gap-4">
-                {/* Predefined thumbnails */}
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground mb-2">Select a thumbnail:</p>
                   <div className="grid grid-cols-4 gap-2">
@@ -375,7 +370,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   </div>
                 </div>
 
-                {/* Upload custom thumbnail */}
                 <div className="col-span-2 mt-2">
                   <p className="text-sm text-muted-foreground mb-2">Or upload your own:</p>
                   <div className="flex items-center gap-4">
@@ -406,7 +400,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 </div>
               </div>
 
-              {/* Thumbnail Preview */}
               {thumbnailPreview && (
                 <div className="mt-4">
                   <p className="text-sm font-medium mb-2">Preview:</p>
