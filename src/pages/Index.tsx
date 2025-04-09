@@ -17,6 +17,19 @@ import {
 } from '@/components/ui/pagination';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import SpecializationFilter from '@/components/SpecializationFilter';
+import { Search, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { useToast } from '@/hooks/use-toast';
 
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
@@ -36,10 +49,61 @@ const Index: React.FC = () => {
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [allEditors, setAllEditors] = useState<any[]>([]);
+  const [isLoadingAllEditors, setIsLoadingAllEditors] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };
+  
+  const handleEditorSelect = (editorId: string) => {
+    setIsSearchOpen(false);
+    navigate(`/editor/${editorId}`);
+  };
+  
+  const filteredSearchEditors = allEditors.filter(editor => 
+    editor.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  useEffect(() => {
+    const fetchAllEditors = async () => {
+      setIsLoadingAllEditors(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, subscription_tier')
+          .order('name');
+        
+        if (error) {
+          throw error;
+        }
+        
+        const editorsData = data.map(profile => ({
+          id: profile.id,
+          name: profile.name || 'Unnamed Editor',
+          subscription_tier: profile.subscription_tier
+        }));
+        
+        setAllEditors(editorsData);
+      } catch (error) {
+        console.error('Error fetching all editors:', error);
+        toast({
+          title: 'Failed to load editors',
+          description: 'Could not retrieve editor profiles from the database.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoadingAllEditors(false);
+      }
+    };
+
+    fetchAllEditors();
+  }, [toast]);
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
@@ -62,7 +126,6 @@ const Index: React.FC = () => {
           avatarUrl: editor.avatar_url,
         }));
         
-        // Sort editors by subscription tier (pro > premium > free) then by likes
         const sortedEditors = sortEditorsByTierAndLikes(editors);
         
         setPopularEditors(sortedEditors);
@@ -82,25 +145,20 @@ const Index: React.FC = () => {
             specializations?: string[]
           }} = {};
           
-          // Collect all unique specializations
           const allSpecializations = new Set<string>();
           
           portfolioData.forEach(item => {
-            // Parse specializations from the JSON array in the database
             let specializationsArray: string[] = [];
             if (item.specializations) {
               try {
-                // Make sure we handle both string JSON and already parsed objects
                 if (typeof item.specializations === 'string') {
                   specializationsArray = JSON.parse(item.specializations);
                 } else if (Array.isArray(item.specializations)) {
-                  // Check each item in the array and convert to string if needed
                   specializationsArray = (item.specializations as any[]).map(spec => 
                     typeof spec === 'string' ? spec : String(spec)
                   );
                 }
                 
-                // Add each specialization to the set
                 specializationsArray.forEach(spec => allSpecializations.add(spec));
               } catch (e) {
                 console.error('Error parsing specializations:', e);
@@ -128,7 +186,6 @@ const Index: React.FC = () => {
     fetchPopularEditors();
   }, []);
   
-  // Update filtered editors whenever popular editors or selected specialization changes
   useEffect(() => {
     if (selectedSpecialization) {
       const filtered = popularEditors.filter(editor => {
@@ -141,19 +198,16 @@ const Index: React.FC = () => {
     }
   }, [popularEditors, selectedSpecialization, showreelData]);
   
-  // Helper function to sort editors by tier then by likes
   const sortEditorsByTierAndLikes = (editors: any[]) => {
     return editors.sort((a, b) => {
       const tierOrder = { pro: 1, premium: 2, free: 3 };
       const aTierValue = tierOrder[a.subscriptionTier as keyof typeof tierOrder] || 3;
       const bTierValue = tierOrder[b.subscriptionTier as keyof typeof tierOrder] || 3;
       
-      // First by tier
       if (aTierValue !== bTierValue) {
         return aTierValue - bTierValue;
       }
       
-      // Then by likes (within the same tier)
       return b.likes - a.likes;
     });
   };
@@ -314,8 +368,27 @@ const Index: React.FC = () => {
           </div>
         </section>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Separator className="my-8 border-dashed border-border/60" />
+        <div className="bg-muted/30 py-12 border-y border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+              <div className="text-center md:text-left max-w-md">
+                <h2 className="text-2xl font-semibold mb-2">Find Video Editors</h2>
+                <p className="text-muted-foreground">
+                  Search for professional video editors by name and explore their portfolios
+                </p>
+              </div>
+              <div className="relative w-full max-w-md">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsSearchOpen(true)}
+                  className="w-full justify-start text-left font-normal border-primary/20 hover:border-primary"
+                >
+                  <Search className="mr-2 h-4 w-4" />
+                  <span>Search for video editors...</span>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
         
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -442,6 +515,42 @@ const Index: React.FC = () => {
           title={selectedVideo.title}
         />
       )}
+      
+      <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+        <CommandInput 
+          placeholder="Search for editors..." 
+          value={searchTerm}
+          onValueChange={setSearchTerm}
+        />
+        <CommandList>
+          {isLoadingAllEditors ? (
+            <div className="py-6 text-center">
+              <p className="text-sm text-muted-foreground">Loading editors...</p>
+            </div>
+          ) : (
+            <>
+              <CommandEmpty>No editors found.</CommandEmpty>
+              <CommandGroup heading="Editors">
+                {filteredSearchEditors.map((editor) => (
+                  <CommandItem
+                    key={editor.id}
+                    onSelect={() => handleEditorSelect(editor.id)}
+                    className="flex items-center"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>{editor.name}</span>
+                    {editor.subscription_tier && editor.subscription_tier !== 'free' && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        • {editor.subscription_tier.charAt(0).toUpperCase() + editor.subscription_tier.slice(1)}
+                      </span>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };

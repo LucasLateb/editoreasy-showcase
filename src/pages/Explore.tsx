@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -195,23 +194,6 @@ const Explore: React.FC = () => {
       <Toaster />
       <main className="flex-grow pt-24 pb-16 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Search Section - Now outside the card */}
-          <div className="mb-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <h2 className="text-2xl font-semibold">Find Video Editors</h2>
-              <div className="relative w-full max-w-md">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsSearchOpen(true)}
-                  className="w-full justify-start text-left font-normal border-primary/20 hover:border-primary"
-                >
-                  <Search className="mr-2 h-4 w-4" />
-                  <span>Search for video editors...</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-2xl md:text-3xl">Explore Videos</CardTitle>
