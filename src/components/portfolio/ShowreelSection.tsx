@@ -83,6 +83,9 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     setVideoPlayerOpen(true);
   };
 
+  // Log to debug thumbnail source
+  console.log('Showreel thumbnail:', showreelThumbnail);
+
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
       <div className="flex justify-between items-center p-4 border-b border-border">
@@ -128,7 +131,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
                     {thumbnailOptions.map(thumbnail => (
                       <Card 
                         key={thumbnail.id} 
-                        className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                        className={`cursor-pointer hover:border-primary transition-colors overflow-hidden ${showreelThumbnail === thumbnail.url ? 'border-2 border-primary' : ''}`}
                         onClick={() => updateShowreelThumbnail(thumbnail.url)}
                       >
                         <CardContent className="p-1">
@@ -151,11 +154,23 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       </div>
       <div className="aspect-video relative">
         <div className="relative w-full h-full">
-          <img 
-            src={showreelThumbnail} 
-            alt="Showreel thumbnail" 
-            className="w-full h-full object-cover"
-          />
+          {showreelThumbnail ? (
+            <img 
+              src={showreelThumbnail} 
+              alt="Showreel thumbnail" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Failed to load thumbnail:', showreelThumbnail);
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f';
+              }}
+            />
+          ) : (
+            <img 
+              src="https://images.unsplash.com/photo-1550745165-9bc0b252726f" 
+              alt="Default showreel thumbnail" 
+              className="w-full h-full object-cover"
+            />
+          )}
           <div className="absolute inset-0 flex items-center justify-center">
             <div 
               className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center backdrop-blur-sm hover:bg-primary transition-colors cursor-pointer"
