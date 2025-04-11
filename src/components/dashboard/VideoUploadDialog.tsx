@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -14,9 +15,10 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Progress } from '@/components/ui/progress';
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -55,6 +57,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   
   const predefinedThumbnails = [
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
@@ -72,15 +75,46 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Thumbnail image must be less than 5MB');
+        return;
+      }
+      
       setThumbnailFile(file);
       const objectUrl = URL.createObjectURL(file);
       setThumbnailPreview(objectUrl);
       setUploadData({...uploadData, thumbnailUrl: ''});
     }
   };
+  
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 500MB)
+      if (file.size > 500 * 1024 * 1024) {
+        alert('Video file must be less than 500MB');
+        return;
+      }
+      
+      setVideoFile(file);
+      // Update progress to show file selected
+      setUploadProgress(10);
+    }
+  };
 
   const handleSubmit = () => {
+    // Reset upload progress
+    setUploadProgress(0);
     onSubmit({...uploadData, uploadType, videoSource}, videoFile, thumbnailFile);
+    
+    // Clear form only if not using dialog modal close
+    if (!isUploading) {
+      resetForm();
+    }
+  };
+  
+  const resetForm = () => {
     setUploadData({
       title: '',
       description: '',
@@ -93,10 +127,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     setThumbnailPreview(null);
     setUploadType(null);
     setVideoSource(null);
+    setUploadProgress(0);
+  };
+  
+  const handleClose = () => {
+    if (!isUploading) {
+      resetForm();
+      onClose();
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Upload New Video</DialogTitle>
@@ -114,6 +156,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 value={uploadData.title} 
                 onChange={(e) => setUploadData({...uploadData, title: e.target.value})}
                 placeholder="Enter a title for your video"
+                disabled={isUploading}
               />
             </div>
             
@@ -124,6 +167,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 value={uploadData.categoryId}
                 onChange={(e) => setUploadData({...uploadData, categoryId: e.target.value})}
+                disabled={isUploading}
               >
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
@@ -141,6 +185,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 onChange={(e) => setUploadData({...uploadData, description: e.target.value})}
                 placeholder="Describe your video"
                 rows={3}
+                disabled={isUploading}
               />
             </div>
             
@@ -155,6 +200,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     setUploadType('link');
                     setVideoSource(null);
                   }}
+                  disabled={isUploading}
                 >
                   <LinkIcon className="mr-2 h-4 w-4" />
                   Video Link
@@ -167,6 +213,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     setUploadType('file');
                     setVideoSource(null);
                   }}
+                  disabled={isUploading}
                 >
                   <FileVideo className="mr-2 h-4 w-4" />
                   Upload File
@@ -182,6 +229,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     value={videoSource || ''} 
                     onValueChange={(value) => setVideoSource(value as 'youtube' | 'vimeo' | 'other' | null)}
                     className="grid grid-cols-3 gap-4"
+                    disabled={isUploading}
                   >
                     <div>
                       <RadioGroupItem 
@@ -262,6 +310,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       value={uploadData.videoUrl} 
                       onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
                       placeholder="https://youtu.be/XXXXXXXXXXX"
+                      disabled={isUploading}
                     />
                   </div>
                 )}
@@ -290,6 +339,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
                       placeholder="<div style='padding:56.25% 0 0 0;position:relative;'><iframe src='https://player.vimeo.com/video/...'></iframe></div>"
                       rows={3}
+                      disabled={isUploading}
                     />
                   </div>
                 )}
@@ -302,6 +352,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       value={uploadData.videoUrl} 
                       onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
                       placeholder="Enter video URL or embed code"
+                      disabled={isUploading}
                     />
                     <p className="text-xs text-muted-foreground">
                       Supports direct video URLs or embed codes from other video hosting platforms
@@ -321,29 +372,44 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               <div className="grid gap-2">
                 <Label htmlFor="videoFile">Video File</Label>
                 <div className="border-2 border-dashed border-input rounded-md p-6 flex flex-col items-center justify-center">
-                  <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {videoFile ? videoFile.name : 'Drag and drop or click to upload'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Supports MP4, MOV, AVI (max 500MB)
-                  </p>
-                  <Input 
-                    id="videoFile" 
-                    type="file"
-                    className="hidden"
-                    accept=".mp4,.mov,.avi"
-                    onChange={(e) => setVideoFile(e.target.files ? e.target.files[0] : null)}
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-4"
-                    onClick={() => document.getElementById('videoFile')?.click()}
-                  >
-                    Select File
-                  </Button>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-10 w-10 text-primary mb-2 animate-spin" />
+                      <p className="text-sm font-medium mb-1">Uploading {videoFile?.name}</p>
+                      <div className="w-full max-w-xs mt-2">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-xs text-muted-foreground text-center mt-1">{uploadProgress}%</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {videoFile ? videoFile.name : 'Drag and drop or click to upload'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Supports MP4, MOV, AVI (max 500MB)
+                      </p>
+                      <Input 
+                        id="videoFile" 
+                        type="file"
+                        className="hidden"
+                        accept=".mp4,.mov,.avi"
+                        onChange={handleVideoFileChange}
+                        disabled={isUploading}
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-4"
+                        onClick={() => document.getElementById('videoFile')?.click()}
+                        disabled={isUploading}
+                      >
+                        Select File
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -356,7 +422,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="border-2 border-dashed border-input rounded-md p-3 flex flex-col items-center justify-center">
-                        <Image className="h-5 w-5 text-muted-foreground mb-1" />
+                        {isUploading && thumbnailFile ? (
+                          <Loader2 className="h-5 w-5 text-primary mb-1 animate-spin" />
+                        ) : (
+                          <Image className="h-5 w-5 text-muted-foreground mb-1" />
+                        )}
                         <p className="text-xs text-muted-foreground">
                           {thumbnailFile ? thumbnailFile.name : 'Click to upload'}
                         </p>
@@ -366,6 +436,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                           className="hidden"
                           accept="image/*"
                           onChange={handleThumbnailFileChange}
+                          disabled={isUploading}
                         />
                       </div>
                     </div>
@@ -374,6 +445,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       variant="outline" 
                       size="sm"
                       onClick={() => document.getElementById('thumbnailFile')?.click()}
+                      disabled={isUploading}
                     >
                       Select Image
                     </Button>
@@ -419,7 +491,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
         <DialogFooter className="px-6 py-4">
           <Button 
             variant="outline" 
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={isUploading}
           >
             Cancel
           </Button>
@@ -427,6 +500,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             type="submit" 
             onClick={handleSubmit}
             disabled={
+              isUploading ||
               !uploadData.title || 
               (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) || 
               (uploadType === 'file' && !videoFile) || 
@@ -434,7 +508,14 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               (!uploadData.thumbnailUrl && !thumbnailFile)
             }
           >
-            Upload Video
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              'Upload Video'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

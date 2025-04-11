@@ -396,32 +396,65 @@ const Dashboard: React.FC = () => {
     
     try {
       let thumbnailUrl = uploadData.thumbnailUrl;
+      let videoUrl = uploadData.videoUrl;
       
+      // Handle thumbnail file upload
       if (thumbnailFile) {
         const fileExt = thumbnailFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `thumbnails/${fileName}`;
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `thumbnails/${currentUser.id}/${fileName}`;
         
-        const { data: storageData, error: storageError } = await supabase.storage
+        const { data: thumbnailData, error: thumbnailError } = await supabase.storage
           .from('videos')
-          .upload(filePath, thumbnailFile);
+          .upload(filePath, thumbnailFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
         
-        if (storageError) {
-          throw storageError;
+        if (thumbnailError) {
+          console.error('Thumbnail upload error:', thumbnailError);
+          throw new Error(`Error uploading thumbnail: ${thumbnailError.message}`);
         }
         
-        const { data: publicUrlData } = supabase.storage
+        const { data: thumbnailUrlData } = await supabase.storage
           .from('videos')
           .getPublicUrl(filePath);
         
-        thumbnailUrl = publicUrlData.publicUrl;
+        thumbnailUrl = thumbnailUrlData.publicUrl;
       }
       
+      // Handle video file upload for file upload type
+      if (uploadData.uploadType === 'file' && videoFile) {
+        const fileExt = videoFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `videos/${currentUser.id}/${fileName}`;
+        
+        // Using .upload method with proper options
+        const { data: videoData, error: videoError } = await supabase.storage
+          .from('videos')
+          .upload(filePath, videoFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
+        if (videoError) {
+          console.error('Video upload error:', videoError);
+          throw new Error(`Error uploading video: ${videoError.message}`);
+        }
+        
+        const { data: videoUrlData } = await supabase.storage
+          .from('videos')
+          .getPublicUrl(filePath);
+        
+        videoUrl = videoUrlData.publicUrl;
+      }
+      
+      // Create the video record in the database
       const newVideoData = {
         title: uploadData.title,
         description: uploadData.description,
         thumbnail_url: thumbnailUrl,
-        video_url: uploadData.uploadType === 'link' ? uploadData.videoUrl : 'file://local-upload',
+        video_url: videoUrl,
         category_id: uploadData.categoryId,
         user_id: currentUser.id,
       };
@@ -460,7 +493,7 @@ const Dashboard: React.FC = () => {
       console.error('Error uploading video:', error);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your video. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error uploading your video. Please try again.",
         variant: "destructive"
       });
     } finally {
