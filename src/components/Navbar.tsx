@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,21 +18,31 @@ const Navbar: React.FC = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
+  // Gestion du dark mode
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleDark = () => {
+    const newMode = !isDark;
+    setIsDark(newMode);
+    document.documentElement.classList.toggle("dark", newMode);
+    localStorage.setItem("theme", newMode ? "dark" : "light");
+  };
+
+  // Scroll behavior
   useEffect(() => {
     const handleScroll = () => {
-      const offset = window.scrollY;
-      if (offset > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 10);
     };
-
     window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
@@ -101,6 +110,18 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-4">
+          {/* Toggle Dark Mode */}
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" className="sr-only" checked={isDark} onChange={toggleDark} />
+            <div className="w-10 h-6 bg-gray-300 dark:bg-gray-600 rounded-full shadow-inner transition-colors duration-300"></div>
+            <div
+              className={`absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow transform transition-transform duration-300 ${
+                isDark ? "translate-x-4" : ""
+              }`}
+            ></div>
+            <span className="ml-2 text-sm">{isDark ? "🌙" : "☀️"}</span>
+          </label>
+
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

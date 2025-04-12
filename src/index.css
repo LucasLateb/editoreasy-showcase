@@ -23,11 +23,17 @@
   font-display: swap;
 }
 
+/* Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Variables et thèmes */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 220 14% 5%;
@@ -107,15 +113,19 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
-@layer base {
+  @media (prefers-color-scheme: dark) {
+    html:not(.light):not(.dark) {
+      color-scheme: dark;
+    }
+  }
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground font-walsheim;
+    @apply bg-background text-foreground font-walsheim transition-colors duration-300 ease-in-out;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -140,11 +150,12 @@
   }
 }
 
+/* Composants */
 @layer components {
   .glass-panel {
     @apply bg-white/80 dark:bg-black/50 backdrop-blur-lg border border-white/20 dark:border-white/10 rounded-2xl shadow-sm;
   }
-  
+
   .glass-button {
     @apply bg-white/90 hover:bg-white dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur-lg border border-white/20 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300;
   }
@@ -164,25 +175,25 @@
   .story-link {
     @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
   }
-  
+
   .hover-scale {
     @apply transition-transform duration-300 hover:scale-105;
   }
-  
+
   .input-effect {
     @apply relative overflow-hidden;
   }
-  
+
   .input-effect::after {
     @apply content-[''] absolute left-0 bottom-0 h-[1px] w-full bg-primary origin-bottom-right transition-transform duration-300 scale-x-0;
   }
-  
+
   .input-effect:focus-within::after {
     @apply origin-bottom-left scale-x-100;
   }
 }
 
-/* Custom scrollbar styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
   @apply w-2 h-2;
 }

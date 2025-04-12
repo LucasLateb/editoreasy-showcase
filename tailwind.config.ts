@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -144,6 +143,18 @@ export default {
 					"0%": { transform: "translateY(0px)" },
 					"50%": { transform: "translateY(-20px)" },
 					"100%": { transform: "translateY(0px)" }
+				},
+				spinFast: {
+					"0%": { transform: "rotate(0deg)" },
+					"100%": { transform: "rotate(360deg)" }
+				},
+				bounce: {
+					"0%, 100%": { transform: "translateY(0)" },
+					"50%": { transform: "translateY(-25%)" }
+				},
+				wiggle: {
+					"0%, 100%": { transform: "rotate(-3deg)" },
+					"50%": { transform: "rotate(3deg)" }
 				}
 			},
 			animation: {
@@ -159,7 +170,10 @@ export default {
 				"slide-in-down": "slide-in-down 0.6s ease-out forwards",
 				"pulse-subtle": "pulse-subtle 3s ease-in-out infinite",
 				"spin-slow": "rotate 8s linear infinite",
-				"float": "float 6s ease-in-out infinite"
+				"float": "float 6s ease-in-out infinite",
+				"spin-fast": "spinFast 0.5s linear infinite",
+				"bounce": "bounce 1s infinite",
+				"wiggle": "wiggle 0.5s ease-in-out infinite"
 			},
 			backdropFilter: {
 				"none": "none",
