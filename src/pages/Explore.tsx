@@ -106,8 +106,7 @@ const Explore: React.FC = () => {
             likes,
             views,
             created_at,
-            is_highlighted,
-            profiles:user_id(name, avatar_url, subscription_tier)
+            is_highlighted
           `)
           .order('created_at', { ascending: false });
         
@@ -115,28 +114,40 @@ const Explore: React.FC = () => {
           query = query.eq('category_id', selectedCategory.id);
         }
         
-        const { data, error } = await query;
+        const { data: videoData, error: videoError } = await query;
         
-        if (error) {
-          throw error;
+        if (videoError) {
+          throw videoError;
         }
-        
-        const formattedVideos: Video[] = data.map(video => ({
-          id: video.id,
-          title: video.title,
-          description: video.description || '',
-          thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
-          videoUrl: video.video_url || '',
-          categoryId: video.category_id,
-          userId: video.user_id,
-          likes: video.likes || 0,
-          views: video.views || 0,
-          createdAt: new Date(video.created_at),
-          isHighlighted: video.is_highlighted || false,
-          editorName: video.profiles?.name || 'Unknown Editor',
-          editorAvatar: video.profiles?.avatar_url || '',
-          editorTier: (video.profiles?.subscription_tier as 'free' | 'premium' | 'pro') || 'free'
-        }));
+
+        // Fetch editor information separately
+        const formattedVideos: Video[] = await Promise.all(
+          videoData.map(async (video) => {
+            // Get editor info from profiles table
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('name, avatar_url, subscription_tier')
+              .eq('id', video.user_id)
+              .single();
+            
+            return {
+              id: video.id,
+              title: video.title,
+              description: video.description || '',
+              thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
+              videoUrl: video.video_url || '',
+              categoryId: video.category_id,
+              userId: video.user_id,
+              likes: video.likes || 0,
+              views: video.views || 0,
+              createdAt: new Date(video.created_at),
+              isHighlighted: video.is_highlighted || false,
+              editorName: profileData?.name || 'Unknown Editor',
+              editorAvatar: profileData?.avatar_url || '',
+              editorTier: (profileData?.subscription_tier as 'free' | 'premium' | 'pro') || 'free'
+            };
+          })
+        );
         
         setVideos(formattedVideos);
       } catch (error) {
