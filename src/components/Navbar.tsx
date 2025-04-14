@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,7 +58,10 @@ const Navbar: React.FC = () => {
           <span className="text-2xl font-semibold bg-clip-text text-foreground">VideoCut</span>
         </Link>
 
-        <div className="hidden md:flex items-center space-x-8">
+        <div className={cn(
+          "hidden md:flex items-center space-x-8",
+          !isAuthenticated && "mx-auto" // Center links when not authenticated
+        )}>
           <Link 
             to="/" 
             className={cn(
