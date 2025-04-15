@@ -27,7 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import SpecializationFilter from '@/components/SpecializationFilter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Category, categories } from '@/types';
+import { Category, Video, categories } from '@/types';
 
 const Footer = () => {
   return (
@@ -64,7 +64,7 @@ type ExploreVideoType = {
   createdAt: Date;
   editorName?: string;
   editorAvatar?: string;
-  editorTier?: string;
+  editorTier?: 'free' | 'premium' | 'pro';
   isHighlighted?: boolean;
 };
 
@@ -95,6 +95,7 @@ const Explore: React.FC = () => {
     const fetchVideos = async () => {
       setIsLoadingVideos(true);
       try {
+        // First fetch the videos
         let query = supabase
           .from('videos')
           .select(`
@@ -108,8 +109,7 @@ const Explore: React.FC = () => {
             category_id, 
             user_id, 
             created_at,
-            is_highlighted,
-            profiles(name, avatar_url, subscription_tier)
+            is_highlighted
           `);
         
         // Apply category filter if selected
@@ -117,32 +117,67 @@ const Explore: React.FC = () => {
           query = query.eq('category_id', selectedCategory.id);
         }
         
-        const { data, error } = await query.order('created_at', { ascending: false });
+        const { data: videoData, error: videoError } = await query.order('created_at', { ascending: false });
         
-        if (error) {
-          throw error;
+        if (videoError) {
+          throw videoError;
+        }
+
+        if (!videoData || videoData.length === 0) {
+          setVideos([]);
+          setIsLoadingVideos(false);
+          return;
+        }
+
+        // Get all unique user IDs from videos
+        const userIds = [...new Set(videoData.map(video => video.user_id))];
+        
+        // Fetch profiles for these users in a separate query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url, subscription_tier')
+          .in('id', userIds);
+          
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          // Continue without profiles rather than failing completely
         }
         
-        // Format the data to match our expected type
-        const formattedVideos = data.map(video => ({
-          id: video.id,
-          title: video.title,
-          description: video.description,
-          videoUrl: video.video_url,
-          thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
-          views: video.views || 0,
-          likes: video.likes || 0,
-          categoryId: video.category_id,
-          userId: video.user_id,
-          createdAt: new Date(video.created_at),
-          date: new Date(video.created_at).toISOString().split('T')[0],
-          editorName: video.profiles?.name || 'Unknown Editor',
-          editorAvatar: video.profiles?.avatar_url || undefined,
-          editorTier: video.profiles?.subscription_tier || 'free',
-          isHighlighted: video.is_highlighted || false,
-          editor: video.profiles?.name || 'Unknown Editor',
-          thumbnail: video.thumbnail_url || '/placeholder.svg',
-        }));
+        // Create a map of user_id to profile data for quick lookup
+        const profilesMap = (profilesData || []).reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, any>);
+        
+        // Combine video data with profile data
+        const formattedVideos = videoData.map(video => {
+          const profile = profilesMap[video.user_id] || {};
+          
+          let editorTier: 'free' | 'premium' | 'pro' = 'free';
+          if (profile.subscription_tier === 'premium' || profile.subscription_tier === 'pro') {
+            editorTier = profile.subscription_tier as 'premium' | 'pro';
+          }
+          
+          return {
+            id: video.id,
+            title: video.title,
+            description: video.description,
+            videoUrl: video.video_url,
+            thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
+            views: video.views || 0,
+            likes: video.likes || 0,
+            categoryId: video.category_id,
+            userId: video.user_id,
+            createdAt: new Date(video.created_at),
+            date: new Date(video.created_at).toISOString().split('T')[0],
+            editorName: profile.name || 'Unknown Editor',
+            editorAvatar: profile.avatar_url || undefined,
+            editorTier: editorTier,
+            isHighlighted: video.is_highlighted || false,
+            editor: profile.name || 'Unknown Editor',
+            thumbnail: video.thumbnail_url || '/placeholder.svg',
+          };
+        });
         
         setVideos(formattedVideos);
       } catch (error) {
@@ -258,7 +293,7 @@ const Explore: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {videos.map((video) => (
-                <VideoCard key={video.id} video={video} />
+                <VideoCard key={video.id} video={video as Video} />
               ))}
             </div>
           )}
