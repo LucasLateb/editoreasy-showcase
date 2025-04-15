@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -94,7 +93,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [specializationsDialogOpen, setSpecializationsDialogOpen] = useState(false);
   const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
   
-  // Added state to store editor data when in view-only mode
   const [editorData, setEditorData] = useState<any>(null);
   
   useEffect(() => {
@@ -368,11 +366,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     setShowreelDialogOpen(false);
     toast.success('Showreel URL updated');
   };
-  
-  const updateShowreelThumbnail = (newThumbnailUrl: string) => {
-    setShowreelThumbnail(newThumbnailUrl);
-    toast.success('Showreel thumbnail updated');
-  };
 
   const handleAddSpecialization = () => {
     if (newSpecialization.trim()) {
@@ -506,12 +499,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       showreelUrl={showreelUrl}
                       showreelThumbnail={showreelThumbnail}
                       editMode={editMode}
-                      showreelDialogOpen={showreelDialogOpen}
-                      setShowreelDialogOpen={setShowreelDialogOpen}
-                      setShowreelUrl={setShowreelUrl}
-                      updateShowreel={updateShowreel}
-                      updateShowreelThumbnail={updateShowreelThumbnail}
-                      thumbnailOptions={thumbnailOptions}
                     />
                     
                     <div className="mb-6">
