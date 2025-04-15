@@ -7,6 +7,7 @@ export interface User {
   subscriptionTier: 'free' | 'premium' | 'pro';
   likes: number;
   createdAt: Date;
+  totalVideoLikes?: number;
 }
 
 export interface Video {

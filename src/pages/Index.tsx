@@ -119,11 +119,27 @@ const Index: React.FC = () => {
           return;
         }
         
+        const editorIds = editorsData.map(editor => editor.id);
+        const { data: videoLikesData, error: videoLikesError } = await supabase
+          .from('videos')
+          .select('user_id, likes')
+          .in('user_id', editorIds);
+          
+        if (videoLikesError) {
+          console.error('Error fetching video likes:', videoLikesError);
+        }
+        
+        const totalLikesByEditor = videoLikesData?.reduce((acc: {[key: string]: number}, video) => {
+          acc[video.user_id] = (acc[video.user_id] || 0) + (video.likes || 0);
+          return acc;
+        }, {}) || {};
+        
         const editors = editorsData.map(editor => ({
           ...editor,
           createdAt: new Date(editor.created_at),
           subscriptionTier: editor.subscription_tier || 'free',
           avatarUrl: editor.avatar_url,
+          totalVideoLikes: totalLikesByEditor[editor.id] || 0
         }));
         
         const sortedEditors = sortEditorsByTierAndLikes(editors);

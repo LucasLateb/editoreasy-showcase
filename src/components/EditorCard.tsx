@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Star, Play, Mail, Share2, Briefcase } from 'lucide-react';
+import { Heart, Star, Play, Mail, Share2, Briefcase, Film } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,9 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useProfileLikes } from '@/hooks/useLikes';
 
 interface EditorCardProps {
-  editor: User;
+  editor: User & {
+    totalVideoLikes?: number;
+  };
   index: number;
   showreelUrl?: string;
   showreelThumbnail?: string;
@@ -34,34 +35,27 @@ const EditorCard: React.FC<EditorCardProps> = ({
   const { toast } = useToast();
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(editor.id, editor.likes);
   
-  // Extract video ID from YouTube URL for thumbnail as fallback
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
     const videoId = url.split('/').pop();
     return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   };
 
-  // Use the showreelThumbnail from the database if available, otherwise fall back to YouTube thumbnail
   const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
 
-  // Decide which bio text to show - prefer the about from portfolio_settings, fallback to the bio from user profile
   const bioText = about || editor.bio || '';
 
-  // Format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
     if (!tier) return 'Free';
     
-    // Check for subscription_tier in database format
     if (tier === 'free' || tier === 'premium' || tier === 'pro') {
       return tier.charAt(0).toUpperCase() + tier.slice(1);
     }
     
-    // Handle possible database values that might be formatted differently
     if (tier.toLowerCase() === 'free') return 'Free';
     if (tier.toLowerCase() === 'premium') return 'Premium';
     if (tier.toLowerCase() === 'pro') return 'Pro';
     
-    // Default fallback
     return 'Free';
   };
 
@@ -78,10 +72,8 @@ const EditorCard: React.FC<EditorCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Create a share URL for this editor
     const shareUrl = `${window.location.origin}/editor/${editor.id}`;
     
-    // Try to use Web Share API if available
     if (navigator.share) {
       navigator.share({
         title: `${editor.name} - Video Editor Profile`,
@@ -137,14 +129,19 @@ const EditorCard: React.FC<EditorCardProps> = ({
             </Avatar>
             <div className="ml-3">
               <h3 className="text-lg font-medium">{editor.name}</h3>
-              <p className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {editor.subscriptionTier === 'pro' && (
-                  <span className="inline-flex items-center mr-1">
+                  <span className="inline-flex items-center">
                     <Star className="h-3 w-3 text-yellow-500 mr-1" fill="currentColor" />
                   </span>
                 )}
-                Joined {editor.createdAt.toLocaleDateString()}
-              </p>
+                <span>Joined {editor.createdAt.toLocaleDateString()}</span>
+                {editor.totalVideoLikes !== undefined && (
+                  <span className="flex items-center gap-1">
+                    • <Film className="h-3 w-3" /> {editor.totalVideoLikes} likes
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           
@@ -152,7 +149,6 @@ const EditorCard: React.FC<EditorCardProps> = ({
             <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{bioText}</p>
           )}
           
-          {/* Specializations */}
           {specializations && specializations.length > 0 && (
             <div className="mb-4">
               <div className="flex items-center gap-1 mb-2">
@@ -243,7 +239,6 @@ const EditorCard: React.FC<EditorCardProps> = ({
         </div>
       </Card>
       
-      {/* Video Player Dialog */}
       {showreelUrl && (
         <VideoPlayerDialog
           isOpen={videoPlayerOpen}
