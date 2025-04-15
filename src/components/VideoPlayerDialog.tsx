@@ -34,10 +34,24 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
     }
   }, [isOpen]);
 
+  // Function to convert YouTube URLs to embed format
+  const getYouTubeEmbedUrl = (url: string): string | null => {
+    // Handle various YouTube URL formats
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const match = url.match(youtubeRegex);
+    
+    if (match && match[1]) {
+      // Return YouTube embed URL
+      return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    
+    return null;
+  };
+  
   // Check if the videoUrl is an embed code (contains iframe)
   const isEmbedCode = videoUrl.includes('<iframe');
   
-  // If it's an embed code, extract the src URL
+  // Extract the src URL from embed code
   let embedSrc = '';
   if (isEmbedCode) {
     const srcMatch = videoUrl.match(/src="([^"]+)"/);
@@ -45,6 +59,9 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
       embedSrc = srcMatch[1];
     }
   }
+  
+  // Check if it's a YouTube URL that needs to be converted
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(videoUrl);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -67,6 +84,16 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
             <div className="w-full aspect-video">
               <iframe 
                 src={embedSrc}
+                className="w-full h-full"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                title={title}
+              />
+            </div>
+          ) : youtubeEmbedUrl ? (
+            <div className="w-full aspect-video">
+              <iframe 
+                src={youtubeEmbedUrl}
                 className="w-full h-full"
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
