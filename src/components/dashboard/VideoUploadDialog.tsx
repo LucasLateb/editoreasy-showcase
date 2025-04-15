@@ -13,11 +13,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Progress } from '@/components/ui/progress';
+// Import du composant Select
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Check } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { Progress } from '@/components/ui/progress';
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -45,20 +54,24 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   isUploading
 }) => {
   const { toast } = useToast();
-  const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
-  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'other' | null>(null);
+
+  // Les données de base pour l’upload
   const [uploadData, setUploadData] = useState<UploadFormData>({
     title: '',
     description: '',
     videoUrl: '',
+    // Initialisation de la catégorie
     categoryId: categories.length > 0 ? categories[0].id : '',
     thumbnailUrl: '',
   });
+
+  const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
+  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'other' | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-  
+
   const predefinedThumbnails = [
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
     'https://images.unsplash.com/photo-1550745166-9bc0b2527af',
@@ -67,7 +80,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   ];
 
   const handleThumbnailSelect = (url: string) => {
-    setUploadData({...uploadData, thumbnailUrl: url});
+    setUploadData({ ...uploadData, thumbnailUrl: url });
     setThumbnailPreview(url);
     setThumbnailFile(null);
   };
@@ -79,14 +92,13 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
         alert('Thumbnail image must be less than 5MB');
         return;
       }
-      
       setThumbnailFile(file);
       const objectUrl = URL.createObjectURL(file);
       setThumbnailPreview(objectUrl);
-      setUploadData({...uploadData, thumbnailUrl: ''});
+      setUploadData({ ...uploadData, thumbnailUrl: '' });
     }
   };
-  
+
   const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -94,7 +106,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
         alert('Video file must be less than 500MB');
         return;
       }
-      
       setVideoFile(file);
       setUploadProgress(10);
     }
@@ -102,13 +113,13 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
   const handleSubmit = () => {
     setUploadProgress(0);
-    onSubmit({...uploadData, uploadType, videoSource}, videoFile, thumbnailFile);
-    
+    onSubmit({ ...uploadData, uploadType, videoSource }, videoFile, thumbnailFile);
+
     if (!isUploading) {
       resetForm();
     }
   };
-  
+
   const resetForm = () => {
     setUploadData({
       title: '',
@@ -124,22 +135,22 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     setVideoSource(null);
     setUploadProgress(0);
   };
-  
+
   const handleClose = () => {
     if (isUploading) {
       toast({
-        title: "Cancel upload?",
-        description: "Are you sure you want to cancel this upload?",
+        title: 'Cancel upload?',
+        description: 'Are you sure you want to cancel this upload?',
         action: (
-          <Button 
-            variant="destructive" 
-            size="sm" 
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={() => {
               onClose();
               resetForm();
               toast({
-                title: "Upload cancelled",
-                description: "Your video upload has been cancelled.",
+                title: 'Upload cancelled',
+                description: 'Your video upload has been cancelled.',
               });
             }}
           >
@@ -162,75 +173,77 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             Add a new video to your portfolio. Fill out the details below.
           </DialogDescription>
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[calc(90vh-10rem)] px-6">
           <div className="grid gap-4 py-4">
+            {/* Titre */}
             <div className="grid gap-2">
               <Label htmlFor="title">Video Title</Label>
-              <Input 
-                id="title" 
-                value={uploadData.title} 
-                onChange={(e) => setUploadData({...uploadData, title: e.target.value})}
+              <Input
+                id="title"
+                value={uploadData.title}
+                onChange={(e) => setUploadData({ ...uploadData, title: e.target.value })}
                 placeholder="Enter a title for your video"
                 disabled={isUploading}
               />
             </div>
-            
+
+            {/* Catégorie */}
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setUploadData({...uploadData, categoryId: category.id})}
-                    className={cn(
-                      "relative p-3 rounded-lg border-2 transition-all duration-300 group",
-                      uploadData.categoryId === category.id 
-                        ? "border-primary bg-primary/10 ring-2 ring-primary" 
-                        : "border-muted hover:border-primary/50 hover:bg-primary/5"
-                    )}
-                  >
-                    <div className="flex flex-col items-center space-y-2">
-                      <span 
-                        className={cn(
-                          "text-sm font-medium transition-colors",
-                          uploadData.categoryId === category.id 
-                            ? "text-primary" 
-                            : "text-muted-foreground group-hover:text-primary"
-                        )}
-                      >
+              <Label htmlFor="category" >
+                Category
+              </Label>
+              <Select
+                // onValueChange met à jour la clé categoryId de uploadData
+                onValueChange={(value) =>
+                  setUploadData((prev) => ({ ...prev, categoryId: value }))
+                }
+                // On utilise la valeur actuelle (uploadData.categoryId)
+                value={uploadData.categoryId}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
                         {category.name}
-                      </span>
-                    </div>
-                    {uploadData.categoryId === category.id && (
-                      <div className="absolute top-1 right-1">
-                        <Check className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="1">Animation</SelectItem>
+                      <SelectItem value="2">Commercial</SelectItem>
+                      <SelectItem value="3">Documentary</SelectItem>
+                      <SelectItem value="4">Music Video</SelectItem>
+                      <SelectItem value="5">Short Film</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
-            
+
+            {/* Description */}
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                value={uploadData.description} 
-                onChange={(e) => setUploadData({...uploadData, description: e.target.value})}
+              <Textarea
+                id="description"
+                value={uploadData.description}
+                onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
                 placeholder="Describe your video"
                 rows={3}
                 disabled={isUploading}
               />
             </div>
-            
+
+            {/* Choix du type d’upload (lien ou fichier) */}
             <div className="grid gap-2">
               <Label>Video Source</Label>
               <div className="flex gap-4 mt-1">
-                <Button 
-                  type="button" 
-                  variant={uploadType === 'link' ? 'default' : 'outline'} 
+                <Button
+                  type="button"
+                  variant={uploadType === 'link' ? 'default' : 'outline'}
                   className="flex-1"
                   onClick={() => {
                     setUploadType('link');
@@ -241,9 +254,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   <LinkIcon className="mr-2 h-4 w-4" />
                   Video Link
                 </Button>
-                <Button 
-                  type="button" 
-                  variant={uploadType === 'file' ? 'default' : 'outline'} 
+                <Button
+                  type="button"
+                  variant={uploadType === 'file' ? 'default' : 'outline'}
                   className="flex-1"
                   onClick={() => {
                     setUploadType('file');
@@ -256,64 +269,57 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 </Button>
               </div>
             </div>
-            
+
+            {/* Si on a choisi "lien" */}
             {uploadType === 'link' && (
               <>
                 <div className="grid gap-2">
                   <Label>Select Platform</Label>
-                  <RadioGroup 
-                    value={videoSource || ''} 
-                    onValueChange={(value) => setVideoSource(value as 'youtube' | 'vimeo' | 'other' | null)}
+                  <RadioGroup
+                    value={videoSource || ''}
+                    onValueChange={(value) =>
+                      setVideoSource(value as 'youtube' | 'vimeo' | 'other' | null)
+                    }
                     className="grid grid-cols-3 gap-4"
-                    disabled={isUploading}
                   >
+                    {/* YouTube */}
                     <div>
-                      <RadioGroupItem 
-                        value="youtube" 
-                        id="youtube" 
-                        className="peer sr-only" 
-                      />
+                      <RadioGroupItem value="youtube" id="youtube" className="peer sr-only" />
                       <Label
                         htmlFor="youtube"
                         className={cn(
-                          "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer",
-                          videoSource === 'youtube' ? "border-primary" : ""
+                          'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer',
+                          videoSource === 'youtube' ? 'border-primary' : ''
                         )}
                       >
                         <Youtube className="mb-2 h-6 w-6 text-red-600" />
                         <span className="text-sm font-medium">YouTube</span>
                       </Label>
                     </div>
-                    
+
+                    {/* Vimeo */}
                     <div>
-                      <RadioGroupItem 
-                        value="vimeo" 
-                        id="vimeo" 
-                        className="peer sr-only" 
-                      />
+                      <RadioGroupItem value="vimeo" id="vimeo" className="peer sr-only" />
                       <Label
                         htmlFor="vimeo"
                         className={cn(
-                          "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer",
-                          videoSource === 'vimeo' ? "border-primary" : ""
+                          'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer',
+                          videoSource === 'vimeo' ? 'border-primary' : ''
                         )}
                       >
                         <Video className="mb-2 h-6 w-6 text-blue-600" />
                         <span className="text-sm font-medium">Vimeo</span>
                       </Label>
                     </div>
-                    
+
+                    {/* Autre */}
                     <div>
-                      <RadioGroupItem 
-                        value="other" 
-                        id="other" 
-                        className="peer sr-only" 
-                      />
+                      <RadioGroupItem value="other" id="other" className="peer sr-only" />
                       <Label
                         htmlFor="other"
                         className={cn(
-                          "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer",
-                          videoSource === 'other' ? "border-primary" : ""
+                          'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer',
+                          videoSource === 'other' ? 'border-primary' : ''
                         )}
                       >
                         <LinkIcon className="mb-2 h-6 w-6 text-gray-600" />
@@ -322,7 +328,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     </div>
                   </RadioGroup>
                 </div>
-                
+
+                {/* URL YouTube */}
                 {videoSource === 'youtube' && (
                   <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
                     <div className="flex items-start gap-3">
@@ -330,7 +337,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">YouTube Video</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Click the "Share" button under the video, then copy the URL. You can also use the embed code.
+                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l’URL. Vous
+                          pouvez aussi récupérer le code d’intégration (embed).
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
                           https://youtu.be/XXXXXXXXXXX
@@ -341,16 +349,17 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       </div>
                     </div>
                     <Label htmlFor="youtube-url">Enter YouTube URL</Label>
-                    <Input 
-                      id="youtube-url" 
-                      value={uploadData.videoUrl} 
-                      onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                    <Input
+                      id="youtube-url"
+                      value={uploadData.videoUrl}
+                      onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
                       placeholder="https://youtu.be/XXXXXXXXXXX"
                       disabled={isUploading}
                     />
                   </div>
                 )}
-                
+
+                {/* Embed Vimeo */}
                 {videoSource === 'vimeo' && (
                   <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
                     <div className="flex items-start gap-3">
@@ -358,35 +367,39 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">Vimeo Video</h3>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Click the "Share" button, go to the "Embed" tab, and copy the entire embed code.
+                          Cliquez sur le bouton "Share", allez dans l’onglet "Embed", et copiez tout
+                          le code d’intégration.
                           <span className="block mt-1 text-muted-foreground font-medium">
-                            Make sure your video is set to unlisted or public to allow others to view it.
+                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
+                            qu’elle soit visible.
                           </span>
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono overflow-hidden">
-                          &lt;div style="padding:56.25% 0 0 0;position:relative;"&gt;&lt;iframe src="https://player.vimeo.com/video/..."&gt;&lt;/iframe&gt;&lt;/div&gt;
+                          &lt;div style="padding:56.25% 0 0 0;position:relative;"&gt;&lt;iframe
+                          src="https://player.vimeo.com/video/..."&gt;&lt;/iframe&gt;&lt;/div&gt;
                         </div>
                       </div>
                     </div>
                     <Label htmlFor="vimeo-embed">Enter Vimeo Embed Code</Label>
-                    <Textarea 
-                      id="vimeo-embed" 
-                      value={uploadData.videoUrl} 
-                      onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                    <Textarea
+                      id="vimeo-embed"
+                      value={uploadData.videoUrl}
+                      onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
                       placeholder="<div style='padding:56.25% 0 0 0;position:relative;'><iframe src='https://player.vimeo.com/video/...'></iframe></div>"
                       rows={3}
                       disabled={isUploading}
                     />
                   </div>
                 )}
-                
+
+                {/* Autre plateforme */}
                 {videoSource === 'other' && (
                   <div className="grid gap-2">
                     <Label htmlFor="videoUrl">Video URL</Label>
-                    <Input 
-                      id="videoUrl" 
-                      value={uploadData.videoUrl} 
-                      onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                    <Input
+                      id="videoUrl"
+                      value={uploadData.videoUrl}
+                      onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
                       placeholder="Enter video URL or embed code"
                       disabled={isUploading}
                     />
@@ -395,7 +408,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     </p>
                   </div>
                 )}
-                
+
                 {!videoSource && (
                   <div className="bg-muted/30 p-4 rounded-md text-center border">
                     <p className="text-muted-foreground">Please select a video platform</p>
@@ -403,7 +416,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 )}
               </>
             )}
-            
+
+            {/* Si on a choisi "fichier" */}
             {uploadType === 'file' && (
               <div className="grid gap-2">
                 <Label htmlFor="videoFile">Video File</Label>
@@ -411,10 +425,14 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   {isUploading ? (
                     <>
                       <Loader2 className="h-10 w-10 text-primary mb-2 animate-spin" />
-                      <p className="text-sm font-medium mb-1">Uploading {videoFile?.name}</p>
+                      <p className="text-sm font-medium mb-1">
+                        Uploading {videoFile?.name}
+                      </p>
                       <div className="w-full max-w-xs mt-2">
                         <Progress value={uploadProgress} className="h-2" />
-                        <p className="text-xs text-muted-foreground text-center mt-1">{uploadProgress}%</p>
+                        <p className="text-xs text-muted-foreground text-center mt-1">
+                          {uploadProgress}%
+                        </p>
                       </div>
                     </>
                   ) : (
@@ -426,18 +444,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <p className="text-xs text-muted-foreground">
                         Supports MP4, MOV, AVI (max 500MB)
                       </p>
-                      <Input 
-                        id="videoFile" 
+                      <Input
+                        id="videoFile"
                         type="file"
                         className="hidden"
                         accept=".mp4,.mov,.avi"
                         onChange={handleVideoFileChange}
                         disabled={isUploading}
                       />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
                         className="mt-4"
                         onClick={() => document.getElementById('videoFile')?.click()}
                         disabled={isUploading}
@@ -450,11 +468,14 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               </div>
             )}
 
+            {/* Thumbnail */}
             <div className="grid gap-2">
               <Label>Thumbnail</Label>
               <div className="grid gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Upload your own thumbnail:</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Upload your own thumbnail:
+                  </p>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="border-2 border-dashed border-input rounded-md p-3 flex flex-col items-center justify-center">
@@ -466,8 +487,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                         <p className="text-xs text-muted-foreground">
                           {thumbnailFile ? thumbnailFile.name : 'Click to upload'}
                         </p>
-                        <Input 
-                          id="thumbnailFile" 
+                        <Input
+                          id="thumbnailFile"
                           type="file"
                           className="hidden"
                           accept="image/*"
@@ -476,9 +497,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                         />
                       </div>
                     </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       onClick={() => document.getElementById('thumbnailFile')?.click()}
                       disabled={isUploading}
@@ -489,17 +510,23 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 </div>
 
                 <div className="mt-2">
-                  <p className="text-sm text-muted-foreground mb-2">Or select from our collection:</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Or select from our collection:
+                  </p>
                   <div className="grid grid-cols-4 gap-2">
                     {predefinedThumbnails.map((thumbnail, index) => (
-                      <div 
+                      <div
                         key={index}
-                        className={`cursor-pointer border-2 rounded-md overflow-hidden transition-all ${uploadData.thumbnailUrl === thumbnail ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-muted'}`}
+                        className={`cursor-pointer border-2 rounded-md overflow-hidden transition-all ${
+                          uploadData.thumbnailUrl === thumbnail
+                            ? 'border-primary ring-2 ring-primary'
+                            : 'border-transparent hover:border-muted'
+                        }`}
                         onClick={() => handleThumbnailSelect(thumbnail)}
                       >
-                        <img 
-                          src={thumbnail} 
-                          alt={`Thumbnail ${index + 1}`} 
+                        <img
+                          src={thumbnail}
+                          alt={`Thumbnail ${index + 1}`}
                           className="w-full h-16 object-cover"
                         />
                       </div>
@@ -512,9 +539,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 <div className="mt-4">
                   <p className="text-sm font-medium mb-2">Preview:</p>
                   <div className="border rounded-md overflow-hidden aspect-video">
-                    <img 
-                      src={thumbnailPreview} 
-                      alt="Thumbnail preview" 
+                    <img
+                      src={thumbnailPreview}
+                      alt="Thumbnail preview"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -523,7 +550,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             </div>
           </div>
         </ScrollArea>
-        
+
+        {/* Barre de progression si c’est en cours d’upload */}
         {isUploading && (
           <div className="my-4 p-4 bg-secondary rounded-lg">
             <div className="flex items-center justify-between mb-2">
@@ -542,24 +570,25 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             <p className="text-xs text-muted-foreground mt-1">{uploadProgress}% complete</p>
           </div>
         )}
-        
+
+        {/* Footer : boutons Cancel / Upload */}
         <DialogFooter className="px-6 py-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleClose}
             disabled={isUploading}
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             onClick={handleSubmit}
             disabled={
               isUploading ||
-              !uploadData.title || 
-              (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) || 
-              (uploadType === 'file' && !videoFile) || 
-              !uploadType || 
+              !uploadData.title ||
+              (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) ||
+              (uploadType === 'file' && !videoFile) ||
+              !uploadType ||
               (!uploadData.thumbnailUrl && !thumbnailFile)
             }
           >
