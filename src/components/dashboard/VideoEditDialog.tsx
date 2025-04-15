@@ -1,0 +1,133 @@
+
+import React from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Category } from '@/types';
+import { useForm } from 'react-hook-form';
+import { Loader2 } from 'lucide-react';
+
+interface VideoEditDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: VideoEditFormData) => Promise<void>;
+  video: {
+    id: string;
+    title: string;
+    description: string;
+    categoryId: string;
+  };
+  categories: Category[];
+  isLoading?: boolean;
+}
+
+export interface VideoEditFormData {
+  title: string;
+  description: string;
+  categoryId: string;
+}
+
+const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  video,
+  categories,
+  isLoading = false
+}) => {
+  const { register, handleSubmit, setValue, watch } = useForm<VideoEditFormData>({
+    defaultValues: {
+      title: video.title,
+      description: video.description,
+      categoryId: video.categoryId
+    }
+  });
+
+  const selectedCategoryId = watch('categoryId');
+
+  const handleFormSubmit = async (data: VideoEditFormData) => {
+    await onSubmit(data);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={() => !isLoading && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Video Details</DialogTitle>
+          <DialogDescription>
+            Update the information for your video.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-6 pb-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  {...register('title')}
+                  placeholder="Enter video title"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  {...register('description')}
+                  placeholder="Enter video description"
+                  className="min-h-[100px]"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={selectedCategoryId}
+                  onValueChange={(value) => setValue('categoryId', value)}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default VideoEditDialog;
