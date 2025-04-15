@@ -179,7 +179,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
         
         <ScrollArea 
           className="max-h-[calc(90vh-10rem)] px-6 relative" 
-          scrollBarClassName="w-2 bg-primary/10 rounded-full"
         >
           <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none flex justify-center items-center">
             <ChevronUp className="text-muted-foreground opacity-50" size={20} />
