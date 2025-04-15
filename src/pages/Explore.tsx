@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -30,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Video, Category, categories } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 
 const Footer = () => {
   return (
@@ -77,6 +77,8 @@ const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -88,7 +90,6 @@ const Explore: React.FC = () => {
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
-  // Fetch videos from Supabase
   useEffect(() => {
     const fetchVideos = async () => {
       setIsLoadingVideos(true);
@@ -120,10 +121,8 @@ const Explore: React.FC = () => {
           throw videoError;
         }
 
-        // Fetch editor information separately
         const formattedVideos: Video[] = await Promise.all(
           videoData.map(async (video) => {
-            // Get editor info from profiles table
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('name, avatar_url, subscription_tier')
@@ -213,6 +212,11 @@ const Explore: React.FC = () => {
     setSelectedCategory(category || null);
   };
 
+  const handleVideoClick = (video: Video) => {
+    setSelectedVideo(video);
+    setIsVideoDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -261,13 +265,24 @@ const Explore: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {videos.map((video) => (
-                <VideoCard key={video.id} video={video} />
+                <div key={video.id} onClick={() => handleVideoClick(video)}>
+                  <VideoCard video={video} />
+                </div>
               ))}
             </div>
           )}
         </div>
       </main>
       <Footer />
+
+      {selectedVideo && (
+        <VideoPlayerDialog
+          isOpen={isVideoDialogOpen}
+          onClose={() => setIsVideoDialogOpen(false)}
+          videoUrl={selectedVideo.videoUrl}
+          title={selectedVideo.title}
+        />
+      )}
 
       <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
         <CommandInput 
