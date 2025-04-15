@@ -7,12 +7,12 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -168,7 +168,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0 relative">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Upload New Video</DialogTitle>
           <DialogDescription>
@@ -176,7 +176,17 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(90vh-10rem)] px-6">
+        <ScrollArea 
+          className="max-h-[calc(90vh-10rem)] px-6 relative" 
+          scrollBarClassName="w-2 bg-primary/10 rounded-full"
+        >
+          <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none flex justify-center items-center">
+            <ChevronUp className="text-muted-foreground opacity-50" size={20} />
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-8 z-10 pointer-events-none flex justify-center items-center">
+            <ChevronDown className="text-muted-foreground opacity-50" size={20} />
+          </div>
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">Video Title</Label>
