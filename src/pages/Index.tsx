@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/pagination';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import SpecializationFilter from '@/components/SpecializationFilter';
-import { Search, Users } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -379,10 +379,18 @@ const Index: React.FC = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setIsSearchOpen(true)}
-                  className="w-full justify-start text-left font-normal border-primary/20 hover:border-primary"
+                  className="w-full justify-start text-left font-normal 
+                    border-primary/20 hover:border-primary 
+                    bg-white/10 backdrop-blur-sm 
+                    transition-all duration-300 
+                    hover:bg-primary/5 
+                    hover:shadow-sm 
+                    group"
                 >
-                  <Search className="mr-2 h-4 w-4" />
-                  <span>Search for video editors...</span>
+                  <Search className="mr-2 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-muted-foreground group-hover:text-foreground transition-colors">
+                    Search for video editors...
+                  </span>
                 </Button>
               </div>
             </div>
