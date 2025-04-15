@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog,
@@ -13,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Category } from '@/types';
 
 export interface UploadFormData {
   title: string;
@@ -36,6 +38,7 @@ interface VideoUploadDialogProps {
     thumbnailUrl: string;
   };
   isUploading?: boolean;
+  categories?: Category[];
 }
 
 const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
@@ -44,7 +47,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   onSubmit,
   editMode = false,
   initialData,
-  isUploading = false
+  isUploading = false,
+  categories = []
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -162,11 +166,21 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Animation</SelectItem>
-                <SelectItem value="2">Commercial</SelectItem>
-                <SelectItem value="3">Documentary</SelectItem>
-                <SelectItem value="4">Music Video</SelectItem>
-                <SelectItem value="5">Short Film</SelectItem>
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="1">Animation</SelectItem>
+                    <SelectItem value="2">Commercial</SelectItem>
+                    <SelectItem value="3">Documentary</SelectItem>
+                    <SelectItem value="4">Music Video</SelectItem>
+                    <SelectItem value="5">Short Film</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
