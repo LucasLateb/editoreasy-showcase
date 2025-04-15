@@ -19,6 +19,7 @@ VideoCut is a comprehensive platform designed for video editors to showcase thei
 - **Thumbnail Selection**: Choose from various thumbnails for the showreel
 - **Video Gallery**: Organized gallery of the editor's video projects
 - **Category Organization**: Videos can be organized by editing style or category
+- **Portfolio Sharing**: Visitors can copy and share the portfolio link with others
 - **Responsive Design**: Portfolio looks great on all device sizes
 
 ### Video Management
@@ -51,7 +52,7 @@ VideoCut is a comprehensive platform designed for video editors to showcase thei
 ### User Interface
 - **Modern Design**: Clean, professional interface with intuitive navigation
 - **Responsive Layout**: Optimized for all screen sizes from mobile to desktop
-- **Dark Mode Support**: Comfortable viewing in different lighting conditions
+- **Dark Mode Support**: Comfortable viewing in different lighting conditions with toggle support
 - **Interactive Elements**: Smooth transitions and responsive user interactions
 - **Toast Notifications**: Informative feedback for user actions
 
@@ -100,3 +101,5 @@ VideoCut is a comprehensive platform designed for video editors to showcase thei
 ---
 
 VideoCut combines powerful portfolio functionality with an intuitive user experience, creating the ultimate platform for video editors to showcase their talent and for clients to discover the perfect editor for their projects.
+
+This project is licensed under a proprietary license. You may use it, but not modify or redistribute it.
