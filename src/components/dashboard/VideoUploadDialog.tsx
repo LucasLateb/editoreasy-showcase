@@ -7,19 +7,17 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Slider } from "@/components/ui/slider";
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -155,21 +153,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     onClose();
   };
 
-  const handleCategoryChange = (value: number[]) => {
-    const index = value[0];
-    const category = categories[index];
-    if (category) {
-      setUploadData({...uploadData, categoryId: category.id});
-    }
-  };
-
-  const getCurrentCategoryIndex = () => {
-    return categories.findIndex(cat => cat.id === uploadData.categoryId);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0 relative">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Upload New Video</DialogTitle>
           <DialogDescription>
@@ -177,16 +163,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea 
-          className="max-h-[calc(90vh-10rem)] px-6 relative" 
-        >
-          <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none flex justify-center items-center">
-            <ChevronUp className="text-muted-foreground opacity-50" size={20} />
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-8 z-10 pointer-events-none flex justify-center items-center">
-            <ChevronDown className="text-muted-foreground opacity-50" size={20} />
-          </div>
-
+        <ScrollArea className="max-h-[calc(90vh-10rem)] px-6">
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">Video Title</Label>
@@ -200,30 +177,38 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="category">Category: {categories[getCurrentCategoryIndex()]?.name}</Label>
-              <div className="px-2 py-4">
-                <Slider
-                  id="category"
-                  max={categories.length - 1}
-                  step={1}
-                  value={[getCurrentCategoryIndex()]}
-                  onValueChange={handleCategoryChange}
-                  disabled={isUploading}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground px-2">
-                {categories.map((category, index) => (
-                  <div 
+              <Label htmlFor="category">Category</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {categories.map((category) => (
+                  <button
                     key={category.id}
+                    type="button"
+                    onClick={() => setUploadData({...uploadData, categoryId: category.id})}
                     className={cn(
-                      "cursor-pointer transition-colors",
-                      uploadData.categoryId === category.id && "text-primary font-medium"
+                      "relative p-3 rounded-lg border-2 transition-all duration-300 group",
+                      uploadData.categoryId === category.id 
+                        ? "border-primary bg-primary/10 ring-2 ring-primary" 
+                        : "border-muted hover:border-primary/50 hover:bg-primary/5"
                     )}
-                    onClick={() => handleCategoryChange([index])}
                   >
-                    {category.name}
-                  </div>
+                    <div className="flex flex-col items-center space-y-2">
+                      <span 
+                        className={cn(
+                          "text-sm font-medium transition-colors",
+                          uploadData.categoryId === category.id 
+                            ? "text-primary" 
+                            : "text-muted-foreground group-hover:text-primary"
+                        )}
+                      >
+                        {category.name}
+                      </span>
+                    </div>
+                    {uploadData.categoryId === category.id && (
+                      <div className="absolute top-1 right-1">
+                        <Check className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
