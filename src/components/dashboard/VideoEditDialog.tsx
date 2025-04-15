@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Category } from '@/types';
 import { useForm } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Image as ImageIcon } from 'lucide-react';
 
 interface VideoEditDialogProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ interface VideoEditDialogProps {
     title: string;
     description: string;
     categoryId: string;
+    thumbnailUrl: string;
   };
   categories: Category[];
   isLoading?: boolean;
@@ -29,6 +30,7 @@ export interface VideoEditFormData {
   title: string;
   description: string;
   categoryId: string;
+  thumbnailUrl: string;
 }
 
 const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
@@ -43,11 +45,13 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
     defaultValues: {
       title: video.title,
       description: video.description,
-      categoryId: video.categoryId
+      categoryId: video.categoryId,
+      thumbnailUrl: video.thumbnailUrl
     }
   });
 
   const selectedCategoryId = watch('categoryId');
+  const thumbnailUrl = watch('thumbnailUrl');
 
   const handleFormSubmit = async (data: VideoEditFormData) => {
     await onSubmit(data);
@@ -105,6 +109,30 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
+                <div className="space-y-3">
+                  <Input
+                    id="thumbnailUrl"
+                    {...register('thumbnailUrl')}
+                    placeholder="Enter thumbnail URL"
+                    disabled={isLoading}
+                  />
+                  {thumbnailUrl && (
+                    <div className="relative aspect-video w-full rounded-lg border overflow-hidden">
+                      <img 
+                        src={thumbnailUrl} 
+                        alt="Video thumbnail preview"
+                        className="object-cover w-full h-full"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </ScrollArea>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Video } from '@/types';
 import { 
@@ -56,7 +55,8 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         .update({
           title: data.title,
           description: data.description,
-          category_id: data.categoryId
+          category_id: data.categoryId,
+          thumbnail_url: data.thumbnailUrl
         })
         .eq('id', video.id);
 
@@ -152,7 +152,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         onClose={() => setIsEditDialogOpen(false)}
         onSubmit={handleEditSubmit}
         video={video}
-        categories={[]} // Will be populated from parent component
+        categories={categories} // Pass the categories from types
         isLoading={isEditing}
       />
     </>
