@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -15,9 +14,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2 } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 
 interface VideoUploadDialogProps {
@@ -45,6 +44,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   categories,
   isUploading
 }) => {
+  const { toast } = useToast();
   const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
   const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'other' | null>(null);
   const [uploadData, setUploadData] = useState<UploadFormData>({
@@ -75,7 +75,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Thumbnail image must be less than 5MB');
         return;
@@ -91,24 +90,20 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 500MB)
       if (file.size > 500 * 1024 * 1024) {
         alert('Video file must be less than 500MB');
         return;
       }
       
       setVideoFile(file);
-      // Update progress to show file selected
       setUploadProgress(10);
     }
   };
 
   const handleSubmit = () => {
-    // Reset upload progress
     setUploadProgress(0);
     onSubmit({...uploadData, uploadType, videoSource}, videoFile, thumbnailFile);
     
-    // Clear form only if not using dialog modal close
     if (!isUploading) {
       resetForm();
     }
@@ -131,10 +126,31 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   };
   
   const handleClose = () => {
-    if (!isUploading) {
-      resetForm();
-      onClose();
+    if (isUploading) {
+      toast({
+        title: "Cancel upload?",
+        description: "Are you sure you want to cancel this upload?",
+        action: (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={() => {
+              onClose();
+              resetForm();
+              toast({
+                title: "Upload cancelled",
+                description: "Your video upload has been cancelled.",
+              });
+            }}
+          >
+            Yes, cancel
+          </Button>
+        ),
+      });
+      return;
     }
+    resetForm();
+    onClose();
   };
 
   return (
@@ -487,6 +503,25 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             </div>
           </div>
         </ScrollArea>
+        
+        {isUploading && (
+          <div className="my-4 p-4 bg-secondary rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Uploading...</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="h-8 px-2 text-destructive hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Cancel upload</span>
+              </Button>
+            </div>
+            <Progress value={uploadProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">{uploadProgress}% complete</p>
+          </div>
+        )}
         
         <DialogFooter className="px-6 py-4">
           <Button 
