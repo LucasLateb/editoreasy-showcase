@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/pagination';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import SpecializationFilter from '@/components/SpecializationFilter';
-import { Search } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -543,7 +543,7 @@ const Index: React.FC = () => {
                     onSelect={() => handleEditorSelect(editor.id)}
                     className="flex items-center"
                   >
-                    <Users className="mr-2 h-4 w-4" />
+                    <User className="mr-2 h-4 w-4" />
                     <span>{editor.name}</span>
                     {editor.subscription_tier && editor.subscription_tier !== 'free' && (
                       <span className="ml-2 text-xs text-muted-foreground">
