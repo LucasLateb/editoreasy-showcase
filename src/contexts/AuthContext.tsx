@@ -30,9 +30,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if we're on a password reset page with recovery token
+    const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
+                               window.location.hash.includes('type=recovery');
+
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
+        // Skip profile fetch if we're in password reset flow
+        if (isPasswordResetFlow) {
+          setCurrentUser(null);
+          setLoading(false);
+          return;
+        }
+
         // Fetch the user profile from our profiles table
         const { data, error } = await supabase
           .from('profiles')
@@ -65,6 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check current session on mount
     const checkSession = async () => {
+      // Skip session check if we're in password reset flow
+      if (isPasswordResetFlow) {
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // Fetch the user profile
