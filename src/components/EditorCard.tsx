@@ -115,14 +115,9 @@ const EditorCard: React.FC<EditorCardProps> = ({
         <div className="absolute -top-3 -right-1">
           <Badge 
             variant={editor.subscriptionTier === 'pro' ? 'default' : 'outline'} 
-            className="shadow-sm flex items-center gap-1"
+            className="shadow-sm"
           >
             {formatSubscriptionTier(editor.subscriptionTier)}
-            {editor.totalVideoLikes !== undefined && (
-              <span className="flex items-center gap-1">
-                • <Film className="h-3 w-3" /> {editor.totalVideoLikes} likes
-              </span>
-            )}
           </Badge>
         </div>
         
@@ -141,6 +136,11 @@ const EditorCard: React.FC<EditorCardProps> = ({
                   </span>
                 )}
                 <span>Joined {editor.createdAt.toLocaleDateString()}</span>
+                {editor.totalVideoLikes !== undefined && (
+                  <span className="flex items-center gap-1">
+                    • <Film className="h-3 w-3" /> {editor.totalVideoLikes} likes
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -191,7 +191,26 @@ const EditorCard: React.FC<EditorCardProps> = ({
         </CardContent>
         
         <CardFooter className="p-5 pt-0 justify-between items-center">
-          <div className="flex items-center space-x-2">
+          <div 
+            className="flex items-center text-sm text-muted-foreground"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleLike();
+            }}
+          >
+            <Heart 
+              className={cn(
+                "h-4 w-4 mr-1 transition-colors",
+                isLiked ? "text-red-500" : "text-muted-foreground",
+                !isLoading && "hover:text-red-400 cursor-pointer"
+              )} 
+              fill={isLiked ? "currentColor" : "none"} 
+            />
+            <span>{likesCount} likes</span>
+          </div>
+          
+          <div className="flex space-x-2">
             <Button 
               variant="outline" 
               size="sm" 
