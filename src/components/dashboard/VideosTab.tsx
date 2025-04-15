@@ -4,9 +4,7 @@ import { Video, Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Film } from 'lucide-react';
-import VideoCardDashboard from '@/components/VideoCardDashboard';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import VideoCardDashboard from './VideoCardDashboard';
 
 interface VideosTabProps {
   videos: Video[];
@@ -23,32 +21,6 @@ const VideosTab: React.FC<VideosTabProps> = ({
   onUploadClick,
   onDeleteClick
 }) => {
-  const handleEditVideo = async (videoId: string, updatedVideo: Partial<Video>) => {
-    try {
-      const { error } = await supabase
-        .from('videos')
-        .update({
-          title: updatedVideo.title,
-          description: updatedVideo.description,
-          category_id: updatedVideo.categoryId,
-          video_url: updatedVideo.videoUrl,
-          thumbnail_url: updatedVideo.thumbnailUrl,
-        })
-        .eq('id', videoId);
-
-      if (error) throw error;
-
-      // Show success message
-      toast.success('Video updated successfully');
-      
-      // Refresh the page to show updated data
-      window.location.reload();
-    } catch (error) {
-      console.error('Error updating video:', error);
-      toast.error('Failed to update video');
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -84,7 +56,6 @@ const VideosTab: React.FC<VideosTabProps> = ({
             video={video}
             category={category}
             onDelete={onDeleteClick}
-            onEdit={handleEditVideo}
           />
         );
       })}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Video } from '@/types';
 import { 
@@ -13,13 +14,12 @@ import { Pencil, Trash2, Heart } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
-import EditVideoDialog from '@/components/dashboard/EditVideoDialog';
 
 interface VideoCardDashboardProps {
   video: Video;
   category: { name: string } | undefined;
   onDelete: (videoId: string) => void;
-  onEdit?: (videoId: string, updatedVideo: Partial<Video>) => void;
+  onEdit?: (videoId: string) => void;
 }
 
 const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
@@ -29,7 +29,6 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   onEdit
 }) => {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
 
   const handleVideoClick = () => {
@@ -39,20 +38,6 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleLike();
-  };
-
-  const handleEditSubmit = async (data: any) => {
-    if (onEdit) {
-      const updatedVideo = {
-        title: data.title,
-        description: data.description,
-        categoryId: data.categoryId,
-        videoUrl: data.videoUrl,
-        thumbnailUrl: data.thumbnailUrl,
-      };
-      onEdit(video.id, updatedVideo);
-    }
-    setIsEditDialogOpen(false);
   };
 
   return (
@@ -103,14 +88,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         
         <CardFooter className="flex justify-between pt-4">
           {onEdit && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsEditDialogOpen(true);
-              }}
-            >
+            <Button size="sm" variant="outline" onClick={() => onEdit(video.id)}>
               <Pencil className="h-4 w-4 mr-1" />
               Edit
             </Button>
@@ -132,21 +110,6 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         videoUrl={video.videoUrl}
         title={video.title}
       />
-
-      {onEdit && (
-        <EditVideoDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          onSubmit={handleEditSubmit}
-          initialData={{
-            title: video.title,
-            description: video.description,
-            categoryId: video.categoryId,
-            videoUrl: video.videoUrl,
-            thumbnailUrl: video.thumbnailUrl,
-          }}
-        />
-      )}
     </>
   );
 };
