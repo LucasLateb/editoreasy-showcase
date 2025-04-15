@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -17,21 +19,24 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
+      // Get the current URL base (domain + protocol)
+      const baseUrl = window.location.origin;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${baseUrl}/reset-password`,
       });
 
       if (error) {
         throw error;
       }
 
+      // Show info dialog instead of just a toast
+      setShowInfoDialog(true);
+      
       toast({
         title: "Check your email",
         description: "We've sent you a password reset link.",
       });
-      
-      // Navigate to login page after successful submission
-      navigate('/login');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -81,6 +86,35 @@ export default function ForgotPassword() {
           </Button>
         </div>
       </div>
+
+      {/* Information Dialog */}
+      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Check your email</DialogTitle>
+            <DialogDescription>
+              We've sent a password reset link to {email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              If you don't see the email in your inbox, please check your spam folder.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              The link in the email should redirect you to the reset password page. If clicking the 
+              link doesn't work, you can copy and paste the entire link into your browser's address bar.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => {
+              setShowInfoDialog(false);
+              navigate('/login');
+            }}>
+              Return to Login
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
