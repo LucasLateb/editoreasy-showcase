@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Video } from '@/types';
+import { Video, categories } from '@/types';
 import { 
   Card, 
   CardContent, 
@@ -152,7 +153,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         onClose={() => setIsEditDialogOpen(false)}
         onSubmit={handleEditSubmit}
         video={video}
-        categories={categories} // Pass the categories from types
+        categories={categories}
         isLoading={isEditing}
       />
     </>
