@@ -167,6 +167,32 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
           title="My Showreel"
         />
       )}
+
+{videos.length > 0 && (
+        <div className="bg-background p-6 rounded-lg border shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Select from Your Videos</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {videos.map((video) => (
+              <div 
+                key={video.id} 
+                className={`relative cursor-pointer border rounded-md overflow-hidden ${selectedVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => handleSelectShowreel(video)}
+              >
+                <div className="aspect-video">
+                  <img 
+                    src={video.thumbnailUrl} 
+                    alt={video.title} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-2 bg-background">
+                  <h3 className="font-medium text-sm truncate">{video.title}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="bg-background p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Set Custom Showreel URL</h2>
@@ -200,31 +226,6 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         </p>
       </div>
       
-      {videos.length > 0 && (
-        <div className="bg-background p-6 rounded-lg border shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Select from Your Videos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {videos.map((video) => (
-              <div 
-                key={video.id} 
-                className={`relative cursor-pointer border rounded-md overflow-hidden ${selectedVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => handleSelectShowreel(video)}
-              >
-                <div className="aspect-video">
-                  <img 
-                    src={video.thumbnailUrl} 
-                    alt={video.title} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-2 bg-background">
-                  <h3 className="font-medium text-sm truncate">{video.title}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       
       {/* Confirmation Dialog */}
       <ConfirmationDialog

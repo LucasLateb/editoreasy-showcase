@@ -126,7 +126,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [specializationsDialogOpen, setSpecializationsDialogOpen] = useState(false);
   const [showreelDialogOpen, setShowreelDialogOpen] = useState(false);
   
-  // Added state to store editor data when in view-only mode
   const [editorData, setEditorData] = useState<any>(null);
   
   useEffect(() => {
@@ -196,6 +195,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           
           if (portfolioSettings.showreel_url) {
             setShowreelUrl(portfolioSettings.showreel_url);
+            console.log('Portfolio: Setting showreel URL to:', portfolioSettings.showreel_url);
+          }
+
+          if (portfolioSettings.showreel_thumbnail) {
+            setShowreelThumbnail(portfolioSettings.showreel_thumbnail);
+            console.log('Portfolio: Setting showreel thumbnail to:', portfolioSettings.showreel_thumbnail);
           }
 
           if (portfolioSettings.about) {
@@ -400,11 +405,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     setShowreelDialogOpen(false);
     toast.success('Showreel URL updated');
   };
-  
-  const updateShowreelThumbnail = (newThumbnailUrl: string) => {
-    setShowreelThumbnail(newThumbnailUrl);
-    toast.success('Showreel thumbnail updated');
-  };
 
   const handleAddSpecialization = () => {
     if (newSpecialization.trim()) {
@@ -538,12 +538,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       showreelUrl={showreelUrl}
                       showreelThumbnail={showreelThumbnail}
                       editMode={editMode}
-                      showreelDialogOpen={showreelDialogOpen}
-                      setShowreelDialogOpen={setShowreelDialogOpen}
-                      setShowreelUrl={setShowreelUrl}
-                      updateShowreel={updateShowreel}
-                      updateShowreelThumbnail={updateShowreelThumbnail}
-                      thumbnailOptions={thumbnailOptions}
                     />
                     
                     <div className="mb-6">
