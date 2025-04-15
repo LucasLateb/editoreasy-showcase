@@ -18,6 +18,7 @@ import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Ch
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from "@/components/ui/slider";
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -153,6 +154,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     onClose();
   };
 
+  const handleCategoryChange = (value: number[]) => {
+    const index = value[0];
+    const category = categories[index];
+    if (category) {
+      setUploadData({...uploadData, categoryId: category.id});
+    }
+  };
+
+  const getCurrentCategoryIndex = () => {
+    return categories.findIndex(cat => cat.id === uploadData.categoryId);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
@@ -177,38 +190,30 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {categories.map((category) => (
-                  <button
+              <Label htmlFor="category">Category: {categories[getCurrentCategoryIndex()]?.name}</Label>
+              <div className="px-2 py-4">
+                <Slider
+                  id="category"
+                  max={categories.length - 1}
+                  step={1}
+                  value={[getCurrentCategoryIndex()]}
+                  onValueChange={handleCategoryChange}
+                  disabled={isUploading}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground px-2">
+                {categories.map((category, index) => (
+                  <div 
                     key={category.id}
-                    type="button"
-                    onClick={() => setUploadData({...uploadData, categoryId: category.id})}
                     className={cn(
-                      "relative p-3 rounded-lg border-2 transition-all duration-300 group",
-                      uploadData.categoryId === category.id 
-                        ? "border-primary bg-primary/10 ring-2 ring-primary" 
-                        : "border-muted hover:border-primary/50 hover:bg-primary/5"
+                      "cursor-pointer transition-colors",
+                      uploadData.categoryId === category.id && "text-primary font-medium"
                     )}
+                    onClick={() => handleCategoryChange([index])}
                   >
-                    <div className="flex flex-col items-center space-y-2">
-                      <span 
-                        className={cn(
-                          "text-sm font-medium transition-colors",
-                          uploadData.categoryId === category.id 
-                            ? "text-primary" 
-                            : "text-muted-foreground group-hover:text-primary"
-                        )}
-                      >
-                        {category.name}
-                      </span>
-                    </div>
-                    {uploadData.categoryId === category.id && (
-                      <div className="absolute top-1 right-1">
-                        <Check className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                  </button>
+                    {category.name}
+                  </div>
                 ))}
               </div>
             </div>
