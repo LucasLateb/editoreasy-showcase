@@ -162,6 +162,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           
           if (portfolioSettings.showreel_url) {
             setShowreelUrl(portfolioSettings.showreel_url);
+            console.log('Portfolio: Setting showreel URL to:', portfolioSettings.showreel_url);
+          }
+
+          if (portfolioSettings.showreel_thumbnail) {
+            setShowreelThumbnail(portfolioSettings.showreel_thumbnail);
+            console.log('Portfolio: Setting showreel thumbnail to:', portfolioSettings.showreel_thumbnail);
           }
 
           if (portfolioSettings.about) {
