@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -178,19 +178,39 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
-              <select 
-                id="category"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                value={uploadData.categoryId}
-                onChange={(e) => setUploadData({...uploadData, categoryId: e.target.value})}
-                disabled={isUploading}
-              >
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setUploadData({...uploadData, categoryId: category.id})}
+                    className={cn(
+                      "relative p-3 rounded-lg border-2 transition-all duration-300 group",
+                      uploadData.categoryId === category.id 
+                        ? "border-primary bg-primary/10 ring-2 ring-primary" 
+                        : "border-muted hover:border-primary/50 hover:bg-primary/5"
+                    )}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <span 
+                        className={cn(
+                          "text-sm font-medium transition-colors",
+                          uploadData.categoryId === category.id 
+                            ? "text-primary" 
+                            : "text-muted-foreground group-hover:text-primary"
+                        )}
+                      >
+                        {category.name}
+                      </span>
+                    </div>
+                    {uploadData.categoryId === category.id && (
+                      <div className="absolute top-1 right-1">
+                        <Check className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             
             <div className="grid gap-2">
