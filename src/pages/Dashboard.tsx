@@ -468,7 +468,37 @@ const Dashboard: React.FC = () => {
       if (error) {
         throw error;
       }
-      
+
+      // Check if this is the user's first video
+      const { data: existingVideos } = await supabase
+        .from('videos')
+        .select('id')
+        .eq('user_id', currentUser.id);
+
+      // If this is the first video (only one video exists), set it as the showreel
+      if (existingVideos && existingVideos.length === 1) {
+        const { error: showreelError } = await supabase
+          .from('portfolio_settings')
+          .upsert({
+            user_id: currentUser.id,
+            showreel_url: videoUrl,
+            showreel_thumbnail: thumbnailUrl,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+
+        if (showreelError) {
+          console.error('Error setting showreel:', showreelError);
+          // Don't throw error here as the video upload was successful
+        } else {
+          setCurrentShowreelUrl(videoUrl);
+          setCurrentShowreelThumbnail(thumbnailUrl);
+          toast({
+            title: "Showreel set",
+            description: "Your first video has been automatically set as your showreel.",
+          });
+        }
+      }
+
       const newVideo: Video = {
         id: data.id,
         title: data.title,
