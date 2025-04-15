@@ -136,11 +136,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
                   </span>
                 )}
                 <span>Joined {editor.createdAt.toLocaleDateString()}</span>
-                {editor.totalVideoLikes !== undefined && (
-                  <span className="flex items-center gap-1">
-                    • <Film className="h-3 w-3" /> {editor.totalVideoLikes} likes
-                  </span>
-                )}
+                
               </div>
             </div>
           </div>
@@ -207,7 +203,14 @@ const EditorCard: React.FC<EditorCardProps> = ({
               )} 
               fill={isLiked ? "currentColor" : "none"} 
             />
-            <span>{likesCount} likes</span>
+            {editor.totalVideoLikes !== undefined && (
+                  <span className="flex items-center gap-1">
+                    {editor.totalVideoLikes}
+                  </span>
+                )}
+
+
+            
           </div>
           
           <div className="flex space-x-2">
