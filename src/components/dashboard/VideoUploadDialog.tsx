@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Category } from '@/types';
 
 export interface UploadFormData {
   title: string;
@@ -29,13 +30,15 @@ interface VideoUploadDialogProps {
   onClose: () => void;
   onSubmit: (data: UploadFormData, videoFile: File | null, thumbnailFile: File | null) => void;
   isUploading?: boolean;
+  categories?: Category[];
 }
 
 const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  isUploading = false
+  isUploading = false,
+  categories = []
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -139,11 +142,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Animation</SelectItem>
-                <SelectItem value="2">Commercial</SelectItem>
-                <SelectItem value="3">Documentary</SelectItem>
-                <SelectItem value="4">Music Video</SelectItem>
-                <SelectItem value="5">Short Film</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
