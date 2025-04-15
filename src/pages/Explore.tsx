@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -11,7 +12,6 @@ import CategorySlider from '@/components/CategorySlider';
 import VideoCard from '@/components/VideoCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
-import { Input } from '@/components/ui/input';
 import { Search, Users } from 'lucide-react';
 import {
   Command,
@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import SpecializationFilter from '@/components/SpecializationFilter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Category, categories } from '@/types';
 
 const Footer = () => {
   return (
@@ -61,6 +62,10 @@ type ExploreVideoType = {
   categoryId: string;
   userId: string;
   createdAt: Date;
+  editorName?: string;
+  editorAvatar?: string;
+  editorTier?: string;
+  isHighlighted?: boolean;
 };
 
 type EditorType = {
@@ -80,6 +85,80 @@ const Explore: React.FC = () => {
   
   const [editors, setEditors] = useState<EditorType[]>([]);
   const [isLoadingEditors, setIsLoadingEditors] = useState(false);
+  
+  const [videos, setVideos] = useState<ExploreVideoType[]>([]);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+
+  // Fetch videos from Supabase
+  useEffect(() => {
+    const fetchVideos = async () => {
+      setIsLoadingVideos(true);
+      try {
+        let query = supabase
+          .from('videos')
+          .select(`
+            id, 
+            title, 
+            description, 
+            video_url, 
+            thumbnail_url, 
+            views, 
+            likes, 
+            category_id, 
+            user_id, 
+            created_at,
+            is_highlighted,
+            profiles(name, avatar_url, subscription_tier)
+          `);
+        
+        // Apply category filter if selected
+        if (selectedCategory) {
+          query = query.eq('category_id', selectedCategory.id);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Format the data to match our expected type
+        const formattedVideos = data.map(video => ({
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          videoUrl: video.video_url,
+          thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
+          views: video.views || 0,
+          likes: video.likes || 0,
+          categoryId: video.category_id,
+          userId: video.user_id,
+          createdAt: new Date(video.created_at),
+          date: new Date(video.created_at).toISOString().split('T')[0],
+          editorName: video.profiles?.name || 'Unknown Editor',
+          editorAvatar: video.profiles?.avatar_url || undefined,
+          editorTier: video.profiles?.subscription_tier || 'free',
+          isHighlighted: video.is_highlighted || false,
+          editor: video.profiles?.name || 'Unknown Editor',
+          thumbnail: video.thumbnail_url || '/placeholder.svg',
+        }));
+        
+        setVideos(formattedVideos);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+        toast({
+          title: 'Failed to load videos',
+          description: 'Could not retrieve videos from the database.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoadingVideos(false);
+      }
+    };
+
+    fetchVideos();
+  }, [toast, selectedCategory]);
 
   useEffect(() => {
     const fetchEditors = async () => {
@@ -125,68 +204,9 @@ const Explore: React.FC = () => {
     navigate(`/editor/${editorId}`);
   };
 
-  const videos: ExploreVideoType[] = [
-    {
-      id: '1',
-      title: 'Cinematic Travel Montage',
-      editor: 'Jane Filmmaker',
-      thumbnail: '/placeholder.svg',
-      views: 12453,
-      likes: 854,
-      date: '2023-08-15',
-      description: 'A breathtaking journey through exotic locations',
-      thumbnailUrl: '/placeholder.svg',
-      videoUrl: 'https://example.com/video1',
-      categoryId: '2',
-      userId: '1',
-      createdAt: new Date('2023-08-15')
-    },
-    {
-      id: '2',
-      title: 'Corporate Brand Video',
-      editor: 'Mark Visual',
-      thumbnail: '/placeholder.svg',
-      views: 7823,
-      likes: 421,
-      date: '2023-09-02',
-      description: 'Professional corporate promo video',
-      thumbnailUrl: '/placeholder.svg',
-      videoUrl: 'https://example.com/video2',
-      categoryId: '1',
-      userId: '2',
-      createdAt: new Date('2023-09-02')
-    },
-    {
-      id: '3',
-      title: 'Wedding Highlights',
-      editor: 'Emma Capture',
-      thumbnail: '/placeholder.svg',
-      views: 15932,
-      likes: 1203,
-      date: '2023-07-28',
-      description: 'Beautiful wedding day highlights',
-      thumbnailUrl: '/placeholder.svg',
-      videoUrl: 'https://example.com/video3',
-      categoryId: '3',
-      userId: '3',
-      createdAt: new Date('2023-07-28')
-    },
-    {
-      id: '4',
-      title: 'Product Commercial',
-      editor: 'Alex Editor',
-      thumbnail: '/placeholder.svg',
-      views: 8745,
-      likes: 632,
-      date: '2023-08-05',
-      description: 'Sleek product demonstration video',
-      thumbnailUrl: '/placeholder.svg',
-      videoUrl: 'https://example.com/video4',
-      categoryId: '1',
-      userId: '4',
-      createdAt: new Date('2023-08-05')
-    },
-  ];
+  const handleCategorySelect = (category: Category) => {
+    setSelectedCategory(category);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -207,15 +227,41 @@ const Explore: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CategorySlider />
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex-grow">
+                  <CategorySlider 
+                    onSelectCategory={handleCategorySelect}
+                    selectedCategoryId={selectedCategory?.id}
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="ml-2"
+                  onClick={() => setIsSearchOpen(true)}
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Find Editors
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
+          {isLoadingVideos ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : videos.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No videos found. {selectedCategory ? 'Try selecting a different category.' : ''}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {videos.map((video) => (
+                <VideoCard key={video.id} video={video} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
       <Footer />
