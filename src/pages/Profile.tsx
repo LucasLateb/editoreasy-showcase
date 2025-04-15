@@ -15,6 +15,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import CopyPortfolioLink from '@/components/CopyPortfolioLink'; 
+
 
 const Profile: React.FC = () => {
   const { currentUser, updateAvatar, isAuthenticated } = useAuth();

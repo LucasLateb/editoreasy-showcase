@@ -27,9 +27,6 @@ import { useNavigate } from 'react-router-dom';
 import SpecializationFilter from '@/components/SpecializationFilter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Video, Category, categories } from '@/types';
-import { Skeleton } from '@/components/ui/skeleton';
-import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 
 const Footer = () => {
   return (
@@ -77,92 +74,12 @@ const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   const [editors, setEditors] = useState<EditorType[]>([]);
   const [isLoadingEditors, setIsLoadingEditors] = useState(false);
-  
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-
-  useEffect(() => {
-    const fetchVideos = async () => {
-      setIsLoadingVideos(true);
-      try {
-        let query = supabase
-          .from('videos')
-          .select(`
-            id,
-            title,
-            description,
-            thumbnail_url,
-            video_url,
-            category_id,
-            user_id,
-            likes,
-            views,
-            created_at,
-            is_highlighted
-          `)
-          .order('created_at', { ascending: false });
-        
-        if (selectedCategory) {
-          query = query.eq('category_id', selectedCategory.id);
-        }
-        
-        const { data: videoData, error: videoError } = await query;
-        
-        if (videoError) {
-          throw videoError;
-        }
-
-        const formattedVideos: Video[] = await Promise.all(
-          videoData.map(async (video) => {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('name, avatar_url, subscription_tier')
-              .eq('id', video.user_id)
-              .single();
-            
-            return {
-              id: video.id,
-              title: video.title,
-              description: video.description || '',
-              thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
-              videoUrl: video.video_url || '',
-              categoryId: video.category_id,
-              userId: video.user_id,
-              likes: video.likes || 0,
-              views: video.views || 0,
-              createdAt: new Date(video.created_at),
-              isHighlighted: video.is_highlighted || false,
-              editorName: profileData?.name || 'Unknown Editor',
-              editorAvatar: profileData?.avatar_url || '',
-              editorTier: (profileData?.subscription_tier as 'free' | 'premium' | 'pro') || 'free'
-            };
-          })
-        );
-        
-        setVideos(formattedVideos);
-      } catch (error) {
-        console.error('Error fetching videos:', error);
-        toast({
-          title: 'Failed to load videos',
-          description: 'Could not retrieve videos from the database.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoadingVideos(false);
-      }
-    };
-
-    fetchVideos();
-  }, [toast, selectedCategory]);
 
   useEffect(() => {
     const fetchEditors = async () => {
@@ -208,14 +125,68 @@ const Explore: React.FC = () => {
     navigate(`/editor/${editorId}`);
   };
 
-  const handleCategorySelect = (category: Category | undefined) => {
-    setSelectedCategory(category || null);
-  };
-
-  const handleVideoClick = (video: Video) => {
-    setSelectedVideo(video);
-    setIsVideoDialogOpen(true);
-  };
+  const videos: ExploreVideoType[] = [
+    {
+      id: '1',
+      title: 'Cinematic Travel Montage',
+      editor: 'Jane Filmmaker',
+      thumbnail: '/placeholder.svg',
+      views: 12453,
+      likes: 854,
+      date: '2023-08-15',
+      description: 'A breathtaking journey through exotic locations',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video1',
+      categoryId: '2',
+      userId: '1',
+      createdAt: new Date('2023-08-15')
+    },
+    {
+      id: '2',
+      title: 'Corporate Brand Video',
+      editor: 'Mark Visual',
+      thumbnail: '/placeholder.svg',
+      views: 7823,
+      likes: 421,
+      date: '2023-09-02',
+      description: 'Professional corporate promo video',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video2',
+      categoryId: '1',
+      userId: '2',
+      createdAt: new Date('2023-09-02')
+    },
+    {
+      id: '3',
+      title: 'Wedding Highlights',
+      editor: 'Emma Capture',
+      thumbnail: '/placeholder.svg',
+      views: 15932,
+      likes: 1203,
+      date: '2023-07-28',
+      description: 'Beautiful wedding day highlights',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video3',
+      categoryId: '3',
+      userId: '3',
+      createdAt: new Date('2023-07-28')
+    },
+    {
+      id: '4',
+      title: 'Product Commercial',
+      editor: 'Alex Editor',
+      thumbnail: '/placeholder.svg',
+      views: 8745,
+      likes: 632,
+      date: '2023-08-05',
+      description: 'Sleek product demonstration video',
+      thumbnailUrl: '/placeholder.svg',
+      videoUrl: 'https://example.com/video4',
+      categoryId: '1',
+      userId: '4',
+      createdAt: new Date('2023-08-05')
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -236,53 +207,18 @@ const Explore: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CategorySlider 
-                onSelectCategory={handleCategorySelect}
-                selectedCategoryId={selectedCategory?.id}
-              />
+              <CategorySlider />
             </CardContent>
           </Card>
 
-          {isLoadingVideos ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, index) => (
-                <div key={index} className="flex flex-col gap-2">
-                  <Skeleton className="w-full aspect-video rounded-lg" />
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : videos.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium mb-2">No videos found</h3>
-              <p className="text-muted-foreground">
-                {selectedCategory 
-                  ? `No videos available in the ${selectedCategory.name} category.` 
-                  : 'There are no videos available at the moment.'}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {videos.map((video) => (
-                <div key={video.id} onClick={() => handleVideoClick(video)}>
-                  <VideoCard video={video} />
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {videos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
         </div>
       </main>
       <Footer />
-
-      {selectedVideo && (
-        <VideoPlayerDialog
-          isOpen={isVideoDialogOpen}
-          onClose={() => setIsVideoDialogOpen(false)}
-          videoUrl={selectedVideo.videoUrl}
-          title={selectedVideo.title}
-        />
-      )}
 
       <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
         <CommandInput 

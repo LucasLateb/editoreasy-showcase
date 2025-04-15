@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -11,7 +10,7 @@ import {
   parseJsonToCategory, 
   parseJsonToVideo
 } from '@/types';
-import { Save, Edit, Loader2 } from 'lucide-react';
+import { Save, Edit, Loader2, ClipboardCopy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -25,6 +24,39 @@ import ShowreelSection from '@/components/portfolio/ShowreelSection';
 import VideoGrid from '@/components/portfolio/VideoGrid';
 import TestimonialsTab from '@/components/portfolio/TestimonialsTab';
 import LoadingState from '@/components/portfolio/LoadingState';
+
+const CopyPortfolioLink: React.FC = () => {
+  const [copied, setCopied] = useState(false);
+  const currentUrl = window.location.href;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      toast.success('Portfolio link copied!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      toast.error('Failed to copy the link.');
+    }
+  };
+
+  return (
+    <Button onClick={handleCopy} variant="outline" className="w-full mt-2">
+      {copied ? (
+        <>
+          <Check className="w-4 h-4 mr-2" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <ClipboardCopy className="w-4 h-4 mr-2" />
+          Share
+        </>
+      )}
+    </Button>
+  );
+};
 
 interface PortfolioProps {
   isViewOnly?: boolean;
@@ -482,7 +514,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                   isViewOnly={isViewOnly}
                   editorData={editorData}
                 />
-                
+                <CopyPortfolioLink />
                 {editMode && (
                   <CategoryManager
                     userCategories={userCategories}
