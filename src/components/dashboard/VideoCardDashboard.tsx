@@ -12,23 +12,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, Heart } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import VideoEditDialog, { VideoEditFormData } from '@/components/dashboard/VideoEditDialog';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VideoCardDashboardProps {
   video: Video;
   category: { name: string } | undefined;
   onDelete: (videoId: string) => void;
-  onEdit?: (videoId: string) => void;
 }
 
 const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   video,
   category,
   onDelete,
-  onEdit
 }) => {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
 
   const handleVideoClick = () => {
@@ -38,6 +41,37 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleLike();
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (data: VideoEditFormData) => {
+    setIsEditing(true);
+    try {
+      const { error } = await supabase
+        .from('videos')
+        .update({
+          title: data.title,
+          description: data.description,
+          category_id: data.categoryId
+        })
+        .eq('id', video.id);
+
+      if (error) throw error;
+
+      toast.success('Video updated successfully');
+      setIsEditDialogOpen(false);
+      // Force a page reload to update the video list
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating video:', error);
+      toast.error('Failed to update video');
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   return (
@@ -87,12 +121,14 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         </CardContent>
         
         <CardFooter className="flex justify-between pt-4">
-          {onEdit && (
-            <Button size="sm" variant="outline" onClick={() => onEdit(video.id)}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-          )}
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleEditClick}
+          >
+            <Pencil className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
           <Button 
             size="sm" 
             variant="destructive" 
@@ -109,6 +145,15 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         onClose={() => setIsVideoDialogOpen(false)}
         videoUrl={video.videoUrl}
         title={video.title}
+      />
+
+      <VideoEditDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSubmit={handleEditSubmit}
+        video={video}
+        categories={[]} // Will be populated from parent component
+        isLoading={isEditing}
       />
     </>
   );
