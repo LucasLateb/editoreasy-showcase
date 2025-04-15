@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Video } from '@/types';
 import { 
@@ -14,7 +13,7 @@ import { Pencil, Trash2, Heart } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
-import VideoUploadDialog from '@/components/dashboard/VideoUploadDialog';
+import EditVideoDialog from '@/components/dashboard/EditVideoDialog';
 
 interface VideoCardDashboardProps {
   video: Video;
@@ -135,11 +134,10 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
       />
 
       {onEdit && (
-        <VideoUploadDialog
+        <EditVideoDialog
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
           onSubmit={handleEditSubmit}
-          editMode={true}
           initialData={{
             title: video.title,
             description: video.description,

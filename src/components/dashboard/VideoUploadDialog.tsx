@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { Category } from '@/types';
 
 export interface UploadFormData {
   title: string;
@@ -29,26 +28,14 @@ interface VideoUploadDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: UploadFormData, videoFile: File | null, thumbnailFile: File | null) => void;
-  editMode?: boolean;
-  initialData?: {
-    title: string;
-    description: string;
-    categoryId: string;
-    videoUrl: string;
-    thumbnailUrl: string;
-  };
   isUploading?: boolean;
-  categories?: Category[];
 }
 
 const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  editMode = false,
-  initialData,
-  isUploading = false,
-  categories = []
+  isUploading = false
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -59,17 +46,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (editMode && initialData) {
-      setTitle(initialData.title);
-      setDescription(initialData.description);
-      setCategoryId(initialData.categoryId);
-      setVideoUrl(initialData.videoUrl);
-      setThumbnailUrl(initialData.thumbnailUrl);
-      setUploadType('url');
-    }
-  }, [editMode, initialData]);
 
   const isFormValid = title.trim() !== '' && description.trim() !== '' && categoryId !== '';
 
@@ -123,12 +99,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{editMode ? 'Edit Video' : 'Upload Video'}</DialogTitle>
+          <DialogTitle>Upload Video</DialogTitle>
           <DialogDescription>
-            {editMode 
-              ? 'Update your video details'
-              : 'Add a new video to your portfolio by uploading a file or providing a URL'
-            }
+            Add a new video to your portfolio by uploading a file or providing a URL
           </DialogDescription>
         </DialogHeader>
 
@@ -161,26 +134,16 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             <Label htmlFor="category" className="text-right">
               Category
             </Label>
-            <Select onValueChange={setCategoryId} defaultValue={categoryId} >
+            <Select onValueChange={setCategoryId}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <>
-                    <SelectItem value="1">Animation</SelectItem>
-                    <SelectItem value="2">Commercial</SelectItem>
-                    <SelectItem value="3">Documentary</SelectItem>
-                    <SelectItem value="4">Music Video</SelectItem>
-                    <SelectItem value="5">Short Film</SelectItem>
-                  </>
-                )}
+                <SelectItem value="1">Animation</SelectItem>
+                <SelectItem value="2">Commercial</SelectItem>
+                <SelectItem value="3">Documentary</SelectItem>
+                <SelectItem value="4">Music Video</SelectItem>
+                <SelectItem value="5">Short Film</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -280,12 +243,10 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             {isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {editMode ? 'Saving...' : 'Uploading...'}
+                Uploading...
               </>
             ) : (
-              <>
-                {editMode ? 'Save Changes' : 'Upload Video'}
-              </>
+              'Upload Video'
             )}
           </Button>
         </DialogFooter>
