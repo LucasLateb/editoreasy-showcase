@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Category } from '@/types';
 import { useForm } from 'react-hook-form';
-import { Loader2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, ImageIcon } from 'lucide-react';
 
 interface VideoEditDialogProps {
   isOpen: boolean;
@@ -55,6 +55,17 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
 
   const handleFormSubmit = async (data: VideoEditFormData) => {
     await onSubmit(data);
+  };
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue('thumbnailUrl', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -112,26 +123,32 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
-                <div className="space-y-3">
-                  <Input
-                    id="thumbnailUrl"
-                    {...register('thumbnailUrl')}
-                    placeholder="Enter thumbnail URL"
-                    disabled={isLoading}
-                  />
-                  {thumbnailUrl && (
-                    <div className="relative aspect-video w-full rounded-lg border overflow-hidden">
+                <Label htmlFor="thumbnail">Thumbnail</Label>
+                <div className="flex flex-col space-y-4">
+                  <div className="relative aspect-video w-full rounded-lg border overflow-hidden bg-muted">
+                    {thumbnailUrl ? (
                       <img 
                         src={thumbnailUrl} 
-                        alt="Video thumbnail preview"
+                        alt="Video thumbnail"
                         className="object-cover w-full h-full"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
                         }}
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <Input
+                    id="thumbnail"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleThumbnailChange}
+                    disabled={isLoading}
+                    className="cursor-pointer"
+                  />
                 </div>
               </div>
             </div>

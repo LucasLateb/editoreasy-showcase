@@ -51,13 +51,33 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const handleEditSubmit = async (data: VideoEditFormData) => {
     setIsEditing(true);
     try {
+      // Handle base64 image upload if the thumbnailUrl starts with "data:"
+      let finalThumbnailUrl = data.thumbnailUrl;
+      if (data.thumbnailUrl.startsWith('data:')) {
+        const base64Data = data.thumbnailUrl.split(',')[1];
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('thumbnails')
+          .upload(`${video.id}-${Date.now()}.jpg`, decode(base64Data), {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('thumbnails')
+          .getPublicUrl(uploadData.path);
+          
+        finalThumbnailUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('videos')
         .update({
           title: data.title,
           description: data.description,
           category_id: data.categoryId,
-          thumbnail_url: data.thumbnailUrl
+          thumbnail_url: finalThumbnailUrl
         })
         .eq('id', video.id);
 
@@ -159,5 +179,15 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
     </>
   );
 };
+
+// Helper function to decode base64
+function decode(base64String: string): Uint8Array {
+  const binaryString = atob(base64String);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
 
 export default VideoCardDashboard;
