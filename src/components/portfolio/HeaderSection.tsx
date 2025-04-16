@@ -7,12 +7,12 @@ import { Play, Heart, Eye, Edit } from 'lucide-react';
 import { Video } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface HeaderSectionProps {
   featuredVideo: Video;
-  currentUser: any; // Changed to accept either the logged-in user or the editor being viewed
+  currentUser: any;
   editMode: boolean;
-  thumbnailOptions: Array<{ id: string; url: string }>;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   title: string;
   setTitle: (title: string) => void;
@@ -23,8 +23,7 @@ interface HeaderSectionProps {
 const HeaderSection: React.FC<HeaderSectionProps> = ({ 
   featuredVideo, 
   currentUser, 
-  editMode, 
-  thumbnailOptions,
+  editMode,
   updateVideoThumbnail,
   title,
   setTitle,
@@ -34,11 +33,25 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedDescription, setEditedDescription] = useState(description);
+  const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
 
   const handleSaveTitle = () => {
     setTitle(editedTitle);
     setDescription(editedDescription);
     setTitleDialogOpen(false);
+  };
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        updateVideoThumbnail(featuredVideo.id, base64String);
+        setThumbnailDialogOpen(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Display title based on the current user (could be the editor we're viewing)
@@ -82,7 +95,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
             
             {editMode && (
               <div className="mt-8 flex gap-3 animate-slide-in-down opacity-0" style={{ animationDelay: '0.8s' }}>
-                <Dialog>
+                <Dialog open={thumbnailDialogOpen} onOpenChange={setThumbnailDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
                       Change Thumbnail
@@ -90,26 +103,32 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Choose a thumbnail</DialogTitle>
+                      <DialogTitle>Choose a new thumbnail</DialogTitle>
                     </DialogHeader>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      {thumbnailOptions.map(thumbnail => (
-                        <Card 
-                          key={thumbnail.id} 
-                          className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                          onClick={() => updateVideoThumbnail(featuredVideo.id, thumbnail.url)}
-                        >
-                          <CardContent className="p-2">
-                            <div className="aspect-video relative overflow-hidden rounded">
-                              <img 
-                                src={thumbnail.url} 
-                                alt={`Thumbnail option ${thumbnail.id}`} 
-                                className="w-full h-full object-cover" 
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="thumbnail">Upload Image</Label>
+                        <Input
+                          id="thumbnail"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleThumbnailChange}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                      
+                      {featuredVideo.thumbnailUrl && (
+                        <div className="space-y-2">
+                          <Label>Current Thumbnail</Label>
+                          <div className="aspect-video relative rounded-lg overflow-hidden border">
+                            <img 
+                              src={featuredVideo.thumbnailUrl} 
+                              alt="Current thumbnail" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
