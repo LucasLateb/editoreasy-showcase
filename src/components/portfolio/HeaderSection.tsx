@@ -78,7 +78,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               style={{ animationDelay: '0.4s' }}
             >
               <FileVideo2 className="h-4 w-4" />
-              <span>{totalVideos} Video{totalVideos !== 1 ? 's' : ''}</span>
+              <span className="whitespace-nowrap">{totalVideos} Video{totalVideos !== 1 ? 's' : ''}</span>
             </div>
 
             {editMode && (
