@@ -71,7 +71,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               {editMode ? title : displayTitle}
             </h1>
             <div 
-              className="flex items-center gap-4 animate-slide-in-up opacity-0 bg-black/40 inline-flex px-3 py-1 rounded"
+              className="flex flex-col items-start gap-2 animate-slide-in-up opacity-0 bg-black/40 inline-flex px-3 py-1 rounded"
               style={{ animationDelay: '0.3s' }}
             >
               <div className="flex items-center gap-1 text-white">
