@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 
       <div className="absolute inset-0 flex flex-col justify-end pb-8">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl -mt-4"> {/* Added -mt-4 to move content up */}
             {/* Titre en overlay */}
             <h1
               className="text-4xl md:text-5xl font-bold text-white mb-2 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
@@ -89,11 +90,12 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                 rounded 
                 shadow-lg 
                 shadow-black/40
+                whitespace-nowrap
               "
               style={{ animationDelay: '0.4s' }}
             >
               <FileVideo2 className="h-4 w-4" />
-              <span className="text-sm whitespace-nowrap">
+              <span className="text-sm">
                 {totalVideos} Video{totalVideos !== 1 ? 's' : ''} displayed
               </span>
             </div>
@@ -194,3 +196,4 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 };
 
 export default HeaderSection;
+
