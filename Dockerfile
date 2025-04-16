@@ -28,4 +28,4 @@ COPY --from=build /app ./
 EXPOSE 4173
 
 # Lancement du serveur de prévisualisation Vite
-CMD ["npm", "run", "preview"]
+CMD ["./run.sh"]
