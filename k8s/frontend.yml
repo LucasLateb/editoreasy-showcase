@@ -23,9 +23,10 @@ kind: Service
 metadata:
   name: vite-frontend
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: vite-frontend
   ports:
     - port: 80
       targetPort: 4173
+      nodePort: 30080
