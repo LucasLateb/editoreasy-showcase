@@ -489,6 +489,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           setTitle={setPortfolioTitle}
           description={portfolioDescription}
           setDescription={setPortfolioDescription}
+          totalVideos={videos.length}
         />
         
         <section className="py-12 bg-secondary">

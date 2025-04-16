@@ -1,13 +1,9 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Play, Heart, Eye } from 'lucide-react';
-import { Video } from '@/types';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { FileVideo2 } from 'lucide-react';
+import { Video } from '@/types';
 
 interface HeaderSectionProps {
   featuredVideo: Video;
@@ -18,6 +14,7 @@ interface HeaderSectionProps {
   setTitle: (title: string) => void;
   description: string;
   setDescription: (description: string) => void;
+  totalVideos?: number;
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({
@@ -27,17 +24,14 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   updateVideoThumbnail,
   title,
   setTitle,
-  description,
-  setDescription
+  totalVideos = 0
 }) => {
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
-  const [editedDescription, setEditedDescription] = useState(description);
   const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
 
   const handleSaveTitle = () => {
     setTitle(editedTitle);
-    setDescription(editedDescription);
     setTitleDialogOpen(false);
   };
 
@@ -67,19 +61,27 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/60 to-transparent"></div>
       </div>
 
-      <div className="absolute inset-0 flex items-center">
-        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <div className="absolute inset-0 flex flex-col justify-end pb-8">
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <h1
-              className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
+              className="text-4xl md:text-5xl font-bold text-white mb-2 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
               style={{ animationDelay: '0.2s' }}
             >
               {editMode ? title : displayTitle}
             </h1>
+            
+            <div 
+              className="flex items-center space-x-2 text-white animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
+              style={{ animationDelay: '0.4s' }}
+            >
+              <FileVideo2 className="h-4 w-4" />
+              <span>{totalVideos} Video{totalVideos !== 1 ? 's' : ''}</span>
+            </div>
 
             {editMode && (
               <div
-                className="mt-8 flex gap-3 animate-slide-in-down opacity-0"
+                className="mt-4 flex gap-3 animate-slide-in-down opacity-0"
                 style={{ animationDelay: '0.8s' }}
               >
                 <Dialog
