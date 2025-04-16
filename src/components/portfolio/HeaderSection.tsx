@@ -65,16 +65,16 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
           alt="Featured work" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/60 to-transparent"></div>
       </div>
       
       <div className="absolute inset-0 flex items-center">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.2s' }}>
-              {editMode ? title : displayTitle}
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded" style={{ animationDelay: '0.2s' }}>
+              {editMode ? title : (currentUser?.name ? `${currentUser.name}'s Portfolio` : title)}
             </h1>
-            <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl animate-slide-in-down opacity-0" style={{ animationDelay: '0.4s' }}>
+            <p className="text-lg md:text-xl text-white mb-8 max-w-2xl animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-2 rounded" style={{ animationDelay: '0.4s' }}>
               {description}
             </p>
             
