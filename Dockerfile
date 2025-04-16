@@ -1,31 +1,39 @@
-# Étape 1 : Construction du projet
+############################
+# Étape 1 : construction
+############################
 FROM node:18 AS build
 
-# Crée un dossier de travail dans le conteneur
 WORKDIR /app
 
-# Copie les fichiers de dépendances
+# Copie des fichiers de dépendances seulement
 COPY package*.json ./
 
-# Installe les dépendances
-RUN npm install
+# Installation (npm ci plus rapide et fiable en CI)
+RUN npm ci
 
-# Copie le reste des fichiers du projet
+# Copie du reste du code
 COPY . .
 
-# Build de l'application Vite
+# Build Vite (génère dist/)
 RUN npm run build
 
-# Étape 2 : Lancement en mode preview (production)
+
+############################
+# Étape 2 : image finale
+############################
 FROM node:18 AS production
 
-# Dossier de travail pour le conteneur final
 WORKDIR /app
 
-# Copie le build et les fichiers nécessaires
-COPY --from=build /app ./
+# Copie tout le dossier compilé (code + dist + run.sh)
+COPY --from=build /app .
 
+# Assure‑toi que le script est exécutable
+RUN chmod +x run.sh
+
+# Port par défaut de vite preview
+ENV PORT=4173
 EXPOSE 4173
 
-# Lancement du serveur de prévisualisation Vite
-CMD ["./run.sh"]
+# On lance bash (et non Node) pour exécuter le script
+ENTRYPOINT ["bash", "/app/run.sh"]
