@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Video } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Heart, Eye } from 'lucide-react';
+import { Video } from '@/types';
 
 interface HeaderSectionProps {
   featuredVideo: Video;
@@ -63,13 +63,26 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 
       <div className="absolute inset-0 flex items-end pb-8">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl space-y-2">
             <h1
-              className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-up opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
+              className="text-4xl md:text-5xl font-bold text-white mb-2 animate-slide-in-up opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
               style={{ animationDelay: '0.2s' }}
             >
               {editMode ? title : displayTitle}
             </h1>
+            <div 
+              className="flex items-center gap-4 animate-slide-in-up opacity-0 bg-black/40 inline-flex px-3 py-1 rounded"
+              style={{ animationDelay: '0.3s' }}
+            >
+              <div className="flex items-center gap-1 text-white">
+                <Heart className="w-4 h-4" />
+                <span>{featuredVideo.likes}</span>
+              </div>
+              <div className="flex items-center gap-1 text-white">
+                <Eye className="w-4 h-4" />
+                <span>{featuredVideo.views}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
