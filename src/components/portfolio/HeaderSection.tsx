@@ -66,7 +66,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 
       <div className="absolute inset-0 flex flex-col justify-end pb-8">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl -mt-4"> {/* Added -mt-4 to move content up */}
+          <div className="max-w-3xl -mt-20"> {/* Added -mt-4 to move content up */}
             {/* Titre en overlay */}
             <h1
               className="text-4xl md:text-5xl font-bold text-white mb-2 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
@@ -80,23 +80,24 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               className="
                 animate-slide-in-down 
                 opacity-0 
-                inline-flex 
-                items-center 
+                flex
+                items-center
                 gap-2 
                 text-white 
-                bg-black/40 
-                px-2 
-                py-1 
+                bg-black/40
+                px-2
+                py-1
                 rounded 
                 shadow-lg 
                 shadow-black/40
                 whitespace-nowrap
+                w-fit
               "
               style={{ animationDelay: '0.4s' }}
             >
               <FileVideo2 className="h-4 w-4" />
               <span className="text-sm">
-                {totalVideos} Video{totalVideos !== 1 ? 's' : ''} displayed
+                {totalVideos} Video{totalVideos !== 1 ? 's' : ''} Available
               </span>
             </div>
 
