@@ -484,7 +484,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           featuredVideo={featuredVideo}
           currentUser={isViewOnly ? editorData : currentUser}
           editMode={editMode}
-          thumbnailOptions={thumbnailOptions}
           updateVideoThumbnail={updateVideoThumbnail}
           title={portfolioTitle}
           setTitle={setPortfolioTitle}
