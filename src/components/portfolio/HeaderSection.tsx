@@ -74,7 +74,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
             </h1>
             
             <div 
-              className="flex items-center space-x-2 text-white animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
+              className="flex items-center space-x-2 text-white animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded shadow-lg shadow-black/40"
               style={{ animationDelay: '0.4s' }}
             >
               <FileVideo2 className="h-4 w-4" />
