@@ -70,16 +70,16 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => !isLoading && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Edit Video Details</DialogTitle>
           <DialogDescription>
             Update the information for your video.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col flex-1 overflow-hidden">
-          <ScrollArea className="flex-1 pr-4" type="always">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-auto pr-4">
             <div className="space-y-6 pb-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
@@ -152,9 +152,9 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
-          <DialogFooter className="mt-6 pt-4 border-t">
+          <DialogFooter className="mt-6 pt-4 border-t shrink-0">
             <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>
               Cancel
             </Button>
