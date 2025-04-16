@@ -14,6 +14,7 @@ import VideosTab from '@/components/dashboard/VideosTab';
 import AnalyticsTab from '@/components/dashboard/AnalyticsTab';
 import AccountTab from '@/components/dashboard/AccountTab';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import MessagingTab from '@/components/dashboard/MessagingTab';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -594,6 +595,7 @@ const Dashboard: React.FC = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="videos">My Videos</TabsTrigger>
             <TabsTrigger value="showreel">My Showreel</TabsTrigger>
+            <TabsTrigger value="messaging">Messaging</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
@@ -616,6 +618,10 @@ const Dashboard: React.FC = () => {
               currentShowreelUrl={currentShowreelUrl}
               currentShowreelThumbnail={currentShowreelThumbnail}
             />
+          </TabsContent>
+          
+          <TabsContent value="messaging">
+            <MessagingTab />
           </TabsContent>
           
           <TabsContent value="analytics">
