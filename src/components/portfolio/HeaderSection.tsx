@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   const displayTitle = currentUser?.name ? `${currentUser.name}'s Portfolio` : title;
 
   return (
-    // Reduced from h-[60vh] md:h-[70vh] to h-[40vh] md:h-[50vh]
     <section className="relative h-[40vh] md:h-[50vh] overflow-hidden group">
       <div className="absolute inset-0">
         <img
@@ -68,7 +68,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
       </div>
 
       <div className="absolute inset-0 flex items-center">
-        {/* Reduced top margin from mt-16 to mt-8 */}
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div className="max-w-3xl">
             <h1
@@ -77,30 +76,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
             >
               {editMode ? title : displayTitle}
             </h1>
-            <p
-              className="text-lg md:text-xl text-white mb-8 max-w-2xl animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-2 rounded"
-              style={{ animationDelay: '0.4s' }}
-            >
-              {description}
-            </p>
-
-            <div
-              className="flex flex-wrap gap-4 animate-slide-in-down opacity-0"
-              style={{ animationDelay: '0.6s' }}
-            >
-              <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
-                <Play className="h-4 w-4" />
-                <span>Featured Work</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
-                <Heart className="h-4 w-4" />
-                <span>{featuredVideo.likes} Likes</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
-                <Eye className="h-4 w-4" />
-                <span>{featuredVideo.views} Views</span>
-              </button>
-            </div>
 
             {editMode && (
               <div
@@ -159,7 +134,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                       variant="outline"
                       className="bg-background/80 backdrop-blur-sm"
                     >
-                      Edit Title & Description
+                      Edit Title
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -179,22 +154,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                           value={editedTitle}
                           onChange={(e) => setEditedTitle(e.target.value)}
                           placeholder="Enter your portfolio title"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="portfolio-description"
-                          className="text-sm font-medium"
-                        >
-                          Portfolio Description
-                        </label>
-                        <Textarea
-                          id="portfolio-description"
-                          value={editedDescription}
-                          onChange={(e) => setEditedDescription(e.target.value)}
-                          placeholder="Enter your portfolio description"
-                          className="min-h-[100px]"
                         />
                       </div>
 
