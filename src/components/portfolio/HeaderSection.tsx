@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Play, Heart, Eye, Edit } from 'lucide-react';
+import { Play, Heart, Eye } from 'lucide-react';
 import { Video } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,9 +19,9 @@ interface HeaderSectionProps {
   setDescription: (description: string) => void;
 }
 
-const HeaderSection: React.FC<HeaderSectionProps> = ({ 
-  featuredVideo, 
-  currentUser, 
+const HeaderSection: React.FC<HeaderSectionProps> = ({
+  featuredVideo,
+  currentUser,
   editMode,
   updateVideoThumbnail,
   title,
@@ -54,31 +53,41 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     }
   };
 
-  // Display title based on the current user (could be the editor we're viewing)
   const displayTitle = currentUser?.name ? `${currentUser.name}'s Portfolio` : title;
 
   return (
-    <section className="relative h-[60vh] md:h-[70vh] overflow-hidden group">
+    // Reduced from h-[60vh] md:h-[70vh] to h-[40vh] md:h-[50vh]
+    <section className="relative h-[40vh] md:h-[50vh] overflow-hidden group">
       <div className="absolute inset-0">
-        <img 
-          src={featuredVideo.thumbnailUrl} 
-          alt="Featured work" 
+        <img
+          src={featuredVideo.thumbnailUrl}
+          alt="Featured work"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/60 to-transparent"></div>
       </div>
-      
+
       <div className="absolute inset-0 flex items-center">
-        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+        {/* Reduced top margin from mt-16 to mt-8 */}
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded" style={{ animationDelay: '0.2s' }}>
-              {editMode ? title : (currentUser?.name ? `${currentUser.name}'s Portfolio` : title)}
+            <h1
+              className="text-4xl md:text-5xl font-bold text-white mb-4 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
+              style={{ animationDelay: '0.2s' }}
+            >
+              {editMode ? title : displayTitle}
             </h1>
-            <p className="text-lg md:text-xl text-white mb-8 max-w-2xl animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-2 rounded" style={{ animationDelay: '0.4s' }}>
+            <p
+              className="text-lg md:text-xl text-white mb-8 max-w-2xl animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-2 rounded"
+              style={{ animationDelay: '0.4s' }}
+            >
               {description}
             </p>
-            
-            <div className="flex flex-wrap gap-4 animate-slide-in-down opacity-0" style={{ animationDelay: '0.6s' }}>
+
+            <div
+              className="flex flex-wrap gap-4 animate-slide-in-down opacity-0"
+              style={{ animationDelay: '0.6s' }}
+            >
               <button className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition duration-200">
                 <Play className="h-4 w-4" />
                 <span>Featured Work</span>
@@ -92,12 +101,22 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                 <span>{featuredVideo.views} Views</span>
               </button>
             </div>
-            
+
             {editMode && (
-              <div className="mt-8 flex gap-3 animate-slide-in-down opacity-0" style={{ animationDelay: '0.8s' }}>
-                <Dialog open={thumbnailDialogOpen} onOpenChange={setThumbnailDialogOpen}>
+              <div
+                className="mt-8 flex gap-3 animate-slide-in-down opacity-0"
+                style={{ animationDelay: '0.8s' }}
+              >
+                <Dialog
+                  open={thumbnailDialogOpen}
+                  onOpenChange={setThumbnailDialogOpen}
+                >
                   <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-background/80 backdrop-blur-sm"
+                    >
                       Change Thumbnail
                     </Button>
                   </DialogTrigger>
@@ -116,14 +135,14 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                           className="cursor-pointer"
                         />
                       </div>
-                      
+
                       {featuredVideo.thumbnailUrl && (
                         <div className="space-y-2">
                           <Label>Current Thumbnail</Label>
                           <div className="aspect-video relative rounded-lg overflow-hidden border">
-                            <img 
-                              src={featuredVideo.thumbnailUrl} 
-                              alt="Current thumbnail" 
+                            <img
+                              src={featuredVideo.thumbnailUrl}
+                              alt="Current thumbnail"
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -132,10 +151,14 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                     </div>
                   </DialogContent>
                 </Dialog>
-                
+
                 <Dialog open={titleDialogOpen} onOpenChange={setTitleDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="bg-background/80 backdrop-blur-sm">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-background/80 backdrop-blur-sm"
+                    >
                       Edit Title & Description
                     </Button>
                   </DialogTrigger>
@@ -145,7 +168,10 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                     </DialogHeader>
                     <div className="space-y-4 mt-4">
                       <div className="space-y-2">
-                        <label htmlFor="portfolio-title" className="text-sm font-medium">
+                        <label
+                          htmlFor="portfolio-title"
+                          className="text-sm font-medium"
+                        >
                           Portfolio Title
                         </label>
                         <Input
@@ -155,9 +181,12 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                           placeholder="Enter your portfolio title"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <label htmlFor="portfolio-description" className="text-sm font-medium">
+                        <label
+                          htmlFor="portfolio-description"
+                          className="text-sm font-medium"
+                        >
                           Portfolio Description
                         </label>
                         <Textarea
@@ -168,7 +197,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                           className="min-h-[100px]"
                         />
                       </div>
-                      
+
                       <div className="flex justify-end">
                         <Button onClick={handleSaveTitle}>
                           Save Changes
