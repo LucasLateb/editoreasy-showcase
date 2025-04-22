@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +23,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
@@ -34,7 +32,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isLoading) return; // Prevent multiple submissions
+    if (isLoading) return;
     
     setIsLoading(true);
     setErrorMessage(null);
@@ -47,30 +45,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             title: "Logged in successfully",
             description: "Welcome back to VideoCut!",
           });
-          // Let the useEffect handle redirection to avoid race conditions
         }
       } else {
         const result = await register(name, email, password);
         if (result) {
           toast({
             title: "Account created",
-            description: "Welcome to VideoCut! Please confirm your email to activate your account.",
+            description: "Please check your email to verify your account. After verification, you'll be redirected to your dashboard.",
+            duration: 6000,
           });
-          // Let the useEffect handle redirection to avoid race conditions
         }
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
       
-      // More comprehensive error handling
       let errorMsg = "Authentication failed. Please check your credentials and try again.";
       
       if (error.message) {
-        // Handle specific known Supabase error messages
         if (error.message.includes('Invalid login credentials')) {
           errorMsg = "Invalid email or password. Please try again.";
         } else if (error.message.includes('Email not confirmed')) {
-          errorMsg = "Please confirm your email address before logging in.";
+          errorMsg = "Please check your email and confirm your address before logging in.";
         } else if (error.message.includes('User already registered')) {
           errorMsg = "An account with this email already exists. Try logging in instead.";
         } else {

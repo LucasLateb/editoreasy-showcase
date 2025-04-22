@@ -168,14 +168,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
-      // Register the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name // This will be stored in user metadata and used by our trigger
-          }
+            name
+          },
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
 
