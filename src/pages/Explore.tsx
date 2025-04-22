@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -28,6 +27,7 @@ import SpecializationFilter from '@/components/SpecializationFilter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Category, Video, categories } from '@/types';
+import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 
 const Footer = () => {
   return (
@@ -89,13 +89,13 @@ const Explore: React.FC = () => {
   const [videos, setVideos] = useState<ExploreVideoType[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<ExploreVideoType | null>(null);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
 
-  // Fetch videos from Supabase
   useEffect(() => {
     const fetchVideos = async () => {
       setIsLoadingVideos(true);
       try {
-        // First fetch the videos
         let query = supabase
           .from('videos')
           .select(`
@@ -112,7 +112,6 @@ const Explore: React.FC = () => {
             is_highlighted
           `);
         
-        // Apply category filter if selected
         if (selectedCategory) {
           query = query.eq('category_id', selectedCategory.id);
         }
@@ -129,10 +128,8 @@ const Explore: React.FC = () => {
           return;
         }
 
-        // Get all unique user IDs from videos
         const userIds = [...new Set(videoData.map(video => video.user_id))];
         
-        // Fetch profiles for these users in a separate query
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, subscription_tier')
@@ -140,16 +137,19 @@ const Explore: React.FC = () => {
           
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
-          // Continue without profiles rather than failing completely
+          toast({
+            title: 'Failed to load videos',
+            description: 'Could not retrieve videos from the database.',
+            variant: 'destructive',
+          });
+          return;
         }
         
-        // Create a map of user_id to profile data for quick lookup
         const profilesMap = (profilesData || []).reduce((acc, profile) => {
           acc[profile.id] = profile;
           return acc;
         }, {} as Record<string, any>);
         
-        // Combine video data with profile data
         const formattedVideos = videoData.map(video => {
           const profile = profilesMap[video.user_id] || {};
           
@@ -243,6 +243,11 @@ const Explore: React.FC = () => {
     setSelectedCategory(category);
   };
 
+  const handleVideoClick = (video: ExploreVideoType) => {
+    setSelectedVideo(video);
+    setIsVideoDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -293,13 +298,24 @@ const Explore: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {videos.map((video) => (
-                <VideoCard key={video.id} video={video as Video} />
+                <div key={video.id} onClick={() => handleVideoClick(video)}>
+                  <VideoCard video={video as Video} />
+                </div>
               ))}
             </div>
           )}
         </div>
       </main>
       <Footer />
+
+      {selectedVideo && (
+        <VideoPlayerDialog
+          isOpen={isVideoDialogOpen}
+          onClose={() => setIsVideoDialogOpen(false)}
+          videoUrl={selectedVideo.videoUrl}
+          title={selectedVideo.title}
+        />
+      )}
 
       <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
         <CommandInput 
