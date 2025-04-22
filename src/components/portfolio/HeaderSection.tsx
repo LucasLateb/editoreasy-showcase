@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ interface HeaderSectionProps {
   description: string;
   setDescription: (description: string) => void;
   totalVideos?: number;
+  isSavingTitle?: boolean;
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({
@@ -26,14 +26,19 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   updateVideoThumbnail,
   title,
   setTitle,
-  totalVideos = 0
+  totalVideos = 0,
+  isSavingTitle = false,
 }) => {
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
 
+  React.useEffect(() => {
+    setEditedTitle(title);
+  }, [title]);
+
   const handleSaveTitle = () => {
-    setTitle(editedTitle);
+    setTitle(editedTitle.trim());
     setTitleDialogOpen(false);
   };
 
@@ -50,11 +55,12 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     }
   };
 
-  const displayTitle = currentUser?.name ? `${currentUser.name}'s Portfolio` : title;
+  const displayTitle = currentUser?.name
+    ? `${currentUser.name}'s Portfolio`
+    : title;
 
   return (
     <section className="relative h-[40vh] md:h-[50vh] overflow-hidden group">
-      {/* Image de fond */}
       <div className="absolute inset-0">
         <img
           src={featuredVideo.thumbnailUrl}
@@ -66,8 +72,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 
       <div className="absolute inset-0 flex flex-col justify-end pb-8">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl -mt-20"> {/* Added -mt-4 to move content up */}
-            {/* Titre en overlay */}
+          <div className="max-w-3xl -mt-20">
             <h1
               className="text-4xl md:text-5xl font-bold text-white mb-2 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
               style={{ animationDelay: '0.2s' }}
@@ -75,7 +80,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               {editMode ? title : displayTitle}
             </h1>
             
-            {/* Compteur de vidéos avec un fond gris réduit à la taille du contenu */}
             <div
               className="
                 animate-slide-in-down 
@@ -101,7 +105,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               </span>
             </div>
 
-            {/* Boutons d'édition (si editMode = true) */}
             {editMode && (
               <div
                 className="mt-4 flex gap-3 animate-slide-in-down opacity-0"
@@ -176,12 +179,33 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                           value={editedTitle}
                           onChange={(e) => setEditedTitle(e.target.value)}
                           placeholder="Enter your portfolio title"
+                          disabled={isSavingTitle}
                         />
                       </div>
-
-                      <div className="flex justify-end">
-                        <Button onClick={handleSaveTitle}>
-                          Save Changes
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setTitleDialogOpen(false)}
+                          disabled={isSavingTitle}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleSaveTitle}
+                          disabled={isSavingTitle || editedTitle.trim() === ''}
+                        >
+                          {isSavingTitle ? (
+                            <>
+                              <span className="mr-2">Saving...</span>
+                              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              </svg>
+                            </>
+                          ) : (
+                            "Save Changes"
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -197,4 +221,3 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 };
 
 export default HeaderSection;
-

@@ -128,6 +128,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   
   const [editorData, setEditorData] = useState<any>(null);
   
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+
   useEffect(() => {
     const fetchPortfolioSettings = async () => {
       if (!userId) {
@@ -486,10 +488,14 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           editMode={editMode}
           updateVideoThumbnail={updateVideoThumbnail}
           title={portfolioTitle}
-          setTitle={setPortfolioTitle}
+          setTitle={(title: string) => {
+            setPortfolioTitle(title);
+            updatePortfolioTitle(title);
+          }}
           description={portfolioDescription}
           setDescription={setPortfolioDescription}
           totalVideos={videos.length}
+          isSavingTitle={isSavingTitle}
         />
         
         <section className="py-12 bg-secondary">
