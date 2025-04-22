@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -129,6 +130,34 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [editorData, setEditorData] = useState<any>(null);
   
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+
+  // Add the updatePortfolioTitle function that was missing
+  const updatePortfolioTitle = async (title: string) => {
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to update your portfolio title');
+      return;
+    }
+    
+    setIsSavingTitle(true);
+    
+    try {
+      const { error } = await supabase
+        .from('portfolio_settings')
+        .update({ portfolio_title: title })
+        .eq('user_id', currentUser.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('Portfolio title updated successfully');
+    } catch (error) {
+      console.error('Error updating portfolio title:', error);
+      toast.error('Failed to update portfolio title');
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPortfolioSettings = async () => {
