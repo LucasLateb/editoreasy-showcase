@@ -1,6 +1,4 @@
 
-/* Remove GT Walsheim Font Import and update font references to Inter */
-
 /* Tailwind Directives */
 @tailwind base;
 @tailwind components;
@@ -183,4 +181,3 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
 }
-

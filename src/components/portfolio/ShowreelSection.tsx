@@ -23,35 +23,9 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     return null;
   }
 
-  // Check if the URL is actually an embed code (contains iframe)
-  const isEmbedCode = showreelUrl && typeof showreelUrl === 'string' && showreelUrl.includes('<iframe');
-  
-  // Extract the src URL from an embed code if needed
-  const extractSrcFromEmbed = (embedCode: string) => {
-    try {
-      const srcMatch = embedCode.match(/src="([^"]+)"/);
-      return srcMatch && srcMatch[1] ? srcMatch[1] : '';
-    } catch (error) {
-      console.error('Error extracting src from embed code:', error);
-      return '';
-    }
-  };
-  
-  // Get the actual URL to use in the iframe
-  let iframeSrc = '';
-  if (isEmbedCode && showreelUrl) {
-    iframeSrc = extractSrcFromEmbed(showreelUrl);
-  } else if (showreelUrl) {
-    // Just use the URL as is
-    iframeSrc = showreelUrl;
-  }
-
   const handlePlayClick = () => {
     setVideoPlayerOpen(true);
   };
-
-  // For debugging, log the thumbnail information
-  console.log('ShowreelSection - Thumbnail URL:', showreelThumbnail);
 
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -87,12 +61,14 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       ) : null}
 
       {/* Video Player Dialog */}
-      <VideoPlayerDialog
-        isOpen={videoPlayerOpen}
-        onClose={() => setVideoPlayerOpen(false)}
-        videoUrl={showreelUrl}
-        title="My Showreel"
-      />
+      {showreelUrl && (
+        <VideoPlayerDialog
+          isOpen={videoPlayerOpen}
+          onClose={() => setVideoPlayerOpen(false)}
+          videoUrl={showreelUrl}
+          title="My Showreel"
+        />
+      )}
     </div>
   );
 };

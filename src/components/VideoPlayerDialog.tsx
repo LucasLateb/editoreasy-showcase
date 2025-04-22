@@ -48,21 +48,60 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
     return null;
   };
   
-  // Check if the videoUrl is an embed code (contains iframe)
-  const isEmbedCode = videoUrl.includes('<iframe');
-  
-  // Extract the src URL from embed code
-  let embedSrc = '';
-  if (isEmbedCode) {
-    const srcMatch = videoUrl.match(/src="([^"]+)"/);
-    if (srcMatch && srcMatch[1]) {
-      embedSrc = srcMatch[1];
+  // Function to convert Vimeo URLs to embed format
+  const getVimeoEmbedUrl = (url: string): string | null => {
+    // Handle various Vimeo URL formats
+    const vimeoRegex = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|)(\d+)(?:|\/\?)/i;
+    const match = url.match(vimeoRegex);
+    
+    if (match && match[1]) {
+      // Return Vimeo embed URL
+      return `https://player.vimeo.com/video/${match[1]}`;
     }
+    
+    return null;
+  };
+  
+  // Parse embed code to extract iframe src
+  const getEmbedSrc = (embedCode: string): string | null => {
+    const srcMatch = embedCode.match(/src=["']([^"']+)["']/i);
+    return srcMatch && srcMatch[1] ? srcMatch[1] : null;
+  };
+  
+  // Determine content type and source
+  const determineVideoSource = () => {
+    // If it's an empty string or undefined, return null
+    if (!videoUrl) return { type: 'none', src: null };
+    
+    // Check if it's an embed code (contains iframe)
+    if (videoUrl.includes('<iframe')) {
+      const src = getEmbedSrc(videoUrl);
+      return { type: 'embed', src };
+    }
+    
+    // Check if it's a YouTube URL
+    const youtubeEmbed = getYouTubeEmbedUrl(videoUrl);
+    if (youtubeEmbed) {
+      return { type: 'youtube', src: youtubeEmbed };
+    }
+    
+    // Check if it's a Vimeo URL
+    const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
+    if (vimeoEmbed) {
+      return { type: 'vimeo', src: vimeoEmbed };
+    }
+    
+    // Default to treating it as a direct video URL
+    return { type: 'video', src: videoUrl };
+  };
+  
+  const videoSource = determineVideoSource();
+
+  // If we have no source, don't render anything
+  if (videoSource.type === 'none' || !videoSource.src) {
+    return null;
   }
   
-  // Check if it's a YouTube URL that needs to be converted
-  const youtubeEmbedUrl = getYouTubeEmbedUrl(videoUrl);
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-6xl w-[95vw] p-1 overflow-hidden">
@@ -80,33 +119,25 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
         </div>
         
         <div className="overflow-hidden rounded">
-          {isEmbedCode && embedSrc ? (
+          {(videoSource.type === 'embed' || videoSource.type === 'youtube' || videoSource.type === 'vimeo') ? (
             <div className="w-full aspect-video">
               <iframe 
-                src={embedSrc}
+                src={videoSource.src}
                 className="w-full h-full"
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
-                title={title}
-              />
-            </div>
-          ) : youtubeEmbedUrl ? (
-            <div className="w-full aspect-video">
-              <iframe 
-                src={youtubeEmbedUrl}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                allowFullScreen
                 title={title}
               />
             </div>
           ) : (
             <video 
               ref={videoRef}
-              src={videoUrl} 
+              src={videoSource.src} 
               controls
               autoPlay
               className="w-full aspect-video"
+              playsInline
             >
               Your browser does not support the video tag.
             </video>
