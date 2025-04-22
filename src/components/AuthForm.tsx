@@ -54,6 +54,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             description: "Please check your email to verify your account. After verification, you'll be redirected to your dashboard.",
             duration: 6000,
           });
+          navigate('/check-email');
+          return;
         }
       }
     } catch (error: any) {

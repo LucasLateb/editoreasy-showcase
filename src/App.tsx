@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,6 +14,7 @@ import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import CheckEmail from '@/pages/CheckEmail';
 import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
@@ -67,6 +67,7 @@ export default function App() {
             <Route path="/editor/:id" element={<Portfolio isViewOnly />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/check-email" element={<CheckEmail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </QueryClientProvider>
