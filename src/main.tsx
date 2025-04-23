@@ -1,11 +1,43 @@
+
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
+// Find the root element
 const rootElement = document.getElementById("root");
 
+// Add error boundary to catch rendering errors
 if (rootElement) {
-  createRoot(rootElement).render(<App />);
+  // Wrap in a try-catch to prevent unhandled exceptions during initialization
+  try {
+    const root = createRoot(rootElement);
+    
+    // Add event listener for unhandled errors
+    window.addEventListener('error', (event) => {
+      console.error('Unhandled error:', event.error);
+    });
+
+    // Add event listener for unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+    });
+
+    // Render the app
+    root.render(<App />);
+  } catch (error) {
+    console.error("Error rendering application:", error);
+    
+    // Display a fallback UI when an error occurs during initial render
+    rootElement.innerHTML = `
+      <div style="padding: 20px; text-align: center;">
+        <h2>Something went wrong</h2>
+        <p>The application couldn't be loaded. Please try refreshing the page.</p>
+        <button onclick="location.reload()" style="padding: 8px 16px; margin-top: 16px;">
+          Refresh Page
+        </button>
+      </div>
+    `;
+  }
 } else {
-  console.error("Élément racine introuvable dans le DOM.");
+  console.error("Root element not found in the DOM.");
 }
