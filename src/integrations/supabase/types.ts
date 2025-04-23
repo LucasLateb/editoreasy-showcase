@@ -57,6 +57,33 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_views: {
+        Row: {
+          browser: string | null
+          device_type: string | null
+          id: string
+          portfolio_user_id: string | null
+          viewed_at: string
+          viewer_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          device_type?: string | null
+          id?: string
+          portfolio_user_id?: string | null
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          device_type?: string | null
+          id?: string
+          portfolio_user_id?: string | null
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Relationships: []
+      }
       profile_likes: {
         Row: {
           created_at: string | null
@@ -95,6 +122,7 @@ export type Database = {
           id: string
           likes: number | null
           name: string | null
+          portfolio_views: number | null
           subscription_tier: string | null
         }
         Insert: {
@@ -105,6 +133,7 @@ export type Database = {
           id: string
           likes?: number | null
           name?: string | null
+          portfolio_views?: number | null
           subscription_tier?: string | null
         }
         Update: {
@@ -115,6 +144,7 @@ export type Database = {
           id?: string
           likes?: number | null
           name?: string | null
+          portfolio_views?: number | null
           subscription_tier?: string | null
         }
         Relationships: []
@@ -244,6 +274,15 @@ export type Database = {
       has_premium_access: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      record_portfolio_view: {
+        Args: {
+          portfolio_user_id_param: string
+          viewer_id_param: string
+          device_type_param: string
+          browser_param: string
+        }
+        Returns: undefined
       }
       record_video_view: {
         Args: {

@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ViewsChart from './analytics/ViewsChart';
 import BrowserStats from './analytics/BrowserStats';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users, Play, Globe } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 const AnalyticsTab: React.FC = () => {
   const { currentUser } = useAuth();
@@ -30,12 +31,28 @@ const AnalyticsTab: React.FC = () => {
     queryFn: async () => {
       if (!currentUser?.id || !hasPremiumAccess) return null;
 
-      // Fetch views over time
+      // Fetch profile views data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('portfolio_views')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Fetch portfolio views over time
+      const { data: portfolioViewsData, error: portfolioViewsError } = await supabase
+        .from('portfolio_views')
+        .select('viewed_at, browser')
+        .eq('portfolio_user_id', currentUser.id);
+
+      if (portfolioViewsError) throw portfolioViewsError;
+
+      // Fetch video views data
       const { data: viewsData, error: viewsError } = await supabase
         .from('video_views')
         .select('video_id, viewed_at, browser')
         .in('video_id', 
-          // Fix: Extract ids from the subquery properly
           await supabase
             .from('videos')
             .select('id')
@@ -45,10 +62,10 @@ const AnalyticsTab: React.FC = () => {
 
       if (viewsError) throw viewsError;
 
-      // Process views data
+      // Process video views data
       const viewsByDate = new Map();
       const browserCounts = new Map();
-      let totalViews = 0;
+      let totalVideoViews = 0;
 
       viewsData?.forEach(view => {
         const date = new Date(view.viewed_at).toLocaleDateString();
@@ -56,7 +73,20 @@ const AnalyticsTab: React.FC = () => {
         
         const browser = view.browser || 'Unknown';
         browserCounts.set(browser, (browserCounts.get(browser) || 0) + 1);
-        totalViews++;
+        totalVideoViews++;
+      });
+
+      // Process portfolio views data
+      const portfolioViewsByDate = new Map();
+      const portfolioBrowserCounts = new Map();
+      let totalPortfolioViews = profileData?.portfolio_views || 0;
+
+      portfolioViewsData?.forEach(view => {
+        const date = new Date(view.viewed_at).toLocaleDateString();
+        portfolioViewsByDate.set(date, (portfolioViewsByDate.get(date) || 0) + 1);
+        
+        const browser = view.browser || 'Unknown';
+        portfolioBrowserCounts.set(browser, (portfolioBrowserCounts.get(browser) || 0) + 1);
       });
 
       // Format data for charts
@@ -64,18 +94,37 @@ const AnalyticsTab: React.FC = () => {
         .map(([date, views]) => ({ date, views }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+      const portfolioViewsChartData = Array.from(portfolioViewsByDate.entries())
+        .map(([date, views]) => ({ date, views }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
       const browserStats = Array.from(browserCounts.entries())
         .map(([browser, views]) => ({
           browser,
           views,
-          percentage: (views / totalViews) * 100
+          percentage: (views / totalVideoViews) * 100
+        }))
+        .sort((a, b) => b.views - a.views);
+
+      const portfolioBrowserStats = Array.from(portfolioBrowserCounts.entries())
+        .map(([browser, views]) => ({
+          browser,
+          views,
+          percentage: (views / totalPortfolioViews) * 100
         }))
         .sort((a, b) => b.views - a.views);
 
       return {
-        viewsChartData,
-        browserStats,
-        totalViews
+        videoViews: {
+          total: totalVideoViews,
+          chartData: viewsChartData,
+          browserStats
+        },
+        portfolioViews: {
+          total: totalPortfolioViews,
+          chartData: portfolioViewsChartData,
+          browserStats: portfolioBrowserStats
+        }
       };
     },
     enabled: hasPremiumAccess === true,
@@ -120,7 +169,7 @@ const AnalyticsTab: React.FC = () => {
       <Alert>
         <AlertTitle>No data available</AlertTitle>
         <AlertDescription>
-          Start sharing your videos to see analytics data.
+          Start sharing your videos and portfolio to see analytics data.
         </AlertDescription>
       </Alert>
     );
@@ -128,15 +177,45 @@ const AnalyticsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-background p-4 rounded-lg border border-border">
-          <div className="text-muted-foreground text-sm mb-1">Total Views</div>
-          <div className="text-3xl font-bold">{analyticsData.totalViews}</div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="bg-background p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3">
+            <Play className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">Video Views</div>
+              <div className="text-3xl font-bold">{analyticsData.videoViews.total}</div>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="bg-background p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3">
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">Portfolio Views</div>
+              <div className="text-3xl font-bold">{analyticsData.portfolioViews.total}</div>
+            </div>
+          </div>
+        </Card>
       </div>
       
-      <ViewsChart data={analyticsData.viewsChartData} />
-      <BrowserStats stats={analyticsData.browserStats} />
+      <div className="space-y-8">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Video Analytics</h3>
+          <ViewsChart data={analyticsData.videoViews.chartData} />
+          <div className="mt-4">
+            <BrowserStats stats={analyticsData.videoViews.browserStats} />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Portfolio Analytics</h3>
+          <ViewsChart data={analyticsData.portfolioViews.chartData} />
+          <div className="mt-4">
+            <BrowserStats stats={analyticsData.portfolioViews.browserStats} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
