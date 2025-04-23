@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import useViewTracking from '@/hooks/useViewTracking';
 
 import ProfileCard from '@/components/portfolio/ProfileCard';
 import CategoryManager from '@/components/portfolio/CategoryManager';
@@ -98,7 +99,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   
   const [isSavingTitle, setIsSavingTitle] = useState(false);
 
-  // Add the updatePortfolioTitle function that was missing
   const updatePortfolioTitle = async (title: string) => {
     if (!currentUser?.id) {
       toast.error('You must be logged in to update your portfolio title');
@@ -125,6 +125,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       setIsSavingTitle(false);
     }
   };
+
+  const { recordPortfolioView } = useViewTracking();
 
   useEffect(() => {
     const fetchPortfolioSettings = async () => {

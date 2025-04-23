@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { 
   Dialog,
@@ -9,24 +8,33 @@ import {
 } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import useViewTracking from '@/hooks/useViewTracking';
 
 interface VideoPlayerDialogProps {
   isOpen: boolean;
   onClose: () => void;
   videoUrl: string;
   title: string;
+  videoId?: string;
 }
 
 const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   isOpen,
   onClose,
   videoUrl,
-  title
+  title,
+  videoId
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+  const { recordVideoView } = useViewTracking();
+
   useEffect(() => {
-    // Auto-play video when dialog opens (for native video element)
+    if (isOpen && videoId) {
+      recordVideoView(videoId);
+    }
+  }, [isOpen, videoId, recordVideoView]);
+
+  useEffect(() => {
     if (isOpen && videoRef.current) {
       videoRef.current.play().catch(err => {
         console.error('Error auto-playing video:', err);
@@ -34,70 +42,56 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
     }
   }, [isOpen]);
 
-  // Function to convert YouTube URLs to embed format
   const getYouTubeEmbedUrl = (url: string): string | null => {
-    // Handle various YouTube URL formats
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
     const match = url.match(youtubeRegex);
     
     if (match && match[1]) {
-      // Return YouTube embed URL
       return `https://www.youtube.com/embed/${match[1]}`;
     }
     
     return null;
   };
   
-  // Function to convert Vimeo URLs to embed format
   const getVimeoEmbedUrl = (url: string): string | null => {
-    // Handle various Vimeo URL formats
     const vimeoRegex = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|)(\d+)(?:|\/\?)/i;
     const match = url.match(vimeoRegex);
     
     if (match && match[1]) {
-      // Return Vimeo embed URL
       return `https://player.vimeo.com/video/${match[1]}`;
     }
     
     return null;
   };
   
-  // Parse embed code to extract iframe src
   const getEmbedSrc = (embedCode: string): string | null => {
     const srcMatch = embedCode.match(/src=["']([^"']+)["']/i);
     return srcMatch && srcMatch[1] ? srcMatch[1] : null;
   };
   
-  // Determine content type and source
   const determineVideoSource = () => {
-    // If it's an empty string or undefined, return null
     if (!videoUrl) return { type: 'none', src: null };
     
-    // Check if it's an embed code (contains iframe)
     if (videoUrl.includes('<iframe')) {
       const src = getEmbedSrc(videoUrl);
       return { type: 'embed', src };
     }
     
-    // Check if it's a YouTube URL
     const youtubeEmbed = getYouTubeEmbedUrl(videoUrl);
     if (youtubeEmbed) {
       return { type: 'youtube', src: youtubeEmbed };
     }
     
-    // Check if it's a Vimeo URL
     const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
     if (vimeoEmbed) {
       return { type: 'vimeo', src: vimeoEmbed };
     }
     
-    // Default to treating it as a direct video URL
     return { type: 'video', src: videoUrl };
   };
   
   const videoSource = determineVideoSource();
 
-  // If we have no source, don't render anything
   if (videoSource.type === 'none' || !videoSource.src) {
     return null;
   }
