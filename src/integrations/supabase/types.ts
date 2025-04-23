@@ -148,6 +148,44 @@ export type Database = {
           },
         ]
       }
+      video_views: {
+        Row: {
+          browser: string | null
+          device_type: string | null
+          id: string
+          video_id: string | null
+          view_duration: number | null
+          viewed_at: string
+          viewer_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          device_type?: string | null
+          id?: string
+          video_id?: string | null
+          view_duration?: number | null
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          device_type?: string | null
+          id?: string
+          video_id?: string | null
+          view_duration?: number | null
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_views_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           category_id: string
@@ -202,6 +240,19 @@ export type Database = {
       check_video_like: {
         Args: { video_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      has_premium_access: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      record_video_view: {
+        Args: {
+          video_id_param: string
+          viewer_id_param: string
+          device_type_param: string
+          browser_param: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
