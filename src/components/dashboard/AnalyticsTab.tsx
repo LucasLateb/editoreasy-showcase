@@ -34,10 +34,14 @@ const AnalyticsTab: React.FC = () => {
       const { data: viewsData, error: viewsError } = await supabase
         .from('video_views')
         .select('video_id, viewed_at, browser')
-        .in('video_id', supabase
-          .from('videos')
-          .select('id')
-          .eq('user_id', currentUser.id));
+        .in('video_id', 
+          // Fix: Extract ids from the subquery properly
+          await supabase
+            .from('videos')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .then(({ data }) => data ? data.map(item => item.id) : [])
+        );
 
       if (viewsError) throw viewsError;
 
