@@ -8,6 +8,11 @@ export const useViewTracking = () => {
 
   const recordVideoView = useCallback(async (videoId: string) => {
     try {
+      if (!videoId) {
+        console.error('Missing videoId for tracking');
+        return;
+      }
+      
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
       
@@ -17,6 +22,7 @@ export const useViewTracking = () => {
         device_type_param: deviceType,
         browser_param: browser
       });
+      console.log('Video view recorded successfully');
     } catch (error) {
       console.error('Error recording video view:', error);
     }
@@ -24,8 +30,16 @@ export const useViewTracking = () => {
 
   const recordPortfolioView = useCallback(async (portfolioUserId: string) => {
     try {
+      if (!portfolioUserId) {
+        console.error('Missing portfolioUserId for tracking');
+        return;
+      }
+      
       // Don't record if viewing own portfolio
-      if (currentUser?.id === portfolioUserId) return;
+      if (currentUser?.id === portfolioUserId) {
+        console.log('Skipping view recording for own portfolio');
+        return;
+      }
       
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
@@ -36,6 +50,7 @@ export const useViewTracking = () => {
         device_type_param: deviceType,
         browser_param: browser
       });
+      console.log('Portfolio view recorded successfully');
     } catch (error) {
       console.error('Error recording portfolio view:', error);
     }
@@ -46,23 +61,33 @@ export const useViewTracking = () => {
 
 // Helper functions to detect browser and device info
 const getBrowserInfo = () => {
-  const userAgent = navigator.userAgent;
-  if (userAgent.includes('Firefox')) return 'Firefox';
-  if (userAgent.includes('Chrome')) return 'Chrome';
-  if (userAgent.includes('Safari')) return 'Safari';
-  if (userAgent.includes('Edge')) return 'Edge';
-  return 'Other';
+  try {
+    const userAgent = navigator.userAgent;
+    if (userAgent.includes('Firefox')) return 'Firefox';
+    if (userAgent.includes('Chrome')) return 'Chrome';
+    if (userAgent.includes('Safari')) return 'Safari';
+    if (userAgent.includes('Edge')) return 'Edge';
+    return 'Other';
+  } catch (error) {
+    console.error('Error detecting browser:', error);
+    return 'Unknown';
+  }
 };
 
 const getDeviceType = () => {
-  const userAgent = navigator.userAgent;
-  if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
-    return 'Mobile';
+  try {
+    const userAgent = navigator.userAgent;
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
+      return 'Mobile';
+    }
+    if (/iPad|Android|Tablet/.test(userAgent)) {
+      return 'Tablet';
+    }
+    return 'Desktop';
+  } catch (error) {
+    console.error('Error detecting device type:', error);
+    return 'Unknown';
   }
-  if (/iPad|Android|Tablet/.test(userAgent)) {
-    return 'Tablet';
-  }
-  return 'Desktop';
 };
 
 export default useViewTracking;

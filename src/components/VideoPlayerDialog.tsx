@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { 
   Dialog,
@@ -27,10 +28,19 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { recordVideoView } = useViewTracking();
+  const viewTrackedRef = useRef(false);
 
   useEffect(() => {
-    if (isOpen && videoId) {
+    // Only track the view once when the dialog opens
+    if (isOpen && videoId && !viewTrackedRef.current) {
+      console.log('Tracking video view for:', videoId);
       recordVideoView(videoId);
+      viewTrackedRef.current = true;
+    }
+    
+    // Reset the tracking ref when dialog closes
+    if (!isOpen) {
+      viewTrackedRef.current = false;
     }
   }, [isOpen, videoId, recordVideoView]);
 
