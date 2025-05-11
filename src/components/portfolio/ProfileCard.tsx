@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -93,8 +92,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <div className="flex items-center">
               <span 
                 className={cn(
-                  "text-sm flex items-center cursor-pointer",
-                  isViewOnly ? "text-muted-foreground" : "hover:text-primary"
+                  "text-sm flex items-center",
+                  isViewOnly && "cursor-pointer"
                 )}
                 onClick={() => isViewOnly && toggleLike()}
               >
@@ -102,11 +101,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   className={cn(
                     "h-4 w-4 mr-1 transition-colors",
                     isLiked ? "text-red-500" : "text-muted-foreground",
-                    !isLoading && isViewOnly && "hover:text-red-400"
+                    !isLoading && "hover:text-red-400 cursor-pointer"
                   )} 
                   fill={isLiked ? "currentColor" : "none"} 
-                /> 
-                {likesCount}
+                />
+                <span className="flex items-center gap-1">
+                  {likesCount}
+                </span>
               </span>
             </div>
             <span className="text-sm text-muted-foreground ml-2 pl-2 border-l border-border flex items-center">
