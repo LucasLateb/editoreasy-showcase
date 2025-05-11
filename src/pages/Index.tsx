@@ -76,7 +76,8 @@ const Index: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name, subscription_tier')
+          .select('id, name, subscription_tier, role')
+          .eq('role', 'monteur') // Only fetch editors (monteurs), not clients
           .order('name');
         
         if (error) {
@@ -86,7 +87,8 @@ const Index: React.FC = () => {
         const editorsData = data.map(profile => ({
           id: profile.id,
           name: profile.name || 'Unnamed Editor',
-          subscription_tier: profile.subscription_tier
+          subscription_tier: profile.subscription_tier,
+          role: profile.role
         }));
         
         setAllEditors(editorsData);
@@ -111,6 +113,7 @@ const Index: React.FC = () => {
         const { data: editorsData, error: editorsError } = await supabase
           .from('profiles')
           .select('*')
+          .eq('role', 'monteur') // Only fetch editors (monteurs), not clients
           .order('likes', { ascending: false })
           .limit(8);
         
