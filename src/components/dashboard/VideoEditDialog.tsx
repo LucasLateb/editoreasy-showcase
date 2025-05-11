@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Category } from '@/types';
 import { useForm } from 'react-hook-form';
 import { Loader2, ImageIcon } from 'lucide-react';
+import { Image } from '@/components/ui/image';
 
 interface VideoEditDialogProps {
   isOpen: boolean;
@@ -60,9 +61,18 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image trop volumineuse. Maximum 5MB.');
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setValue('thumbnailUrl', reader.result as string);
+      };
+      reader.onerror = () => {
+        console.error("FileReader error:", reader.error);
+        alert('Erreur lors de la lecture du fichier');
       };
       reader.readAsDataURL(file);
     }
@@ -127,13 +137,11 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
                 <div className="flex flex-col space-y-4">
                   <div className="relative aspect-video w-full rounded-lg border overflow-hidden bg-muted">
                     {thumbnailUrl ? (
-                      <img 
+                      <Image 
                         src={thumbnailUrl} 
                         alt="Video thumbnail"
                         className="object-cover w-full h-full"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
-                        }}
+                        fallbackSrc="/placeholder.svg"
                       />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full">

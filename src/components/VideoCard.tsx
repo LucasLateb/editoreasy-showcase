@@ -5,6 +5,7 @@ import { Eye, Heart, Play, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
+import { Image } from '@/components/ui/image';
 
 interface VideoCardProps {
   video: Video;
@@ -25,7 +26,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       onMouseLeave={() => setIsHovering(false)}
     >
       {/* Video Thumbnail */}
-      <img
+      <Image
         src={video.thumbnailUrl}
         alt={video.title}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -78,7 +79,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           <div className="flex items-center mb-2">
             <div className="w-5 h-5 rounded-full bg-accent mr-2 overflow-hidden">
               {video.editorAvatar ? (
-                <img src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
+                <Image src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
                   {video.editorName.charAt(0)}

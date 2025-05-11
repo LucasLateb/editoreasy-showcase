@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { Image } from '@/components/ui/image';
 
 interface ShowreelSectionProps {
   showreelUrl: string;
@@ -35,14 +36,11 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       {showreelUrl ? (
         <div className="aspect-video relative">
           <div className="relative w-full h-full">
-            <img 
+            <Image 
               src={showreelThumbnail || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f'} 
               alt="Showreel thumbnail" 
               className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error('Failed to load thumbnail:', showreelThumbnail);
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f';
-              }}
+              fallbackSrc="https://images.unsplash.com/photo-1550745165-9bc0b252726f"
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <div 

@@ -17,6 +17,7 @@ import { useVideoLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Image } from '@/components/ui/image';
 
 interface VideoCardDashboardProps {
   video: Video;
@@ -102,7 +103,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
           className="relative aspect-video cursor-pointer" 
           onClick={handleVideoClick}
         >
-          <img 
+          <Image 
             src={video.thumbnailUrl} 
             alt={video.title} 
             className="w-full h-full object-cover"
@@ -166,6 +167,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         onClose={() => setIsVideoDialogOpen(false)}
         videoUrl={video.videoUrl}
         title={video.title}
+        videoId={video.id}
       />
 
       <VideoEditDialog
