@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart } from 'lucide-react';
-import { useProfileLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
 
 interface ProfileCardProps {
@@ -70,8 +69,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     return 'Free';
   };
   
-  // Get the total video likes for the user
-  const totalVideoLikes = displayUser?.totalVideoLikes || 0;
+  // Get the total video likes from the user data
+  // This matches how EditorCard handles the likes count
+  const totalVideoLikes = displayUser?.totalVideoLikes !== undefined ? displayUser.totalVideoLikes : 0;
   
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
