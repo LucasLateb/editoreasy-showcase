@@ -93,7 +93,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               <span className="text-sm flex items-center">
                 <Heart 
                   className="h-4 w-4 mr-1 text-muted-foreground" 
-                  fill="none" 
+                  fill="currentColor" 
+                  strokeWidth={1.5}
                 />
                 <span className="flex items-center gap-1">
                   {totalVideoLikes}
