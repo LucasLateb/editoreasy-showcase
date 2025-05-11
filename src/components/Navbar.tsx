@@ -80,15 +80,6 @@ const Navbar: React.FC = () => {
           >
             Explore
           </Link>
-          <Link 
-            to="/pricing" 
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-primary",
-              location.pathname === "/pricing" ? "text-primary" : "text-foreground/80"
-            )}
-          >
-            Pricing
-          </Link>
           {isAuthenticated && (
             <>
               <Link 
