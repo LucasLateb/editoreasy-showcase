@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -94,20 +93,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               {formatSubscriptionTier(displayUser?.subscriptionTier || displayUser?.subscription_tier)}
             </Badge>
             <div className="flex items-center">
-              <span 
-                className={cn(
-                  "text-sm flex items-center",
-                  isViewOnly && "cursor-pointer"
-                )}
-                onClick={() => isViewOnly && toggleLike()}
-              >
+              <span className="text-sm flex items-center">
                 <Heart 
-                  className={cn(
-                    "h-4 w-4 mr-1 transition-colors",
-                    isLiked ? "text-red-500" : "text-muted-foreground",
-                    !isLoading && "hover:text-red-400 cursor-pointer"
-                  )} 
-                  fill={isLiked ? "currentColor" : "none"} 
+                  className="h-4 w-4 mr-1 transition-colors text-muted-foreground"
+                  fill="none" 
                 />
                 <span className="flex items-center gap-1">
                   {totalVideoLikes}
