@@ -65,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
             likes: data.likes,
             createdAt: new Date(data.created_at),
+            // Use optional chaining to safely access the role property
+            // Default to 'monteur' if role is not present
             role: data.role || 'monteur'
           };
           setCurrentUser(user);
@@ -105,6 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
             likes: data.likes,
             createdAt: new Date(data.created_at),
+            // Use optional chaining to safely access the role property
+            // Default to 'monteur' if role is not present
             role: data.role || 'monteur'
           };
           setCurrentUser(user);
@@ -154,6 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
         createdAt: new Date(profileData.created_at),
+        // Use optional chaining to safely access the role property
+        // Default to 'monteur' if role is not present
         role: profileData.role || 'monteur'
       };
 
@@ -226,6 +232,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
         createdAt: new Date(profileData.created_at),
+        // Use optional chaining to safely access the role property
+        // Default to the provided role or 'monteur' if role is not present in profile data
         role: profileData.role || role
       };
       
