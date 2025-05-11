@@ -50,6 +50,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
           });
         }
       } else {
+        // Pass the exact selected role to register
         const result = await register(name, email, password, userRole);
         if (result) {
           toast({

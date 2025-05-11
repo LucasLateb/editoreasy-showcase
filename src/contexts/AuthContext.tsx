@@ -177,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             name,
-            role
+            role // Ensure the role is passed correctly
           },
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           subscriptionTier: 'free' as const,
           likes: 0,
           createdAt: new Date(),
-          role: role
+          role: role // Use the provided role
         };
         
         setCurrentUser(user);
@@ -226,7 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
         createdAt: new Date(profileData.created_at),
-        role: profileData.role || role
+        role: profileData.role || role // Use the profile role or the provided role
       };
       
       setCurrentUser(user);
