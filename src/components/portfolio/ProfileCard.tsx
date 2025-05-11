@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart } from 'lucide-react';
+import { useProfileLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
 
 interface ProfileCardProps {
@@ -50,6 +51,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 }) => {
   // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
+  const userId = displayUser?.id;
+  
+  // Use profile likes hook to get like functionality
+  const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);
+  
+  // Only use the total video likes, not including profile likes
+  const totalVideoLikes = displayUser?.totalVideoLikes || 0;
   
   // Function to format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
@@ -69,10 +77,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     return 'Free';
   };
   
-  // Get the total video likes from the user data
-  // This matches how EditorCard handles the likes count
-  const totalVideoLikes = displayUser?.totalVideoLikes !== undefined ? displayUser.totalVideoLikes : 0;
-  
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
       {/* Profile information */}
@@ -90,11 +94,20 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               {formatSubscriptionTier(displayUser?.subscriptionTier || displayUser?.subscription_tier)}
             </Badge>
             <div className="flex items-center">
-              <span className="text-sm flex items-center">
+              <span 
+                className={cn(
+                  "text-sm flex items-center",
+                  isViewOnly && "cursor-pointer"
+                )}
+                onClick={() => isViewOnly && toggleLike()}
+              >
                 <Heart 
-                  className="h-4 w-4 mr-1 text-muted-foreground" 
-                  fill="currentColor" 
-                  strokeWidth={1.5}
+                  className={cn(
+                    "h-4 w-4 mr-1 transition-colors",
+                    isLiked ? "text-red-500" : "text-muted-foreground",
+                    !isLoading && "hover:text-red-400 cursor-pointer"
+                  )} 
+                  fill={isLiked ? "currentColor" : "none"} 
                 />
                 <span className="flex items-center gap-1">
                   {totalVideoLikes}
