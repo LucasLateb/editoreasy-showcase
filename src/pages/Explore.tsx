@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -319,6 +318,10 @@ const Explore: React.FC = () => {
           videoUrl={selectedVideo.videoUrl}
           title={selectedVideo.title}
           videoId={selectedVideo.id}
+          description={selectedVideo.description}
+          editorId={selectedVideo.userId}
+          editorName={selectedVideo.editorName}
+          editorAvatar={selectedVideo.editorAvatar}
         />
       )}
 
