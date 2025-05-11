@@ -9,19 +9,36 @@ interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 const Image = React.forwardRef<HTMLImageElement, ImageProps>(
   ({ className, src, alt, fallbackSrc = '/placeholder.svg', ...props }, ref) => {
     const [error, setError] = useState(false);
+    const [loaded, setLoaded] = useState(false);
     
     return (
-      <img
-        className={cn('object-cover w-full h-full', className)}
-        src={error ? fallbackSrc : src}
-        alt={alt || "Image"}
-        ref={ref}
-        onError={(e) => {
-          console.log(`Failed to load image: ${src}`);
-          setError(true);
-        }}
-        {...props}
-      />
+      <div className={cn('relative w-full h-full overflow-hidden', className)}>
+        {!loaded && !error && (
+          <div className="absolute inset-0 bg-muted/50 animate-pulse" />
+        )}
+        <img
+          className={cn(
+            'object-cover w-full h-full transition-opacity',
+            loaded && !error ? 'opacity-100' : 'opacity-0'
+          )}
+          src={error ? fallbackSrc : src}
+          alt={alt || "Image"}
+          ref={ref}
+          onError={() => {
+            console.log(`Failed to load image: ${src}`);
+            setError(true);
+          }}
+          onLoad={() => setLoaded(true)}
+          {...props}
+        />
+        {error && (
+          <img
+            src={fallbackSrc}
+            alt="Fallback"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+      </div>
     );
   }
 );

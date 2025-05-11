@@ -6,17 +6,20 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zaitoudikrddbzsfukzv.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphaXRvdWRpa3JkZGJ6c2Z1a3p2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4MzAxMzEsImV4cCI6MjA1NjQwNjEzMX0.QfTPLs8GumhnZRHKCmkxGV7a5vA1Nhg_5RiBhsW7FkQ";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
-// Create a singleton instance to ensure consistency across the app
+// Créer un client singleton pour assurer la cohérence dans toute l'application
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    persistSession: true
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: localStorage
   },
   global: {
     headers: {
       'x-application-name': 'video-portfolio-app'
     }
+  },
+  db: {
+    schema: 'public'
   }
 });

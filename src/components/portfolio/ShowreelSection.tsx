@@ -28,6 +28,8 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     setVideoPlayerOpen(true);
   };
 
+  const defaultThumbnail = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f';
+
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
       <div className="flex justify-between items-center p-4 border-b border-border">
@@ -37,10 +39,10 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
         <div className="aspect-video relative">
           <div className="relative w-full h-full">
             <Image 
-              src={showreelThumbnail || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f'} 
+              src={showreelThumbnail || defaultThumbnail} 
               alt="Showreel thumbnail" 
-              className="w-full h-full object-cover"
-              fallbackSrc="https://images.unsplash.com/photo-1550745165-9bc0b252726f"
+              className="w-full h-full"
+              fallbackSrc={defaultThumbnail}
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <div 

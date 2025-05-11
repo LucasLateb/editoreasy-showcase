@@ -13,15 +13,22 @@ export const useViewTracking = () => {
         return;
       }
       
+      // Récupération des informations du navigateur et appareil de façon sécurisée
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
       
-      await supabase.rpc('record_video_view', {
+      // Utilisation du RPC avec paramètres explicites pour éviter les problèmes de search_path
+      const { error } = await supabase.rpc('record_video_view', {
         video_id_param: videoId,
         viewer_id_param: currentUser?.id || null,
         device_type_param: deviceType,
         browser_param: browser
       });
+      
+      if (error) {
+        throw error;
+      }
+      
       console.log('Video view recorded successfully');
     } catch (error) {
       console.error('Error recording video view:', error);
@@ -35,21 +42,28 @@ export const useViewTracking = () => {
         return;
       }
       
-      // Don't record if viewing own portfolio
+      // Ne pas enregistrer si l'utilisateur consulte son propre portfolio
       if (currentUser?.id === portfolioUserId) {
         console.log('Skipping view recording for own portfolio');
         return;
       }
       
+      // Récupération des informations du navigateur et appareil de façon sécurisée
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
       
-      await supabase.rpc('record_portfolio_view', {
+      // Utilisation du RPC avec paramètres explicites pour éviter les problèmes de search_path
+      const { error } = await supabase.rpc('record_portfolio_view', {
         portfolio_user_id_param: portfolioUserId,
         viewer_id_param: currentUser?.id || null,
         device_type_param: deviceType,
         browser_param: browser
       });
+      
+      if (error) {
+        throw error;
+      }
+      
       console.log('Portfolio view recorded successfully');
     } catch (error) {
       console.error('Error recording portfolio view:', error);
@@ -59,14 +73,15 @@ export const useViewTracking = () => {
   return { recordVideoView, recordPortfolioView };
 };
 
-// Helper functions to detect browser and device info
+// Fonctions d'assistance pour détecter le navigateur et le type d'appareil de manière sécurisée
 const getBrowserInfo = () => {
   try {
-    const userAgent = navigator.userAgent;
-    if (userAgent.includes('Firefox')) return 'Firefox';
-    if (userAgent.includes('Chrome')) return 'Chrome';
-    if (userAgent.includes('Safari')) return 'Safari';
-    if (userAgent.includes('Edge')) return 'Edge';
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.includes('firefox')) return 'Firefox';
+    if (userAgent.includes('edg')) return 'Edge';
+    if (userAgent.includes('chrome')) return 'Chrome';
+    if (userAgent.includes('safari')) return 'Safari';
+    if (userAgent.includes('opera')) return 'Opera';
     return 'Other';
   } catch (error) {
     console.error('Error detecting browser:', error);
@@ -76,11 +91,11 @@ const getBrowserInfo = () => {
 
 const getDeviceType = () => {
   try {
-    const userAgent = navigator.userAgent;
-    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
       return 'Mobile';
     }
-    if (/iPad|Android|Tablet/.test(userAgent)) {
+    if (/ipad|tablet|playbook|silk/i.test(userAgent)) {
       return 'Tablet';
     }
     return 'Desktop';
