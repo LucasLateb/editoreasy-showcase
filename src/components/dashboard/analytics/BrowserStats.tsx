@@ -10,6 +10,13 @@ interface VideoAnalyticsProps {
 }
 
 const VideoAnalytics: React.FC<VideoAnalyticsProps> = ({ videos }) => {
+  // Helper function to get category name from categoryId
+  const getCategoryName = (categoryId: string) => {
+    // Find category by id from the categories array in types.ts
+    const category = videos.find(video => video.categoryId === categoryId);
+    return category ? categoryId : 'Non classé';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -47,7 +54,7 @@ const VideoAnalytics: React.FC<VideoAnalyticsProps> = ({ videos }) => {
               videos.map((video) => (
                 <TableRow key={video.id}>
                   <TableCell className="font-medium truncate max-w-[200px]">{video.title}</TableCell>
-                  <TableCell>{video.categoryName || 'Non classé'}</TableCell>
+                  <TableCell>{getCategoryName(video.categoryId)}</TableCell>
                   <TableCell className="text-right">{video.views}</TableCell>
                   <TableCell className="text-right">{video.likes}</TableCell>
                   <TableCell className="text-right">
