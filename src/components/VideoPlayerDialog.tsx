@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   Dialog,
@@ -140,7 +139,7 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
     
     return { type: 'video', src: videoUrl };
   };
-
+  
   const navigateToEditor = () => {
     onClose();
     if (editorId) {

@@ -181,6 +181,9 @@ const VideoGrid: React.FC<VideoGridProps> = ({
           onClose={() => setIsVideoDialogOpen(false)}
           videoUrl={selectedVideo.videoUrl}
           title={selectedVideo.title}
+          videoId={selectedVideo.id}
+          description={selectedVideo.description}
+          editorId={selectedVideo.userId}
         />
       )}
     </>
