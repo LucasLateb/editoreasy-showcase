@@ -123,6 +123,7 @@ export type Database = {
           likes: number | null
           name: string | null
           portfolio_views: number | null
+          role: string | null
           subscription_tier: string | null
         }
         Insert: {
@@ -134,6 +135,7 @@ export type Database = {
           likes?: number | null
           name?: string | null
           portfolio_views?: number | null
+          role?: string | null
           subscription_tier?: string | null
         }
         Update: {
@@ -145,6 +147,7 @@ export type Database = {
           likes?: number | null
           name?: string | null
           portfolio_views?: number | null
+          role?: string | null
           subscription_tier?: string | null
         }
         Relationships: []
