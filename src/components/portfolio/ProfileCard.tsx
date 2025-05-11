@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Mail, User, Briefcase, Edit, X, PlusCircle } from 'lucide-react';
+import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart } from 'lucide-react';
+import { useProfileLikes } from '@/hooks/useLikes';
+import { cn } from '@/lib/utils';
 
 interface ProfileCardProps {
   currentUser: any;
@@ -49,6 +51,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 }) => {
   // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
+  const userId = displayUser?.id;
+  
+  // Use profile likes hook to get like functionality
+  const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);
   
   // Function to format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
@@ -68,9 +74,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     return 'Free';
   };
   
-  // For debugging in development
-  console.log('Display user subscription tier:', displayUser?.subscriptionTier || displayUser?.subscription_tier);
-  
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
       {/* Profile information */}
@@ -87,11 +90,27 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <Badge variant="outline" className="mr-2">
               {formatSubscriptionTier(displayUser?.subscriptionTier || displayUser?.subscription_tier)}
             </Badge>
-            <span className="text-sm text-muted-foreground">
-              {displayUser?.likes || 0} likes
-            </span>
-            <span className="text-sm text-muted-foreground ml-2 pl-2 border-l border-border">
-              {totalVideos} videos
+            <div className="flex items-center">
+              <span 
+                className={cn(
+                  "text-sm flex items-center cursor-pointer",
+                  isViewOnly ? "text-muted-foreground" : "hover:text-primary"
+                )}
+                onClick={() => isViewOnly && toggleLike()}
+              >
+                <Heart 
+                  className={cn(
+                    "h-4 w-4 mr-1 transition-colors",
+                    isLiked ? "text-red-500" : "text-muted-foreground",
+                    !isLoading && isViewOnly && "hover:text-red-400"
+                  )} 
+                  fill={isLiked ? "currentColor" : "none"} 
+                /> 
+                {likesCount}
+              </span>
+            </div>
+            <span className="text-sm text-muted-foreground ml-2 pl-2 border-l border-border flex items-center">
+              <Film className="h-4 w-4 mr-1 text-muted-foreground" /> {totalVideos}
             </span>
           </div>
         </div>
