@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Video, categories } from '@/types';
@@ -246,6 +246,7 @@ const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const location = useLocation();
   
   const [videos, setVideos] = useState<Video[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -256,6 +257,11 @@ const Dashboard: React.FC = () => {
   
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
+  
+  // Get the active tab from URL query parameters
+  const searchParams = new URLSearchParams(location.search);
+  const activeTabFromUrl = searchParams.get('tab');
+  const defaultTab = activeTabFromUrl || 'videos';
   
   useEffect(() => {
     if (currentUser) {
@@ -591,7 +597,7 @@ const Dashboard: React.FC = () => {
           cancelLabel="Cancel"
         />
         
-        <Tabs defaultValue="videos" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="videos">My Videos</TabsTrigger>
             <TabsTrigger value="showreel">My Showreel</TabsTrigger>

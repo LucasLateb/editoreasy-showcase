@@ -148,9 +148,9 @@ const Navbar: React.FC = () => {
                   <Link to="/portfolio" className="w-full cursor-pointer">My Portfolio</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/profile" className="w-full cursor-pointer">
+                  <Link to="/dashboard?tab=account" className="w-full cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Edit Profile</span>
+                    <span>Account</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

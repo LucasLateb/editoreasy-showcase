@@ -11,7 +11,6 @@ import Pricing from '@/pages/Pricing';
 import Explore from '@/pages/Explore';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
-import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
@@ -90,7 +89,6 @@ export default function App() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<Profile />} />
             <Route path="/editor/:id" element={<Portfolio isViewOnly />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
