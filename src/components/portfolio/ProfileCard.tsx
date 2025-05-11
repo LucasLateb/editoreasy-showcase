@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,6 +56,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   // Use profile likes hook to get like functionality
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);
   
+  // Calculate total likes (profile likes + video likes)
+  const totalLikes = displayUser?.totalVideoLikes !== undefined ? 
+    (likesCount + displayUser.totalVideoLikes) : likesCount;
+  
   // Function to format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
     if (!tier) return 'Free';
@@ -106,7 +111,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   fill={isLiked ? "currentColor" : "none"} 
                 />
                 <span className="flex items-center gap-1">
-                  {likesCount}
+                  {totalLikes}
                 </span>
               </span>
             </div>
