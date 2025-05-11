@@ -7,9 +7,10 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ViewsChart from './analytics/ViewsChart';
-import BrowserStats from './analytics/BrowserStats';
+import VideoAnalytics from './analytics/BrowserStats';
 import { Loader2, Users, Play, Globe } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Video } from '@/types';
 
 const AnalyticsTab: React.FC = () => {
   const { currentUser } = useAuth();
@@ -48,45 +49,58 @@ const AnalyticsTab: React.FC = () => {
 
       if (portfolioViewsError) throw portfolioViewsError;
 
+      // Fetch videos data with views and likes
+      const { data: videosData, error: videosError } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (videosError) throw videosError;
+
       // Fetch video views data
       const { data: viewsData, error: viewsError } = await supabase
         .from('video_views')
-        .select('video_id, viewed_at, browser')
+        .select('video_id, viewed_at')
         .in('video_id', 
-          await supabase
-            .from('videos')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .then(({ data }) => data ? data.map(item => item.id) : [])
+          videosData.map(video => video.id)
         );
 
       if (viewsError) throw viewsError;
 
+      // Transformons les vidéos pour inclure la catégorie et formater les dates
+      const formattedVideos: Video[] = videosData.map(video => ({
+        id: video.id,
+        title: video.title,
+        description: video.description || '',
+        thumbnailUrl: video.thumbnail_url,
+        videoUrl: video.video_url,
+        categoryId: video.category_id,
+        categoryName: video.category_id, // Nous allons utiliser l'ID comme nom par simplicité
+        userId: video.user_id,
+        likes: video.likes || 0,
+        views: video.views || 0,
+        createdAt: new Date(video.created_at),
+        isHighlighted: video.is_highlighted
+      }));
+
       // Process video views data
       const viewsByDate = new Map();
-      const browserCounts = new Map();
       let totalVideoViews = 0;
 
       viewsData?.forEach(view => {
         const date = new Date(view.viewed_at).toLocaleDateString();
         viewsByDate.set(date, (viewsByDate.get(date) || 0) + 1);
-        
-        const browser = view.browser || 'Unknown';
-        browserCounts.set(browser, (browserCounts.get(browser) || 0) + 1);
         totalVideoViews++;
       });
 
       // Process portfolio views data
       const portfolioViewsByDate = new Map();
-      const portfolioBrowserCounts = new Map();
       let totalPortfolioViews = profileData?.portfolio_views || 0;
 
       portfolioViewsData?.forEach(view => {
         const date = new Date(view.viewed_at).toLocaleDateString();
         portfolioViewsByDate.set(date, (portfolioViewsByDate.get(date) || 0) + 1);
-        
-        const browser = view.browser || 'Unknown';
-        portfolioBrowserCounts.set(browser, (portfolioBrowserCounts.get(browser) || 0) + 1);
       });
 
       // Format data for charts
@@ -98,33 +112,16 @@ const AnalyticsTab: React.FC = () => {
         .map(([date, views]) => ({ date, views }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      const browserStats = Array.from(browserCounts.entries())
-        .map(([browser, views]) => ({
-          browser,
-          views,
-          percentage: (views / totalVideoViews) * 100
-        }))
-        .sort((a, b) => b.views - a.views);
-
-      const portfolioBrowserStats = Array.from(portfolioBrowserCounts.entries())
-        .map(([browser, views]) => ({
-          browser,
-          views,
-          percentage: (views / totalPortfolioViews) * 100
-        }))
-        .sort((a, b) => b.views - a.views);
-
       return {
         videoViews: {
           total: totalVideoViews,
           chartData: viewsChartData,
-          browserStats
         },
         portfolioViews: {
           total: totalPortfolioViews,
           chartData: portfolioViewsChartData,
-          browserStats: portfolioBrowserStats
-        }
+        },
+        videos: formattedVideos
       };
     },
     enabled: hasPremiumAccess === true,
@@ -204,16 +201,13 @@ const AnalyticsTab: React.FC = () => {
           <h3 className="text-lg font-semibold mb-4">Video Analytics</h3>
           <ViewsChart data={analyticsData.videoViews.chartData} />
           <div className="mt-4">
-            <BrowserStats stats={analyticsData.videoViews.browserStats} />
+            <VideoAnalytics videos={analyticsData.videos} />
           </div>
         </div>
 
         <div>
           <h3 className="text-lg font-semibold mb-4">Portfolio Analytics</h3>
           <ViewsChart data={analyticsData.portfolioViews.chartData} />
-          <div className="mt-4">
-            <BrowserStats stats={analyticsData.portfolioViews.browserStats} />
-          </div>
         </div>
       </div>
     </div>
