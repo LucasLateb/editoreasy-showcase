@@ -158,7 +158,7 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl w-[95vw] p-1 overflow-hidden">
+      <DialogContent className="max-w-6xl w-[95vw] p-1 overflow-auto max-h-[95vh]">
         <DialogDescription className="sr-only">
           Video player for {title}
         </DialogDescription>
@@ -172,8 +172,9 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
           </DialogClose>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
-          <div className="lg:col-span-2 overflow-hidden rounded">
+        <div className="flex flex-col">
+          {/* Video Section */}
+          <div className="w-full overflow-hidden rounded">
             {(videoSource.type === 'embed' || videoSource.type === 'youtube' || videoSource.type === 'vimeo') ? (
               <div className="w-full aspect-video">
                 <iframe 
@@ -199,37 +200,36 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
             )}
           </div>
           
-          <div className="p-4 lg:p-6 flex flex-col h-full">
-            <div>
-              <DialogTitle className="text-xl font-bold mb-2">{title}</DialogTitle>
-              
-              {editorId && (
-                <div 
-                  onClick={navigateToEditor}
-                  className="flex items-center mb-4 cursor-pointer hover:bg-primary/5 p-2 rounded-md transition-colors"
-                >
-                  <Avatar className="h-10 w-10 mr-2">
-                    {displayEditorAvatar ? (
-                      <AvatarImage src={displayEditorAvatar} alt={displayEditorName} />
-                    ) : (
-                      <AvatarFallback>{displayEditorName.charAt(0)}</AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex items-center">
-                    <span className="font-medium">{displayEditorName}</span>
-                    <ExternalLink className="h-4 w-4 ml-1 text-muted-foreground" />
-                  </div>
+          {/* Info Section */}
+          <div className="p-4 lg:p-6">
+            <DialogTitle className="text-xl font-bold mb-2">{title}</DialogTitle>
+            
+            {editorId && (
+              <div 
+                onClick={navigateToEditor}
+                className="flex items-center mb-4 cursor-pointer hover:bg-primary/5 p-2 rounded-md transition-colors"
+              >
+                <Avatar className="h-10 w-10 mr-2">
+                  {displayEditorAvatar ? (
+                    <AvatarImage src={displayEditorAvatar} alt={displayEditorName} />
+                  ) : (
+                    <AvatarFallback>{displayEditorName.charAt(0)}</AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex items-center">
+                  <span className="font-medium">{displayEditorName}</span>
+                  <ExternalLink className="h-4 w-4 ml-1 text-muted-foreground" />
                 </div>
-              )}
-              
-              <Separator className="my-3" />
-              
-              {description && (
-                <div className="overflow-y-auto max-h-[30vh] lg:max-h-[40vh] pr-2 text-sm text-muted-foreground">
-                  <p className="whitespace-pre-wrap">{description}</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+            
+            <Separator className="my-3" />
+            
+            {description && (
+              <div className="max-h-60 overflow-y-auto pr-2 text-sm text-muted-foreground">
+                <p className="whitespace-pre-wrap">{description}</p>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
