@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -72,6 +73,7 @@ type EditorType = {
   id: string;
   name: string | null;
   subscription_tier: string | null;
+  role?: string;
   specialization?: string;
 };
 
@@ -201,7 +203,8 @@ const Explore: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name, subscription_tier')
+          .select('id, name, subscription_tier, role')
+          .eq('role', 'monteur') // Only fetch editors (monteurs), not clients
           .order('name');
         
         if (error) {
@@ -211,7 +214,8 @@ const Explore: React.FC = () => {
         const editorsData = data.map(profile => ({
           id: profile.id,
           name: profile.name || 'Unnamed Editor',
-          subscription_tier: profile.subscription_tier
+          subscription_tier: profile.subscription_tier,
+          role: profile.role
         }));
         
         setEditors(editorsData);

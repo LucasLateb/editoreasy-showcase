@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +19,9 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  
+  // Check if user is a client
+  const isClient = currentUser?.role === 'client';
 
   // Gestion du dark mode
   useEffect(() => {
@@ -91,15 +93,18 @@ const Navbar: React.FC = () => {
               >
                 Dashboard
               </Link>
-              <Link 
-                to="/portfolio" 
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === "/portfolio" ? "text-primary" : "text-foreground/80"
-                )}
-              >
-                My Portfolio
-              </Link>
+              {/* Only show Portfolio link for editors (non-client users) */}
+              {!isClient && (
+                <Link 
+                  to="/portfolio" 
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary",
+                    location.pathname === "/portfolio" ? "text-primary" : "text-foreground/80"
+                  )}
+                >
+                  My Portfolio
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -135,9 +140,12 @@ const Navbar: React.FC = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard" className="w-full cursor-pointer">Dashboard</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/portfolio" className="w-full cursor-pointer">My Portfolio</Link>
-                </DropdownMenuItem>
+                {/* Only show Portfolio link in dropdown for editors (non-client users) */}
+                {!isClient && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/portfolio" className="w-full cursor-pointer">My Portfolio</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard?tab=account" className="w-full cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
