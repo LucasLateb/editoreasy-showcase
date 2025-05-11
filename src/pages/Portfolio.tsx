@@ -492,7 +492,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           }}
           description={portfolioDescription}
           setDescription={setPortfolioDescription}
-          totalVideos={videos.length}
           isSavingTitle={isSavingTitle}
         />
         
@@ -517,6 +516,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                   handleRemoveSpecialization={handleRemoveSpecialization}
                   isViewOnly={isViewOnly}
                   editorData={editorData}
+                  totalVideos={videos.length}
                 />
                 <CopyPortfolioLink />
                 {editMode && (

@@ -1,9 +1,8 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FileVideo2 } from 'lucide-react';
-import { Video } from '@/types';
 import { Label } from '@/components/ui/label';
 
 interface HeaderSectionProps {
@@ -55,10 +54,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     }
   };
 
-  const displayTitle = currentUser?.name
-    ? `${currentUser.name}'s Portfolio`
-    : title;
-
   return (
     <section className="relative h-[40vh] md:h-[50vh] overflow-hidden group">
       <div className="absolute inset-0">
@@ -73,38 +68,6 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
       <div className="absolute inset-0 flex flex-col justify-end pb-8">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl -mt-20">
-            <h1
-              className="text-4xl md:text-5xl font-bold text-white mb-2 animate-slide-in-down opacity-0 bg-black/40 inline-block px-3 py-1 rounded"
-              style={{ animationDelay: '0.2s' }}
-            >
-              {editMode ? title : displayTitle}
-            </h1>
-            
-            <div
-              className="
-                animate-slide-in-down 
-                opacity-0 
-                flex
-                items-center
-                gap-2 
-                text-white 
-                bg-black/40
-                px-2
-                py-1
-                rounded 
-                shadow-lg 
-                shadow-black/40
-                whitespace-nowrap
-                w-fit
-              "
-              style={{ animationDelay: '0.4s' }}
-            >
-              <FileVideo2 className="h-4 w-4" />
-              <span className="text-sm">
-                {totalVideos} Video{totalVideos !== 1 ? 's' : ''} Available
-              </span>
-            </div>
-
             {editMode && (
               <div
                 className="mt-4 flex gap-3 animate-slide-in-down opacity-0"

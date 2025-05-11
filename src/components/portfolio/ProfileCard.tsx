@@ -25,6 +25,7 @@ interface ProfileCardProps {
   handleRemoveSpecialization: (index: number) => void;
   isViewOnly?: boolean;
   editorData?: any; // This will hold the data of the editor whose portfolio is being viewed
+  totalVideos?: number; // Add this prop for video count
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -43,7 +44,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   handleAddSpecialization,
   handleRemoveSpecialization,
   isViewOnly = false,
-  editorData
+  editorData,
+  totalVideos = 0
 }) => {
   // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
@@ -87,6 +89,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             </Badge>
             <span className="text-sm text-muted-foreground">
               {displayUser?.likes || 0} likes
+            </span>
+            <span className="text-sm text-muted-foreground ml-2 pl-2 border-l border-border">
+              {totalVideos} videos
             </span>
           </div>
         </div>
