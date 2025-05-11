@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, CheckCircle2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -39,7 +38,6 @@ const AccountTab: React.FC<AccountTabProps> = ({ currentUser }) => {
   const form = useForm({
     defaultValues: {
       name: currentUser?.name || '',
-      bio: currentUser?.bio || '',
     }
   });
 
@@ -167,7 +165,6 @@ const AccountTab: React.FC<AccountTabProps> = ({ currentUser }) => {
         .from('profiles')
         .update({
           name: values.name,
-          bio: values.bio
         })
         .eq('id', currentUser.id);
       
@@ -281,23 +278,6 @@ const AccountTab: React.FC<AccountTabProps> = ({ currentUser }) => {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" value={currentUser.email} disabled />
               </div>
-              
-              <FormField
-                control={form.control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bio</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field} 
-                        placeholder="Tell us about yourself..."
-                        className="min-h-[100px]"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
               
               <div className="space-y-2">
                 <Label htmlFor="subscription">Subscription Tier</Label>
