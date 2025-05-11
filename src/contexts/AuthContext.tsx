@@ -8,7 +8,7 @@ interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  register: (name: string, email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string, role?: string) => Promise<User>;
   logout: () => void;
   isAuthenticated: boolean;
   updateAvatar: (avatarUrl: string) => Promise<void>;
@@ -64,7 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             bio: data.bio,
             subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
             likes: data.likes,
-            createdAt: new Date(data.created_at)
+            createdAt: new Date(data.created_at),
+            role: data.role || 'monteur'
           };
           setCurrentUser(user);
         }
@@ -103,7 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             bio: data.bio,
             subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
             likes: data.likes,
-            createdAt: new Date(data.created_at)
+            createdAt: new Date(data.created_at),
+            role: data.role || 'monteur'
           };
           setCurrentUser(user);
         }
@@ -151,7 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bio: profileData.bio,
         subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
-        createdAt: new Date(profileData.created_at)
+        createdAt: new Date(profileData.created_at),
+        role: profileData.role || 'monteur'
       };
 
       setCurrentUser(user);
@@ -164,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<User> => {
+  const register = async (name: string, email: string, password: string, role: string = 'monteur'): Promise<User> => {
     setLoading(true);
     
     try {
@@ -173,7 +176,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           data: {
-            name
+            name,
+            role
           },
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
@@ -204,7 +208,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: email,
           subscriptionTier: 'free' as const,
           likes: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
+          role: role
         };
         
         setCurrentUser(user);
@@ -220,7 +225,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bio: profileData.bio,
         subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         likes: profileData.likes,
-        createdAt: new Date(profileData.created_at)
+        createdAt: new Date(profileData.created_at),
+        role: profileData.role || role
       };
       
       setCurrentUser(user);

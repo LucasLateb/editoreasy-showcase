@@ -15,7 +15,7 @@ const Register: React.FC = () => {
           <Alert className="mb-6">
             <InfoIcon className="h-4 w-4" />
             <AlertDescription>
-              Authentication is now live with Supabase! Create your account to start showcasing your work.
+              Choose your account type: "Monteur" if you're a video editor looking to showcase your work, or "Client" if you're looking to hire video editing services.
             </AlertDescription>
           </Alert>
           <AuthForm type="register" />

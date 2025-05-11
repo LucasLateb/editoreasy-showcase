@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface AuthFormProps {
   type: 'login' | 'register';
@@ -20,6 +22,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState('monteur'); // Default role is "monteur"
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
@@ -47,7 +50,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
           });
         }
       } else {
-        const result = await register(name, email, password);
+        const result = await register(name, email, password, userRole);
         if (result) {
           toast({
             title: "Account created",
@@ -156,6 +159,26 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             disabled={isLoading}
           />
         </div>
+        
+        {type === 'register' && (
+          <div className="space-y-2">
+            <Label>I am a</Label>
+            <RadioGroup 
+              value={userRole} 
+              onValueChange={setUserRole} 
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="monteur" id="monteur" />
+                <Label htmlFor="monteur" className="cursor-pointer">Monteur (Editor)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="client" id="client" />
+                <Label htmlFor="client" className="cursor-pointer">Client</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        )}
         
         <Button 
           type="submit" 

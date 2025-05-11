@@ -16,6 +16,7 @@ import AccountTab from '@/components/dashboard/AccountTab';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import MessagingTab from '@/components/dashboard/MessagingTab';
 import PlanTab from '@/components/dashboard/PlanTab';
+import FavoriteEditorsTab from '@/components/dashboard/FavoriteEditorsTab';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -262,14 +263,20 @@ const Dashboard: React.FC = () => {
   // Get the active tab from URL query parameters
   const searchParams = new URLSearchParams(location.search);
   const activeTabFromUrl = searchParams.get('tab');
-  const defaultTab = activeTabFromUrl || 'videos';
+  const isClient = currentUser?.role === 'client';
+  
+  // Determine default tab based on user role
+  const defaultTab = activeTabFromUrl || (isClient ? 'messaging' : 'videos');
   
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isClient) {
       Promise.all([
         fetchUserVideos(),
         fetchPortfolioSettings()
       ]);
+    } else if (currentUser) {
+      // For clients, we don't need to fetch videos or portfolio settings
+      setIsLoading(false);
     }
   }, [currentUser]);
   
@@ -560,85 +567,114 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Manage your videos and portfolio</p>
+            <p className="text-muted-foreground">
+              {isClient 
+                ? "Manage your client account and find video editors" 
+                : "Manage your videos and portfolio"}
+            </p>
           </div>
           
-          <div className="mt-4 md:mt-0">
-            <Button onClick={handleUploadVideo} disabled={isUploading}>
-              {isUploading ? (
-                <>
-                  <UploadCloud className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Upload Video
-                </>
-              )}
-            </Button>
-          </div>
+          {!isClient && (
+            <div className="mt-4 md:mt-0">
+              <Button onClick={handleUploadVideo} disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <UploadCloud className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Upload Video
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
         
-        <VideoUploadDialog
-          isOpen={uploadDialogOpen}
-          onClose={() => setUploadDialogOpen(false)}
-          onSubmit={handleUploadSubmit}
-          categories={categories}
-          isUploading={isUploading}
-        />
-        
-        <ConfirmationDialog
-          isOpen={deleteConfirmOpen}
-          onClose={() => setDeleteConfirmOpen(false)}
-          onConfirm={handleDeleteVideo}
-          title="Delete Video"
-          description="Are you sure you want to delete this video? This action cannot be undone."
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
-        />
+        {!isClient && (
+          <>
+            <VideoUploadDialog
+              isOpen={uploadDialogOpen}
+              onClose={() => setUploadDialogOpen(false)}
+              onSubmit={handleUploadSubmit}
+              categories={categories}
+              isUploading={isUploading}
+            />
+            
+            <ConfirmationDialog
+              isOpen={deleteConfirmOpen}
+              onClose={() => setDeleteConfirmOpen(false)}
+              onConfirm={handleDeleteVideo}
+              title="Delete Video"
+              description="Are you sure you want to delete this video? This action cannot be undone."
+              confirmLabel="Delete"
+              cancelLabel="Cancel"
+            />
+          </>
+        )}
         
         <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="videos">My Videos</TabsTrigger>
-            <TabsTrigger value="showreel">My Showreel</TabsTrigger>
+            {!isClient && (
+              <>
+                <TabsTrigger value="videos">My Videos</TabsTrigger>
+                <TabsTrigger value="showreel">My Showreel</TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="messaging">Messaging</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="plan">Plan</TabsTrigger>
+            {isClient && <TabsTrigger value="favorite-editors">Favorite Editors</TabsTrigger>}
+            {!isClient && (
+              <>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="plan">Plan</TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="videos">
-            <VideosTab
-              videos={videos}
-              categories={categories}
-              isLoading={isLoading}
-              onUploadClick={handleUploadVideo}
-              onDeleteClick={handleDeleteConfirm}
-            />
-          </TabsContent>
-          
-          <TabsContent value="showreel">
-            <ShowreelTab 
-              videos={videos}
-              isLoading={isLoading}
-              onSetShowreel={handleSetShowreel}
-              currentShowreelUrl={currentShowreelUrl}
-              currentShowreelThumbnail={currentShowreelThumbnail}
-            />
-          </TabsContent>
+          {!isClient && (
+            <>
+              <TabsContent value="videos">
+                <VideosTab
+                  videos={videos}
+                  categories={categories}
+                  isLoading={isLoading}
+                  onUploadClick={handleUploadVideo}
+                  onDeleteClick={handleDeleteConfirm}
+                />
+              </TabsContent>
+              
+              <TabsContent value="showreel">
+                <ShowreelTab 
+                  videos={videos}
+                  isLoading={isLoading}
+                  onSetShowreel={handleSetShowreel}
+                  currentShowreelUrl={currentShowreelUrl}
+                  currentShowreelThumbnail={currentShowreelThumbnail}
+                />
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <AnalyticsTab />
+              </TabsContent>
+              
+              <TabsContent value="plan">
+                <PlanTab />
+              </TabsContent>
+            </>
+          )}
           
           <TabsContent value="messaging">
             <MessagingTab />
           </TabsContent>
           
-          <TabsContent value="analytics">
-            <AnalyticsTab />
-          </TabsContent>
-          
-          <TabsContent value="plan">
-            <PlanTab />
-          </TabsContent>
+          {isClient && (
+            <TabsContent value="favorite-editors">
+              <FavoriteEditorsTab />
+            </TabsContent>
+          )}
           
           <TabsContent value="account">
             <AccountTab currentUser={currentUser} />

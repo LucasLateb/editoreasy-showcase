@@ -1,13 +1,13 @@
 export interface User {
   id: string;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   avatarUrl?: string;
   bio?: string;
   subscriptionTier: 'free' | 'premium' | 'pro';
   likes: number;
   createdAt: Date;
-  totalVideoLikes?: number;
+  role?: string;
 }
 
 export interface Video {
