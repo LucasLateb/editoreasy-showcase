@@ -98,6 +98,42 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       </div>
       
       <div className="border-t border-border pt-6">
+        {/* About section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-medium flex items-center">
+              <User className="h-4 w-4 mr-2" />
+              About
+            </h3>
+            {editMode && (
+              <Dialog open={aboutDialogOpen} onOpenChange={setAboutDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 px-2">
+                    <Edit className="h-3.5 w-3.5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit About</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <Textarea 
+                      value={about} 
+                      onChange={(e) => setAbout(e.target.value)}
+                      placeholder="Tell others about yourself and your work..."
+                      className="min-h-[150px]"
+                    />
+                    <div className="flex justify-end">
+                      <Button onClick={() => setAboutDialogOpen(false)}>Save</Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">{about || "No information provided."}</p>
+        </div>
+        
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium flex items-center">
             <Briefcase className="h-4 w-4 mr-2" />
