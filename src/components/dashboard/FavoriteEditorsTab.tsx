@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Heart, Search, Mail, ExternalLink } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -12,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 const FavoriteEditorsTab = () => {
   const navigate = useNavigate();
@@ -49,6 +49,18 @@ const FavoriteEditorsTab = () => {
     : favoriteEditors.filter(editor => 
         editor.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+  const getBadgeVariant = (tier: 'free' | 'premium' | 'pro') => {
+    switch (tier) {
+      case 'pro':
+        return 'default';
+      case 'premium':
+        return 'secondary';
+      case 'free':
+      default:
+        return 'outline';
+    }
+  };
 
   const handleMessageClick = (editor: User) => {
     toast.success(`Your message to ${editor.name} has been sent.`);
@@ -131,8 +143,14 @@ const FavoriteEditorsTab = () => {
                         <AvatarImage src={editor.avatarUrl} alt={editor.name} />
                         <AvatarFallback>{editor.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h3 className="font-medium">{editor.name}</h3>
+                      <div className="flex flex-col">
+                        <h3 className="text-sm font-medium">{editor.name}</h3>
+                        <Badge 
+                          variant={getBadgeVariant(editor.subscriptionTier)} 
+                          className="mt-1 text-xs w-fit"
+                        >
+                          {editor.subscriptionTier.charAt(0).toUpperCase() + editor.subscriptionTier.slice(1)}
+                        </Badge>
                       </div>
                     </div>
                     
