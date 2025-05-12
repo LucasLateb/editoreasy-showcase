@@ -119,7 +119,7 @@ const FavoriteEditorsTab = () => {
                   editor={editor}
                   index={index}
                   specializations={[]}
-                  about={editor.bio || ''}
+                  about={editor.bio}
                 />
               ))}
             </div>
