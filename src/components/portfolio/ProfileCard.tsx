@@ -54,7 +54,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
   const userId = displayUser?.id;
-  const { user: authUser } = useAuth();
+  const { currentUser: authUser } = useAuth();
   
   // Use profile likes hook to get like functionality
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);

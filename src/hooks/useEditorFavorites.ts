@@ -146,7 +146,7 @@ export const useEditorFavorites = (editorId?: string) => {
         avatarUrl: editor.avatar_url || '',
         bio: editor.bio || '',
         createdAt: new Date(editor.created_at || Date.now()),
-        subscriptionTier: editor.subscription_tier || 'free',
+        subscriptionTier: (editor.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         role: editor.role || 'monteur',
         likes: editor.likes || 0
       }));
