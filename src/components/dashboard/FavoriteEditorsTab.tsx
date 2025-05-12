@@ -4,7 +4,7 @@ import { Heart, Search } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useEditorFavorites } from '@/hooks/useEditorFavorites';
 import { User } from '@/types';
@@ -119,7 +119,6 @@ const FavoriteEditorsTab = () => {
                   editor={editor}
                   index={index}
                   specializations={[]}
-                  about={editor.bio} // Pass the bio as the about prop to display in the card
                 />
               ))}
             </div>

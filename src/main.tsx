@@ -8,55 +8,45 @@ const rootElement = document.getElementById("root");
 
 // Add error boundary to catch rendering errors
 if (rootElement) {
+  // Wrap in a try-catch to prevent unhandled exceptions during initialization
   try {
     const root = createRoot(rootElement);
     
-    // Add event listener for unhandled errors with improved handling
+    // Add event listener for unhandled errors
     window.addEventListener('error', (event) => {
-      console.error('Caught unhandled error:', event.error);
-      // Prevent the error from breaking the entire app
-      event.preventDefault();
+      console.error('Unhandled error:', event.error);
     });
 
     // Add event listener for unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-      console.error('Caught unhandled promise rejection:', event.reason);
-      // Prevent the rejection from breaking the entire app
-      event.preventDefault();
+      console.error('Unhandled promise rejection:', event.reason);
     });
 
-    // Performance monitoring for debugging
+    // Add performance monitoring for initial load
     window.addEventListener('load', () => {
       console.log('Application fully loaded');
+      
+      // Report any performance issues after load
+      setTimeout(() => {
+        const performance = window.performance;
+        if (performance && performance.timing) {
+          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+          console.log(`Page load time: ${loadTime}ms`);
+        }
+      }, 0);
     });
 
-    // Initialize performance mark for tracking app load time
-    performance.mark('app-init-start');
-    
-    // Render the app with error handling
+    // Render the app
     root.render(<App />);
-    
-    // Capture render completion time
-    setTimeout(() => {
-      performance.mark('app-init-end');
-      performance.measure('app-initialization', 'app-init-start', 'app-init-end');
-      const measures = performance.getEntriesByName('app-initialization');
-      if (measures.length > 0) {
-        console.log(`App initialization time: ${measures[0].duration.toFixed(2)}ms`);
-      }
-    }, 0);
-    
   } catch (error) {
     console.error("Error rendering application:", error);
     
-    // Display a user-friendly fallback UI
+    // Display a fallback UI when an error occurs during initial render
     rootElement.innerHTML = `
-      <div style="padding: 20px; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
+      <div style="padding: 20px; text-align: center;">
         <h2>Something went wrong</h2>
-        <p>We're having trouble loading the application. Please try refreshing the page.</p>
-        <button onclick="location.reload()" 
-          style="padding: 8px 16px; margin-top: 16px; background-color: #3b82f6; color: white; 
-          border: none; border-radius: 4px; cursor: pointer;">
+        <p>The application couldn't be loaded. Please try refreshing the page.</p>
+        <button onclick="location.reload()" style="padding: 8px 16px; margin-top: 16px;">
           Refresh Page
         </button>
       </div>
