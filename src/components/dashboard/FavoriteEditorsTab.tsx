@@ -27,7 +27,9 @@ const FavoriteEditorsTab = () => {
       }
 
       try {
+        console.log('Fetching favorite editors...');
         const editors = await fetchFavoriteEditors();
+        console.log('Fetched editors:', editors);
         setFavoriteEditors(editors);
       } catch (error) {
         console.error('Error loading favorite editors:', error);
@@ -119,7 +121,7 @@ const FavoriteEditorsTab = () => {
                   editor={editor}
                   index={index}
                   specializations={[]}
-                  about={editor.bio}
+                  about={editor.bio || ""}
                 />
               ))}
             </div>

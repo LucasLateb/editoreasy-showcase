@@ -24,24 +24,30 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
     
     // Handle image loading error
     const handleError = () => {
+      console.log('Image error occurred for src:', src);
       if (!attemptedFallback.current) {
         attemptedFallback.current = true;
+        console.log('Attempting to use fallback image:', fallbackSrc);
+        // Only change the src if it's different from the fallback
         if (imageSrc !== fallbackSrc) {
           setImageSrc(fallbackSrc);
         } else {
           // If we're already using the fallback, just set loaded
           setLoaded(true);
           setError(true);
+          console.log('Already using fallback, marking as loaded with error');
         }
       } else {
         // If fallback also fails, just set loaded to true to remove loading state
         setLoaded(true);
         setError(true);
+        console.log('Fallback image also failed to load');
       }
     };
 
     // Handle successful image load
     const handleLoad = () => {
+      console.log('Image loaded successfully:', imageSrc);
       setLoaded(true);
       setError(false);
     };
@@ -82,7 +88,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
           {...props}
         />
         
-        {error && attemptedFallback.current && (
+        {error && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground text-sm">
             Image unavailable
           </div>

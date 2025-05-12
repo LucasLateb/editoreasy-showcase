@@ -37,8 +37,6 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   };
 
   const defaultThumbnail = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f';
-  console.log('Portfolio: Setting showreel URL to:', showreelUrl);
-  console.log('Portfolio: Setting showreel thumbnail to:', showreelThumbnail);
 
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
