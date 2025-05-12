@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Heart, Search, Mail, ExternalLink } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -12,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 const FavoriteEditorsTab = () => {
   const navigate = useNavigate();
@@ -151,6 +153,11 @@ const FavoriteEditorsTab = () => {
                         >
                           {editor.subscriptionTier.charAt(0).toUpperCase() + editor.subscriptionTier.slice(1)}
                         </Badge>
+                        {editor.favoritedAt && (
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Added {format(editor.favoritedAt, 'MMM d, yyyy')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     

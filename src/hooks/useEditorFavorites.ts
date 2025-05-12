@@ -120,8 +120,9 @@ export const useEditorFavorites = (editorId?: string) => {
       // First fetch the favorite relationships
       const { data: favoriteRelations, error: favError } = await supabase
         .from('editor_favorites')
-        .select('editor_id')
-        .eq('user_id', currentUser.id);
+        .select('editor_id, created_at')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
       if (favError) throw favError;
       
@@ -139,18 +140,26 @@ export const useEditorFavorites = (editorId?: string) => {
 
       if (editorsError) throw editorsError;
       
-      // Format the data to match the User type
-      return editors.map(editor => ({
-        id: editor.id,
-        name: editor.name || '',
-        email: editor.email || '',
-        avatarUrl: editor.avatar_url || '',
-        bio: editor.bio || '',
-        createdAt: new Date(editor.created_at || Date.now()),
-        subscriptionTier: (editor.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
-        role: editor.role || 'monteur',
-        likes: editor.likes || 0
-      }));
+      // Format the data to match the User type and include created_at from favorites
+      return editors.map(editor => {
+        const favoriteRelation = favoriteRelations.find(
+          relation => relation.editor_id === editor.id
+        );
+        
+        return {
+          id: editor.id,
+          name: editor.name || '',
+          email: editor.email || '',
+          avatarUrl: editor.avatar_url || '',
+          bio: editor.bio || '',
+          createdAt: new Date(editor.created_at || Date.now()),
+          subscriptionTier: (editor.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
+          role: editor.role || 'monteur',
+          likes: editor.likes || 0,
+          // Add the favorited_at date
+          favoritedAt: favoriteRelation ? new Date(favoriteRelation.created_at) : null
+        };
+      });
     } catch (error) {
       console.error('Error fetching favorite editors:', error);
       toast.error('Failed to load favorite editors');
