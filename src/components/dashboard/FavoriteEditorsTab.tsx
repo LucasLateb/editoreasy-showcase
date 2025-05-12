@@ -120,7 +120,7 @@ const FavoriteEditorsTab = () => {
             </div>
           ) : (
             <ScrollArea className="h-[500px] pr-4">
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {filteredEditors.map((editor) => (
                   <div 
                     key={editor.id}
