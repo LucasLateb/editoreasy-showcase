@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Heart, Search } from 'lucide-react';
+import { Heart, Search, Mail, ExternalLink } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useEditorFavorites } from '@/hooks/useEditorFavorites';
 import { User } from '@/types';
-import EditorCard from '@/components/EditorCard';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const FavoriteEditorsTab = () => {
   const navigate = useNavigate();
@@ -45,9 +47,15 @@ const FavoriteEditorsTab = () => {
   const filteredEditors = searchQuery.trim() === ''
     ? favoriteEditors
     : favoriteEditors.filter(editor => 
-        editor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (editor.bio && editor.bio.toLowerCase().includes(searchQuery.toLowerCase()))
+        editor.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+  const handleMessageClick = (editor: User) => {
+    toast({
+      title: "Message Sent",
+      description: `Your message to ${editor.name} has been sent.`,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -114,17 +122,53 @@ const FavoriteEditorsTab = () => {
               <p className="text-muted-foreground">No editors match your search.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEditors.map((editor, index) => (
-                <EditorCard 
-                  key={editor.id}
-                  editor={editor}
-                  index={index}
-                  specializations={[]}
-                  about={editor.bio || ""}
-                />
-              ))}
-            </div>
+            <ScrollArea className="h-[500px] pr-4">
+              <div className="space-y-3">
+                {filteredEditors.map((editor) => (
+                  <div 
+                    key={editor.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:border-primary/50 transition-colors bg-card"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 border-2 border-background shadow">
+                        <AvatarImage src={editor.avatarUrl} alt={editor.name} />
+                        <AvatarFallback>{editor.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-medium">{editor.name}</h3>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMessageClick(editor);
+                        }}
+                      >
+                        <Mail className="h-4 w-4" /> 
+                        <span className="ml-1 hidden sm:inline">Message</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/editor/${editor.id}`);
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4" /> 
+                        <span className="ml-1 hidden sm:inline">Portfolio</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
