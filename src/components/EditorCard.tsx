@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
@@ -43,6 +44,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
 
   const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
 
+  // Use the provided about prop if available, otherwise fallback to editor.bio
   const bioText = about || editor.bio || '';
 
   const formatSubscriptionTier = (tier: string) => {
@@ -142,7 +144,10 @@ const EditorCard: React.FC<EditorCardProps> = ({
           </div>
           
           {bioText && (
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{bioText}</p>
+            <div className="mb-4">
+              <h4 className="text-sm font-medium mb-1">About</h4>
+              <p className="text-sm text-muted-foreground line-clamp-3">{bioText}</p>
+            </div>
           )}
           
           {specializations && specializations.length > 0 && (
@@ -208,9 +213,6 @@ const EditorCard: React.FC<EditorCardProps> = ({
                     {editor.totalVideoLikes}
                   </span>
                 )}
-
-
-            
           </div>
           
           <div className="flex space-x-2">

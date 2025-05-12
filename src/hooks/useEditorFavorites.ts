@@ -145,7 +145,7 @@ export const useEditorFavorites = (editorId?: string) => {
         name: editor.name || '',
         email: editor.email || '',
         avatarUrl: editor.avatar_url || '',
-        bio: editor.bio || '',
+        bio: editor.bio || '', // Make sure bio is included
         createdAt: new Date(editor.created_at || Date.now()),
         subscriptionTier: (editor.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         role: editor.role || 'monteur',
