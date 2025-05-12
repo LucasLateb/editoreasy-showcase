@@ -6,9 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart } from 'lucide-react';
+import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart, Bookmark } from 'lucide-react';
 import { useProfileLikes } from '@/hooks/useLikes';
+import { useEditorFavorites } from '@/hooks/useEditorFavorites';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProfileCardProps {
   currentUser: any;
@@ -52,12 +54,19 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
   const userId = displayUser?.id;
+  const { user: authUser } = useAuth();
   
   // Use profile likes hook to get like functionality
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);
+
+  // Use editor favorites hook if in view only mode and the user is a client
+  const { isFavorited, isLoading: isFavLoading, toggleFavorite } = useEditorFavorites(isViewOnly ? userId : undefined);
   
   // Only use the total video likes, not including profile likes
   const totalVideoLikes = displayUser?.totalVideoLikes || 0;
+
+  // Check if the current user is a client
+  const isClient = authUser?.role === 'client';
   
   // Function to format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
@@ -219,10 +228,32 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           ))}
         </div>
         
-        <Button className="w-full">
-          <Mail className="mr-2 h-4 w-4" />
-          Contact Me
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button className="w-full">
+            <Mail className="mr-2 h-4 w-4" />
+            Contact Me
+          </Button>
+          
+          {/* Add the favorite button only for clients viewing an editor's portfolio */}
+          {isViewOnly && isClient && (
+            <Button 
+              variant={isFavorited ? "outline" : "secondary"} 
+              className="w-full" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite();
+              }}
+              disabled={isFavLoading}
+            >
+              <Bookmark 
+                className={cn("mr-2 h-4 w-4", isFavorited && "text-primary")} 
+                fill={isFavorited ? "currentColor" : "none"} 
+              />
+              {isFavorited ? "Remove from Favorites" : "Add to Favorites"}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
