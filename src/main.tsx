@@ -15,6 +15,19 @@ if (rootElement) {
     // Add event listener for unhandled errors
     window.addEventListener('error', (event) => {
       console.error('Unhandled error:', event.error);
+      
+      // Display simple error UI for module loading issues
+      if (event.error instanceof TypeError && event.error.message.includes('module')) {
+        rootElement.innerHTML = `
+          <div style="padding: 20px; text-align: center;">
+            <h2>Module loading error detected</h2>
+            <p>There was a problem loading the application modules.</p>
+            <button onclick="window.location.reload(true)" style="padding: 8px 16px; margin-top: 16px;">
+              Reload and clear cache
+            </button>
+          </div>
+        `;
+      }
     });
 
     // Add event listener for unhandled promise rejections
@@ -46,8 +59,8 @@ if (rootElement) {
       <div style="padding: 20px; text-align: center;">
         <h2>Something went wrong</h2>
         <p>The application couldn't be loaded. Please try refreshing the page.</p>
-        <button onclick="location.reload()" style="padding: 8px 16px; margin-top: 16px;">
-          Refresh Page
+        <button onclick="location.reload(true)" style="padding: 8px 16px; margin-top: 16px;">
+          Refresh Page and Clear Cache
         </button>
       </div>
     `;
