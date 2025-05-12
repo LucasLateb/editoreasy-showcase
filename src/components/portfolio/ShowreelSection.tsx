@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
@@ -16,8 +16,23 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   showreelThumbnail,
   editMode
 }) => {
-  // Use state to control the video player dialog
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  
+  useEffect(() => {
+    if (showreelThumbnail) {
+      // Précharger l'image
+      const img = new Image();
+      img.src = showreelThumbnail;
+      img.onload = () => {
+        console.log('Showreel thumbnail preloaded successfully:', showreelThumbnail);
+        setThumbnailLoaded(true);
+      };
+      img.onerror = () => {
+        console.error('Failed to preload showreel thumbnail:', showreelThumbnail);
+      };
+    }
+  }, [showreelThumbnail]);
   
   // If there's no showreel URL and we're not in edit mode, don't render anything
   if (!showreelUrl && !editMode) {
@@ -25,10 +40,13 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   }
 
   const handlePlayClick = () => {
+    console.log('Play button clicked, opening video player');
     setVideoPlayerOpen(true);
   };
 
   const defaultThumbnail = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f';
+  console.log('Portfolio: Setting showreel URL to:', showreelUrl);
+  console.log('Portfolio: Setting showreel thumbnail to:', showreelThumbnail);
 
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm">
