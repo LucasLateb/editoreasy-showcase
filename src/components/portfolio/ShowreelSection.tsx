@@ -19,24 +19,10 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   
+  // Simplified approach - we'll trust the Image component to handle loading
   useEffect(() => {
     if (showreelThumbnail) {
-      // Précharger l'image
-      const img = new window.Image();
-      img.src = showreelThumbnail;
-      img.onload = () => {
-        console.log('Showreel thumbnail preloaded successfully:', showreelThumbnail);
-        setThumbnailLoaded(true);
-      };
-      img.onerror = () => {
-        console.error('Failed to preload showreel thumbnail:', showreelThumbnail);
-      };
-      
-      // Cleanup function
-      return () => {
-        img.onload = null;
-        img.onerror = null;
-      };
+      setThumbnailLoaded(true);
     }
   }, [showreelThumbnail]);
   

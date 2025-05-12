@@ -22,7 +22,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       setImageSrc(src);
     }, [src]);
     
-    // Fonction de gestion d'erreur pour l'image
+    // Handle image loading error
     const handleError = () => {
       console.error(`Image loading failed: ${imageSrc}`);
       setError(true);
@@ -32,6 +32,9 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
         if (imageSrc !== fallbackSrc) {
           console.log(`Trying fallback image: ${fallbackSrc}`);
           setImageSrc(fallbackSrc);
+        } else {
+          // If we're already using the fallback, just set loaded
+          setLoaded(true);
         }
       } else {
         // If fallback also fails, just set loaded to true to remove loading state
@@ -39,7 +42,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       }
     };
 
-    // Fonction de gestion du chargement réussi
+    // Handle successful image load
     const handleLoad = () => {
       console.log(`Image loaded successfully: ${imageSrc}`);
       setLoaded(true);
@@ -55,33 +58,14 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       };
     }, []);
 
-    // Preload the image
+    // Simplified preload approach
     useEffect(() => {
-      if (imageSrc) {
-        const preloadImage = new window.Image();
-        preloadImage.src = imageSrc;
-        
-        const handlePreloadSuccess = () => {
-          // Image is now in browser cache
-          console.log(`Preloaded image successfully: ${imageSrc}`);
-        };
-        
-        const handlePreloadError = () => {
-          console.error(`Failed to preload image: ${imageSrc}`);
-          // Only attempt fallback if we haven't already and if we're not already using the fallback
-          if (!attemptedFallback.current && imageSrc !== fallbackSrc) {
-            attemptedFallback.current = true;
-            setImageSrc(fallbackSrc);
-          }
-        };
-        
-        preloadImage.onload = handlePreloadSuccess;
-        preloadImage.onerror = handlePreloadError;
-        
-        return () => {
-          preloadImage.onload = null;
-          preloadImage.onerror = null;
-        };
+      if (!imageSrc) return;
+      
+      // For non-fallback images, we can skip preloading to improve performance
+      if (imageSrc === fallbackSrc && attemptedFallback.current) {
+        setLoaded(true);
+        return;
       }
     }, [imageSrc, fallbackSrc]);
     

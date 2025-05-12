@@ -22,6 +22,20 @@ if (rootElement) {
       console.error('Unhandled promise rejection:', event.reason);
     });
 
+    // Add performance monitoring for initial load
+    window.addEventListener('load', () => {
+      console.log('Application fully loaded');
+      
+      // Report any performance issues after load
+      setTimeout(() => {
+        const performance = window.performance;
+        if (performance && performance.timing) {
+          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+          console.log(`Page load time: ${loadTime}ms`);
+        }
+      }, 0);
+    });
+
     // Render the app
     root.render(<App />);
   } catch (error) {
