@@ -19,7 +19,7 @@ export const useEditorFavorites = (editorId?: string) => {
       }
 
       try {
-        // Use raw query with explicit SQL to avoid TypeScript errors with table that hasn't been synced
+        // Use RPC to check if user has favorited the editor
         const { data, error } = await supabase
           .rpc('check_favorite', {
             user_id_param: currentUser.id,
