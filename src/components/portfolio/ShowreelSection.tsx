@@ -31,6 +31,12 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       img.onerror = () => {
         console.error('Failed to preload showreel thumbnail:', showreelThumbnail);
       };
+      
+      // Cleanup function
+      return () => {
+        img.onload = null;
+        img.onerror = null;
+      };
     }
   }, [showreelThumbnail]);
   
