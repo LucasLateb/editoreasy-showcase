@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
-import { Image } from '@/components/ui/image';
+import { Image as CustomImage } from '@/components/ui/image';
 
 interface ShowreelSectionProps {
   showreelUrl: string;
@@ -22,7 +22,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   useEffect(() => {
     if (showreelThumbnail) {
       // Précharger l'image
-      const img = new Image();
+      const img = new window.Image();
       img.src = showreelThumbnail;
       img.onload = () => {
         console.log('Showreel thumbnail preloaded successfully:', showreelThumbnail);
@@ -56,7 +56,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       {showreelUrl ? (
         <div className="aspect-video relative">
           <div className="relative w-full h-full">
-            <Image 
+            <CustomImage 
               src={showreelThumbnail || defaultThumbnail} 
               alt="Showreel thumbnail" 
               className="w-full h-full"
