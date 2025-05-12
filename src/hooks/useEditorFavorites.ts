@@ -19,12 +19,13 @@ export const useEditorFavorites = (editorId?: string) => {
       }
 
       try {
+        // Direct database query instead of using RPC function
         const { data, error } = await supabase
           .from('editor_favorites')
           .select('*')
           .eq('user_id', currentUser.id)
           .eq('editor_id', editorId)
-          .single();
+          .maybeSingle();
 
         if (error && error.code !== 'PGSQL_RELATION_DOES_NOT_EXIST') {
           console.error('Error checking favorite status:', error);
@@ -119,8 +120,7 @@ export const useEditorFavorites = (editorId?: string) => {
       // First fetch the favorite relationships
       const { data: favoriteRelations, error: favError } = await supabase
         .from('editor_favorites')
-        .select('editor_id')
-        .eq('user_id', currentUser.id);
+        .select('editor_id');
 
       if (favError) throw favError;
       
@@ -146,7 +146,7 @@ export const useEditorFavorites = (editorId?: string) => {
         avatarUrl: editor.avatar_url || '',
         bio: editor.bio || '',
         createdAt: new Date(editor.created_at || Date.now()),
-        subscriptionTier: editor.subscription_tier || 'free',
+        subscriptionTier: (editor.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
         role: editor.role || 'monteur',
         likes: editor.likes || 0
       }));
