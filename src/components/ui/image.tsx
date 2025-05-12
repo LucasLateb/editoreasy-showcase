@@ -24,27 +24,24 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
     
     // Handle image loading error
     const handleError = () => {
-      console.error(`Image loading failed: ${imageSrc}`);
-      setError(true);
-      
       if (!attemptedFallback.current) {
         attemptedFallback.current = true;
         if (imageSrc !== fallbackSrc) {
-          console.log(`Trying fallback image: ${fallbackSrc}`);
           setImageSrc(fallbackSrc);
         } else {
           // If we're already using the fallback, just set loaded
           setLoaded(true);
+          setError(true);
         }
       } else {
         // If fallback also fails, just set loaded to true to remove loading state
         setLoaded(true);
+        setError(true);
       }
     };
 
     // Handle successful image load
     const handleLoad = () => {
-      console.log(`Image loaded successfully: ${imageSrc}`);
       setLoaded(true);
       setError(false);
     };
@@ -57,17 +54,6 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
         }
       };
     }, []);
-
-    // Simplified preload approach
-    useEffect(() => {
-      if (!imageSrc) return;
-      
-      // For non-fallback images, we can skip preloading to improve performance
-      if (imageSrc === fallbackSrc && attemptedFallback.current) {
-        setLoaded(true);
-        return;
-      }
-    }, [imageSrc, fallbackSrc]);
     
     return (
       <div className={cn('relative w-full h-full overflow-hidden', className)}>
@@ -96,7 +82,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
           {...props}
         />
         
-        {error && attemptedFallback.current && imageSrc === fallbackSrc && (
+        {error && attemptedFallback.current && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground text-sm">
             Image unavailable
           </div>

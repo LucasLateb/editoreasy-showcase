@@ -1,21 +1,22 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
-import Index from '@/pages/Index';
-import Dashboard from '@/pages/Dashboard';
-import Portfolio from '@/pages/Portfolio';
-import Pricing from '@/pages/Pricing';
-import Explore from '@/pages/Explore';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
 import NotFound from '@/pages/NotFound';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import CheckEmail from '@/pages/CheckEmail';
-import { supabase } from '@/integrations/supabase/client';
+
+// Lazy load non-critical pages to improve initial loading performance
+const Index = lazy(() => import('@/pages/Index'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Portfolio = lazy(() => import('@/pages/Portfolio'));
+const Pricing = lazy(() => import('@/pages/Pricing'));
+const Explore = lazy(() => import('@/pages/Explore'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,16 @@ const AuthRedirectHandler = () => {
   return null;
 };
 
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+      <p className="mt-4 text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -81,20 +92,22 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <Toaster />
           <AuthRedirectHandler />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/editor/:id" element={<Portfolio isViewOnly />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/check-email" element={<CheckEmail />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/editor/:id" element={<Portfolio isViewOnly />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/check-email" element={<CheckEmail />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </QueryClientProvider>
       </AuthProvider>
     </BrowserRouter>
