@@ -51,10 +51,7 @@ const FavoriteEditorsTab = () => {
       );
 
   const handleMessageClick = (editor: User) => {
-    toast({
-      title: "Message Sent",
-      description: `Your message to ${editor.name} has been sent.`,
-    });
+    toast.success(`Your message to ${editor.name} has been sent.`);
   };
 
   if (isLoading) {
