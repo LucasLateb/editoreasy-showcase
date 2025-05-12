@@ -120,7 +120,8 @@ export const useEditorFavorites = (editorId?: string) => {
       // First fetch the favorite relationships
       const { data: favoriteRelations, error: favError } = await supabase
         .from('editor_favorites')
-        .select('editor_id');
+        .select('editor_id')
+        .eq('user_id', currentUser.id);
 
       if (favError) throw favError;
       
