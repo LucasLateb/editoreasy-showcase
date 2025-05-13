@@ -41,23 +41,25 @@ const Explore: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <Toaster />
       <main className="flex-grow pt-24 pb-16 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto w-full">
           <ExploreHeader 
             onCategorySelect={handleCategorySelect}
             selectedCategoryId={selectedCategory?.id}
             onOpenSearch={() => setIsSearchOpen(true)}
           />
 
-          <VideoGrid 
-            videos={videos}
-            isLoading={isLoadingVideos}
-            onVideoClick={handleVideoClick}
-            selectedCategory={selectedCategory?.name}
-          />
+          <div className="w-full mb-10">
+            <VideoGrid 
+              videos={videos}
+              isLoading={isLoadingVideos}
+              onVideoClick={handleVideoClick}
+              selectedCategory={selectedCategory?.name}
+            />
+          </div>
         </div>
       </main>
       <Footer />
