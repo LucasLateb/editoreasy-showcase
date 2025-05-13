@@ -40,14 +40,15 @@ export const useExploreData = (selectedCategory: Category | null) => {
   const [editors, setEditors] = useState<EditorType[]>([]);
   const [isLoadingEditors, setIsLoadingEditors] = useState(false);
   
-  // Ajout d'un ref pour suivre si le composant est monté
+  // Add refs to track component mount state and prevent multiple requests
   const isMounted = useRef(true);
-  // Ajout d'un ref pour suivre si une requête est en cours
   const isLoadingRef = useRef(false);
+  const initialLoadComplete = useRef(false);
 
-  // Gestion du montage/démontage du composant
+  // Handle component mounting/unmounting
   useEffect(() => {
     isMounted.current = true;
+    initialLoadComplete.current = false;
     
     return () => {
       isMounted.current = false;
@@ -56,13 +57,15 @@ export const useExploreData = (selectedCategory: Category | null) => {
 
   // Fetch videos based on selected category
   useEffect(() => {
-    // Éviter des requêtes multiples si une requête est déjà en cours
+    // Skip if already loading to prevent multiple concurrent requests
     if (isLoadingRef.current) return;
     
     const fetchVideos = async () => {
-      // Marquer que le chargement a commencé
+      // Mark loading as started
       isLoadingRef.current = true;
-      setIsLoadingVideos(true);
+      if (isMounted.current) {
+        setIsLoadingVideos(true);
+      }
       
       try {
         let query = supabase
@@ -91,13 +94,16 @@ export const useExploreData = (selectedCategory: Category | null) => {
           throw videoError;
         }
 
-        // Si le composant n'est plus monté, ne pas mettre à jour l'état
+        // Stop if component unmounted
         if (!isMounted.current) return;
 
         if (!videoData || videoData.length === 0) {
           setVideos([]);
-          setIsLoadingVideos(false);
+          if (isMounted.current) {
+            setIsLoadingVideos(false);
+          }
           isLoadingRef.current = false;
+          initialLoadComplete.current = true;
           return;
         }
 
@@ -110,16 +116,19 @@ export const useExploreData = (selectedCategory: Category | null) => {
           
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
-          toast({
-            title: 'Failed to load videos',
-            description: 'Could not retrieve videos from the database.',
-            variant: 'destructive',
-          });
+          if (isMounted.current) {
+            toast({
+              title: 'Failed to load videos',
+              description: 'Could not retrieve videos from the database.',
+              variant: 'destructive',
+            });
+          }
           isLoadingRef.current = false;
+          initialLoadComplete.current = true;
           return;
         }
         
-        // Si le composant n'est plus monté, ne pas mettre à jour l'état
+        // Stop if component unmounted
         if (!isMounted.current) return;
         
         const profilesMap = (profilesData || []).reduce((acc, profile) => {
@@ -156,7 +165,9 @@ export const useExploreData = (selectedCategory: Category | null) => {
           };
         });
         
-        setVideos(formattedVideos);
+        if (isMounted.current) {
+          setVideos(formattedVideos);
+        }
       } catch (error) {
         console.error('Error fetching videos:', error);
         if (isMounted.current) {
@@ -171,34 +182,39 @@ export const useExploreData = (selectedCategory: Category | null) => {
           setIsLoadingVideos(false);
         }
         isLoadingRef.current = false;
+        initialLoadComplete.current = true;
       }
     };
 
     fetchVideos();
   }, [toast, selectedCategory]);
 
-  // Fetch editors
+  // Fetch editors once, with better tracking
   useEffect(() => {
-    // N'exécuter cette requête qu'une seule fois
-    let hasRun = false;
+    // Use ref to track if this effect has run
+    const editorsFetchedRef = useRef(false);
     
     const fetchEditors = async () => {
-      if (hasRun || isLoadingRef.current) return;
-      hasRun = true;
+      // Skip if already fetched or fetching
+      if (editorsFetchedRef.current || isLoadingRef.current) return;
+      editorsFetchedRef.current = true;
       
-      setIsLoadingEditors(true);
+      if (isMounted.current) {
+        setIsLoadingEditors(true);
+      }
+      
       try {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, subscription_tier, role')
-          .eq('role', 'monteur') // Only fetch editors (monteurs), not clients
+          .eq('role', 'monteur')
           .order('name');
         
         if (error) {
           throw error;
         }
         
-        // Si le composant n'est plus monté, ne pas mettre à jour l'état
+        // Stop if component unmounted
         if (!isMounted.current) return;
         
         const editorsData = data.map(profile => ({
@@ -208,7 +224,9 @@ export const useExploreData = (selectedCategory: Category | null) => {
           role: profile.role
         }));
         
-        setEditors(editorsData);
+        if (isMounted.current) {
+          setEditors(editorsData);
+        }
       } catch (error) {
         console.error('Error fetching editors:', error);
         if (isMounted.current) {
@@ -226,7 +244,16 @@ export const useExploreData = (selectedCategory: Category | null) => {
     };
 
     fetchEditors();
+    
+    return () => {
+      editorsFetchedRef.current = false;
+    };
   }, [toast]);
 
-  return { videos, isLoadingVideos, editors, isLoadingEditors };
+  return { 
+    videos, 
+    isLoadingVideos, 
+    editors, 
+    isLoadingEditors 
+  };
 };

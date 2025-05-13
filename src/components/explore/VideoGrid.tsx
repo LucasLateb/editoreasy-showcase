@@ -22,17 +22,20 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   onClearCategory,
   onVideoClick,
 }) => {
+  // Using consistent container height for all states to prevent layout shifts
+  const containerClasses = "min-h-[50vh]";
+  
   if (isLoading) {
     return (
-      <div className="min-h-[50vh]">
+      <div className={containerClasses}>
         <VideoSkeletons />
       </div>
     );
   }
 
-  if (videos.length === 0) {
+  if (!videos || videos.length === 0) {
     return (
-      <div className="min-h-[50vh]">
+      <div className={containerClasses}>
         <EmptyState selectedCategory={selectedCategory} onClearCategory={onClearCategory} />
       </div>
     );
@@ -41,10 +44,10 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   return (
     <div className={cn(
       "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6",
-      "min-h-[50vh]"
+      containerClasses
     )}>
       {videos.map((video) => (
-        <div key={video.id} onClick={() => onVideoClick(video)}>
+        <div key={video.id} onClick={() => onVideoClick(video)} className="cursor-pointer">
           <VideoCard video={video as Video} />
         </div>
       ))}

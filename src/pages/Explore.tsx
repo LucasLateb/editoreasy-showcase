@@ -14,13 +14,13 @@ import { useExploreData, ExploreVideoType } from '@/hooks/useExploreData';
 const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
   
-  // Références d'état locales
+  // Use refs instead of state for UI elements to prevent unnecessary rerenders
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<ExploreVideoType | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   
-  // Utiliser notre hook personnalisé pour récupérer les données
+  // Use our custom hook for data fetching
   const { 
     videos, 
     isLoadingVideos, 
@@ -37,11 +37,12 @@ const Explore: React.FC = () => {
   };
 
   const handleVideoClick = (video: ExploreVideoType) => {
+    if (!video) return;
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };
 
-  // Effet pour nettoyer les états lors du démontage du composant
+  // Cleanup effect
   useEffect(() => {
     return () => {
       setIsSearchOpen(false);
@@ -54,6 +55,8 @@ const Explore: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <Toaster />
+      
+      {/* Set fixed min-height to prevent layout shifts */}
       <main className="flex-grow pt-24 pb-16 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <ExploreHeader 
@@ -63,10 +66,10 @@ const Explore: React.FC = () => {
             isAuthenticated={isAuthenticated}
           />
 
-          {/* Zone de contenu avec hauteur minimale pour éviter les sauts de mise en page */}
-          <div className="min-h-[60vh]">
+          {/* Content area with stable minimum height */}
+          <div className="min-h-[60vh] mt-6">
             <VideoGrid 
-              videos={videos}
+              videos={videos || []}
               isLoading={isLoadingVideos}
               selectedCategory={selectedCategory}
               onClearCategory={handleClearCategory}
@@ -77,7 +80,7 @@ const Explore: React.FC = () => {
       </main>
       <Footer />
 
-      {/* Dialogue de lecteur vidéo */}
+      {/* Dialogs */}
       {selectedVideo && (
         <VideoPlayerDialog
           isOpen={isVideoDialogOpen}
@@ -92,7 +95,6 @@ const Explore: React.FC = () => {
         />
       )}
 
-      {/* Dialogue de recherche d'éditeurs */}
       <EditorSearch 
         editors={editors}
         isLoading={isLoadingEditors}
