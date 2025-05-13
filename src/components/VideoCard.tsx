@@ -1,19 +1,19 @@
 
 import React, { useState } from 'react';
-import { Video, Category, categories } from '@/types';
+import { Video } from '@/types';
+import { ExploreVideoType } from '@/hooks/useVideos';
 import { Eye, Heart, Play, Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 
 interface VideoCardProps {
-  video: Video;
+  video: Video | ExploreVideoType;
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const category = categories.find(c => c.id === video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
   return (
@@ -27,7 +27,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
     >
       {/* Video Thumbnail */}
       <Image
-        src={video.thumbnailUrl}
+        src={video.thumbnailUrl || video.thumbnail}
         alt={video.title}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"
@@ -67,33 +67,34 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       
       {/* Video info */}
       <div className="absolute bottom-0 left-0 right-0 p-4">
-        {category && (
+        {'categoryId' in video && video.categoryId && (
           <span className="inline-block px-2 py-1 mb-2 text-xs font-medium rounded-full bg-primary/20 backdrop-blur-sm text-primary-foreground">
-            {category.name}
+            {/* Display category name if available */}
+            {video.categoryName || 'Video'}
           </span>
         )}
         <h3 className="font-medium text-white mb-1 line-clamp-1">{video.title}</h3>
         
         {/* Editor info if available */}
-        {video.editorName && (
+        {(video.editorName || video.editor) && (
           <div className="flex items-center mb-2">
             <div className="w-5 h-5 rounded-full bg-accent mr-2 overflow-hidden">
               {video.editorAvatar ? (
-                <Image src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
+                <Image src={video.editorAvatar} alt={video.editorName || video.editor} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
-                  {video.editorName.charAt(0)}
+                  {(video.editorName || video.editor).charAt(0)}
                 </div>
               )}
             </div>
-            <span className="text-xs text-white/80">{video.editorName}</span>
+            <span className="text-xs text-white/80">{video.editorName || video.editor}</span>
           </div>
         )}
         
         <div className="flex items-center space-x-4 text-xs text-white/80">
           <div className="flex items-center">
             <Eye className="h-3 w-3 mr-1" />
-            <span>{video.views}</span>
+            <span>{formatNumber(video.views)}</span>
           </div>
           <div 
             className="flex items-center" 

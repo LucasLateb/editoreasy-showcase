@@ -35,7 +35,11 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {videos.map((video) => (
-        <div key={video.id} onClick={() => onVideoClick(video)}>
+        <div 
+          key={video.id} 
+          onClick={() => onVideoClick(video)} 
+          className="cursor-pointer transition-transform hover:scale-[1.02] duration-300"
+        >
           <VideoCard video={video} />
         </div>
       ))}

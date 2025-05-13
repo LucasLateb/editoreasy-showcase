@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Toaster } from '@/components/ui/toaster';
 import { Category } from '@/types';
@@ -10,6 +10,7 @@ import VideoGrid from '@/components/VideoGrid';
 import EditorSearchDialog from '@/components/EditorSearchDialog';
 import { useVideos, ExploreVideoType } from '@/hooks/useVideos';
 import { useEditors } from '@/hooks/useEditors';
+import { toast } from 'sonner';
 
 const Explore: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,11 +23,19 @@ const Explore: React.FC = () => {
   const { videos, isLoading: isLoadingVideos } = useVideos(selectedCategory);
   const { editors, isLoading: isLoadingEditors } = useEditors();
 
+  useEffect(() => {
+    // Check if the videos loaded successfully
+    if (videos.length > 0) {
+      console.log('Videos loaded successfully:', videos.length);
+    }
+  }, [videos]);
+
   const handleCategorySelect = (category: Category) => {
     setSelectedCategory(category);
   };
 
   const handleVideoClick = (video: ExploreVideoType) => {
+    console.log('Video clicked:', video);
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };

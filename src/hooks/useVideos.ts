@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types';
+import { Category, categories } from '@/types';
+import { toast } from 'sonner';
 
 export type ExploreVideoType = {
   id: string;
@@ -16,6 +17,7 @@ export type ExploreVideoType = {
   thumbnailUrl: string;
   videoUrl: string;
   categoryId: string;
+  categoryName?: string;
   userId: string;
   createdAt: Date;
   editorName?: string;
@@ -27,12 +29,14 @@ export type ExploreVideoType = {
 export const useVideos = (selectedCategory: Category | null) => {
   const [videos, setVideos] = useState<ExploreVideoType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   useEffect(() => {
     const fetchVideos = async () => {
       setIsLoading(true);
       try {
+        console.log('Fetching videos, selected category:', selectedCategory?.name);
+        
         let query = supabase
           .from('videos')
           .select(`
@@ -56,8 +60,11 @@ export const useVideos = (selectedCategory: Category | null) => {
         const { data: videoData, error: videoError } = await query.order('created_at', { ascending: false });
         
         if (videoError) {
+          console.error('Error fetching videos:', videoError);
           throw videoError;
         }
+
+        console.log('Video data received:', videoData?.length || 0);
 
         if (!videoData || videoData.length === 0) {
           setVideos([]);
@@ -74,8 +81,7 @@ export const useVideos = (selectedCategory: Category | null) => {
           
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
-          toast({
-            title: 'Failed to load videos',
+          toast('Failed to load videos', {
             description: 'Could not retrieve videos from the database.',
           });
           return;
@@ -88,6 +94,7 @@ export const useVideos = (selectedCategory: Category | null) => {
         
         const formattedVideos = videoData.map(video => {
           const profile = profilesMap[video.user_id] || {};
+          const categoryInfo = categories.find(c => c.id === video.category_id);
           
           let editorTier: 'free' | 'premium' | 'pro' = 'free';
           if (profile.subscription_tier === 'premium' || profile.subscription_tier === 'pro') {
@@ -100,26 +107,27 @@ export const useVideos = (selectedCategory: Category | null) => {
             description: video.description,
             videoUrl: video.video_url,
             thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
+            thumbnail: video.thumbnail_url || '/placeholder.svg', // For compatibility
             views: video.views || 0,
             likes: video.likes || 0,
             categoryId: video.category_id,
+            categoryName: categoryInfo?.name,
             userId: video.user_id,
             createdAt: new Date(video.created_at),
             date: new Date(video.created_at).toISOString().split('T')[0],
             editorName: profile.name || 'Unknown Editor',
+            editor: profile.name || 'Unknown Editor', // For compatibility
             editorAvatar: profile.avatar_url || undefined,
             editorTier: editorTier,
             isHighlighted: video.is_highlighted || false,
-            editor: profile.name || 'Unknown Editor',
-            thumbnail: video.thumbnail_url || '/placeholder.svg',
           };
         });
-        
+
+        console.log('Formatted videos:', formattedVideos.length);
         setVideos(formattedVideos);
       } catch (error) {
         console.error('Error fetching videos:', error);
-        toast({
-          title: 'Failed to load videos',
+        toast('Failed to load videos', {
           description: 'Could not retrieve videos from the database.',
         });
       } finally {
@@ -128,7 +136,7 @@ export const useVideos = (selectedCategory: Category | null) => {
     };
 
     fetchVideos();
-  }, [toast, selectedCategory]);
+  }, [uiToast, selectedCategory]);
 
   return {
     videos,
