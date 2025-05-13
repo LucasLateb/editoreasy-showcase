@@ -9,6 +9,7 @@ export type Action = {
 };
 
 export type ToastProps = {
+  id?: string;
   title?: string;
   description?: string;
   variant?: 'default' | 'destructive' | 'success';
