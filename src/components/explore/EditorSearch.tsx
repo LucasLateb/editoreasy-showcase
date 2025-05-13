@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +9,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
-import { EditorType } from '@/hooks/useExploreData';
+import { EditorType } from '@/types/exploreTypes';
 
 interface EditorSearchProps {
   editors: EditorType[];

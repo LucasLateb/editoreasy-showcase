@@ -4,7 +4,7 @@ import { Video } from '@/types';
 import VideoCard from '@/components/VideoCard';
 import { VideoSkeletons } from '@/components/ui/loading-skeleton';
 import EmptyState from '@/components/explore/EmptyState';
-import { ExploreVideoType } from '@/hooks/useExploreData';
+import { ExploreVideoType } from '@/types/exploreTypes';
 import { cn } from '@/lib/utils';
 
 interface VideoGridProps {
