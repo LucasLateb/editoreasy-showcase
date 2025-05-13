@@ -10,13 +10,13 @@ import ResetPassword from '@/pages/ResetPassword';
 import CheckEmail from '@/pages/CheckEmail';
 
 // Optimize lazy loading with proper error boundaries
-const Index = lazy(() => import('@/pages/Index').catch(() => ({ default: () => <ErrorFallback /> })));
-const Dashboard = lazy(() => import('@/pages/Dashboard').catch(() => ({ default: () => <ErrorFallback /> })));
-const Portfolio = lazy(() => import('@/pages/Portfolio').catch(() => ({ default: () => <ErrorFallback /> })));
-const Pricing = lazy(() => import('@/pages/Pricing').catch(() => ({ default: () => <ErrorFallback /> })));
-const Explore = lazy(() => import('@/pages/Explore').catch(() => ({ default: () => <ErrorFallback /> })));
-const Login = lazy(() => import('@/pages/Login').catch(() => ({ default: () => <ErrorFallback /> })));
-const Register = lazy(() => import('@/pages/Register').catch(() => ({ default: () => <ErrorFallback /> })));
+const Index = lazy(() => import('@/pages/Index'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Portfolio = lazy(() => import('@/pages/Portfolio'));
+const Pricing = lazy(() => import('@/pages/Pricing'));
+const Explore = lazy(() => import('@/pages/Explore'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
 
 // Error fallback component for lazy loading failures
 const ErrorFallback = () => (
@@ -27,7 +27,7 @@ const ErrorFallback = () => (
         We couldn't load this page. This could be due to a temporary issue or a network problem.
       </p>
       <button 
-        onClick={() => window.location.reload(true)} 
+        onClick={() => window.location.reload()} 
         className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
       >
         Reload page
@@ -45,9 +45,11 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       gcTime: 5 * 60 * 1000,
-      // Add proper error handling for queries
-      onError: (error) => {
-        console.error('Query error:', error);
+      // Add proper error handling for queries using onSettled instead of onError
+      meta: {
+        onError: (error: Error) => {
+          console.error('Query error:', error);
+        }
       }
     },
   },
@@ -134,7 +136,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
             <button 
               onClick={() => {
                 this.setState({ hasError: false });
-                window.location.reload(true);
+                window.location.reload();
               }} 
               className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
             >
@@ -166,7 +168,7 @@ export default function App() {
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/editor/:id" element={<Portfolio isViewOnly />} />
+                <Route path="/editor/:id" element={<Portfolio />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/check-email" element={<CheckEmail />} />
