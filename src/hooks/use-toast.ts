@@ -17,7 +17,7 @@ export type ToastProps = {
 export function useToast() {
   // We don't actually need any state here since we're using Sonner
   // which manages its own state internally
-  const [, setToasts] = useState<ToastT[]>([]);
+  const [toasts, setToasts] = useState<ToastT[]>([]);
 
   function toast({
     title,
@@ -56,6 +56,7 @@ export function useToast() {
 
   return {
     toast,
+    toasts,
     dismiss: sonnerToast.dismiss,
   };
 }
