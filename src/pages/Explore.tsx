@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Toaster } from '@/components/ui/toaster';
@@ -14,12 +14,13 @@ import { useExploreData, ExploreVideoType } from '@/hooks/useExploreData';
 const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
   
+  // Références d'état locales
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<ExploreVideoType | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   
-  // Use our custom hook to fetch data
+  // Utiliser notre hook personnalisé pour récupérer les données
   const { 
     videos, 
     isLoadingVideos, 
@@ -40,6 +41,15 @@ const Explore: React.FC = () => {
     setIsVideoDialogOpen(true);
   };
 
+  // Effet pour nettoyer les états lors du démontage du composant
+  useEffect(() => {
+    return () => {
+      setIsSearchOpen(false);
+      setSelectedVideo(null);
+      setIsVideoDialogOpen(false);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -53,7 +63,7 @@ const Explore: React.FC = () => {
             isAuthenticated={isAuthenticated}
           />
 
-          {/* Content area with minimum height to prevent layout shifts */}
+          {/* Zone de contenu avec hauteur minimale pour éviter les sauts de mise en page */}
           <div className="min-h-[60vh]">
             <VideoGrid 
               videos={videos}
@@ -67,7 +77,7 @@ const Explore: React.FC = () => {
       </main>
       <Footer />
 
-      {/* Video player dialog */}
+      {/* Dialogue de lecteur vidéo */}
       {selectedVideo && (
         <VideoPlayerDialog
           isOpen={isVideoDialogOpen}
@@ -82,7 +92,7 @@ const Explore: React.FC = () => {
         />
       )}
 
-      {/* Editor search dialog */}
+      {/* Dialogue de recherche d'éditeurs */}
       <EditorSearch 
         editors={editors}
         isLoading={isLoadingEditors}

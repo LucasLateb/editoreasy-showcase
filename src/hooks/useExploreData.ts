@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -39,24 +39,31 @@ export const useExploreData = (selectedCategory: Category | null) => {
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const [editors, setEditors] = useState<EditorType[]>([]);
   const [isLoadingEditors, setIsLoadingEditors] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Ajout d'un ref pour suivre si le composant est monté
+  const isMounted = useRef(true);
+  // Ajout d'un ref pour suivre si une requête est en cours
+  const isLoadingRef = useRef(false);
 
-  // Initial load handling
+  // Gestion du montage/démontage du composant
   useEffect(() => {
-    if (isInitialLoad) {
-      const timer = setTimeout(() => {
-        setIsInitialLoad(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialLoad]);
+    isMounted.current = true;
+    
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Fetch videos based on selected category
   useEffect(() => {
-    if (isInitialLoad) return; // Skip fetch on initial render to prevent layout shifting
-
+    // Éviter des requêtes multiples si une requête est déjà en cours
+    if (isLoadingRef.current) return;
+    
     const fetchVideos = async () => {
+      // Marquer que le chargement a commencé
+      isLoadingRef.current = true;
       setIsLoadingVideos(true);
+      
       try {
         let query = supabase
           .from('videos')
@@ -84,9 +91,13 @@ export const useExploreData = (selectedCategory: Category | null) => {
           throw videoError;
         }
 
+        // Si le composant n'est plus monté, ne pas mettre à jour l'état
+        if (!isMounted.current) return;
+
         if (!videoData || videoData.length === 0) {
           setVideos([]);
           setIsLoadingVideos(false);
+          isLoadingRef.current = false;
           return;
         }
 
@@ -104,8 +115,12 @@ export const useExploreData = (selectedCategory: Category | null) => {
             description: 'Could not retrieve videos from the database.',
             variant: 'destructive',
           });
+          isLoadingRef.current = false;
           return;
         }
+        
+        // Si le composant n'est plus monté, ne pas mettre à jour l'état
+        if (!isMounted.current) return;
         
         const profilesMap = (profilesData || []).reduce((acc, profile) => {
           acc[profile.id] = profile;
@@ -144,24 +159,33 @@ export const useExploreData = (selectedCategory: Category | null) => {
         setVideos(formattedVideos);
       } catch (error) {
         console.error('Error fetching videos:', error);
-        toast({
-          title: 'Failed to load videos',
-          description: 'Could not retrieve videos from the database.',
-          variant: 'destructive',
-        });
+        if (isMounted.current) {
+          toast({
+            title: 'Failed to load videos',
+            description: 'Could not retrieve videos from the database.',
+            variant: 'destructive',
+          });
+        }
       } finally {
-        setIsLoadingVideos(false);
+        if (isMounted.current) {
+          setIsLoadingVideos(false);
+        }
+        isLoadingRef.current = false;
       }
     };
 
     fetchVideos();
-  }, [toast, selectedCategory, isInitialLoad]);
+  }, [toast, selectedCategory]);
 
   // Fetch editors
   useEffect(() => {
-    if (isInitialLoad) return; // Skip fetch on initial render
-
+    // N'exécuter cette requête qu'une seule fois
+    let hasRun = false;
+    
     const fetchEditors = async () => {
+      if (hasRun || isLoadingRef.current) return;
+      hasRun = true;
+      
       setIsLoadingEditors(true);
       try {
         const { data, error } = await supabase
@@ -174,6 +198,9 @@ export const useExploreData = (selectedCategory: Category | null) => {
           throw error;
         }
         
+        // Si le composant n'est plus monté, ne pas mettre à jour l'état
+        if (!isMounted.current) return;
+        
         const editorsData = data.map(profile => ({
           id: profile.id,
           name: profile.name || 'Unnamed Editor',
@@ -184,18 +211,22 @@ export const useExploreData = (selectedCategory: Category | null) => {
         setEditors(editorsData);
       } catch (error) {
         console.error('Error fetching editors:', error);
-        toast({
-          title: 'Failed to load editors',
-          description: 'Could not retrieve editor profiles from the database.',
-          variant: 'destructive',
-        });
+        if (isMounted.current) {
+          toast({
+            title: 'Failed to load editors',
+            description: 'Could not retrieve editor profiles from the database.',
+            variant: 'destructive',
+          });
+        }
       } finally {
-        setIsLoadingEditors(false);
+        if (isMounted.current) {
+          setIsLoadingEditors(false);
+        }
       }
     };
 
     fetchEditors();
-  }, [toast, isInitialLoad]);
+  }, [toast]);
 
-  return { videos, isLoadingVideos, editors, isLoadingEditors, isInitialLoad };
+  return { videos, isLoadingVideos, editors, isLoadingEditors };
 };

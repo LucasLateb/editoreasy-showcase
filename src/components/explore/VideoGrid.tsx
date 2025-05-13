@@ -5,6 +5,7 @@ import VideoCard from '@/components/VideoCard';
 import { VideoSkeletons } from '@/components/ui/loading-skeleton';
 import EmptyState from '@/components/explore/EmptyState';
 import { ExploreVideoType } from '@/hooks/useExploreData';
+import { cn } from '@/lib/utils';
 
 interface VideoGridProps {
   videos: ExploreVideoType[];
@@ -22,15 +23,26 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   onVideoClick,
 }) => {
   if (isLoading) {
-    return <VideoSkeletons />;
+    return (
+      <div className="min-h-[50vh]">
+        <VideoSkeletons />
+      </div>
+    );
   }
 
   if (videos.length === 0) {
-    return <EmptyState selectedCategory={selectedCategory} onClearCategory={onClearCategory} />;
+    return (
+      <div className="min-h-[50vh]">
+        <EmptyState selectedCategory={selectedCategory} onClearCategory={onClearCategory} />
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className={cn(
+      "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6",
+      "min-h-[50vh]"
+    )}>
       {videos.map((video) => (
         <div key={video.id} onClick={() => onVideoClick(video)}>
           <VideoCard video={video as Video} />
