@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -28,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Category, Video, categories } from '@/types';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Footer = () => {
   return (
@@ -92,8 +94,21 @@ const Explore: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<ExploreVideoType | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
+    // Set a flag to prevent multiple re-renders during initial page load
+    if (isInitialLoad) {
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialLoad]);
+
+  useEffect(() => {
+    if (isInitialLoad) return; // Skip fetch on initial render to prevent layout shifting
+
     const fetchVideos = async () => {
       setIsLoadingVideos(true);
       try {
@@ -194,9 +209,11 @@ const Explore: React.FC = () => {
     };
 
     fetchVideos();
-  }, [toast, selectedCategory]);
+  }, [toast, selectedCategory, isInitialLoad]);
 
   useEffect(() => {
+    if (isInitialLoad) return; // Skip fetch on initial render
+
     const fetchEditors = async () => {
       setIsLoadingEditors(true);
       try {
@@ -231,7 +248,7 @@ const Explore: React.FC = () => {
     };
 
     fetchEditors();
-  }, [toast]);
+  }, [toast, isInitialLoad]);
 
   const filteredEditors = editors.filter(editor => 
     editor.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -250,6 +267,41 @@ const Explore: React.FC = () => {
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };
+
+  // Loading skeletons for videos
+  const VideoSkeletons = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+        <div key={i} className="flex flex-col space-y-3">
+          <Skeleton className="h-[200px] w-full rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Empty state component
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-12 text-center min-h-[300px]">
+      <div className="bg-muted rounded-full p-6 mb-4">
+        <Search className="h-10 w-10 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-medium mb-2">No videos found</h3>
+      <p className="text-muted-foreground mb-4 max-w-md">
+        {selectedCategory 
+          ? `No videos available for the "${selectedCategory.name}" category.`
+          : "No videos available yet. Check back later or try a different search."}
+      </p>
+      {selectedCategory && (
+        <Button variant="outline" onClick={() => setSelectedCategory(null)}>
+          Show all videos
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -290,23 +342,22 @@ const Explore: React.FC = () => {
             </CardContent>
           </Card>
 
-          {isLoadingVideos ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : videos.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No videos found. {selectedCategory ? 'Try selecting a different category.' : ''}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {videos.map((video) => (
-                <div key={video.id} onClick={() => handleVideoClick(video)}>
-                  <VideoCard video={video as Video} />
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Content area with minimum height to prevent layout shifts */}
+          <div className="min-h-[60vh]">
+            {isLoadingVideos ? (
+              <VideoSkeletons />
+            ) : videos.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {videos.map((video) => (
+                  <div key={video.id} onClick={() => handleVideoClick(video)}>
+                    <VideoCard video={video as Video} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
       <Footer />

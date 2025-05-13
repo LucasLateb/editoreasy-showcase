@@ -81,7 +81,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   
   if (videos.length === 0) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-12 text-center min-h-[400px] flex flex-col justify-center">
         <div className="max-w-md mx-auto">
           <h3 className="text-lg font-medium mb-2">No videos in your portfolio yet</h3>
           <p className="text-muted-foreground mb-6">
@@ -98,7 +98,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]">
         {videos.map((video) => (
           <div 
             key={video.id} 
