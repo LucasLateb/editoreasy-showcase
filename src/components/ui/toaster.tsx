@@ -1,4 +1,5 @@
 
+import * as React from "react"
 import {
   Toast,
   ToastClose,
@@ -17,8 +18,8 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts && toasts.map(function ({ id, title, description, action, ...props }) {
-        // We need to remove sonner's 'type' property as it conflicts with shadcn Toast
-        const { type, ...restProps } = props as any;
+        // Remove properties that might conflict with shadcn Toast component
+        const { type, variant, ...restProps } = props as any;
         
         return (
           <Toast key={id} {...restProps}>
@@ -30,7 +31,7 @@ export function Toaster() {
             </div>
             {action && typeof action === 'object' && 'label' in action ? (
               <ToastAction 
-                altText={String(action.label || 'Action')}
+                altText={typeof action.label === 'string' ? action.label : 'Action'}
                 onClick={(action as any).onClick}
               >
                 {action.label}
