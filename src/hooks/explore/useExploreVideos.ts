@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types';
 import { ExploreVideoType } from '@/types/exploreTypes';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 export const useExploreVideos = (selectedCategory: Category | null) => {
   const { toast } = useToast();
@@ -39,6 +40,7 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
       }
       
       try {
+        console.log('Fetching videos...');
         let query = supabase
           .from('videos')
           .select(`
@@ -65,6 +67,8 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
           throw videoError;
         }
 
+        console.log(`Fetched ${videoData?.length || 0} videos`);
+
         // Stop if component unmounted
         if (!isMounted.current) return;
 
@@ -79,6 +83,7 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
         }
 
         const userIds = [...new Set(videoData.map(video => video.user_id))];
+        console.log(`Found ${userIds.length} unique user IDs`);
         
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
@@ -93,11 +98,16 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
               description: 'Could not retrieve videos from the database.',
               variant: 'destructive',
             });
+            
+            // Also use sonner toast for more visibility
+            sonnerToast.error('Failed to load videos', 'Could not retrieve videos from the database.');
           }
           isLoadingRef.current = false;
           initialLoadComplete.current = true;
           return;
         }
+        
+        console.log(`Fetched ${profilesData?.length || 0} profiles`);
         
         // Stop if component unmounted
         if (!isMounted.current) return;
@@ -115,12 +125,16 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
             editorTier = profile.subscription_tier as 'premium' | 'pro';
           }
           
+          // Ensure thumbnailUrl is not null
+          const thumbnailUrl = video.thumbnail_url || '/placeholder.svg';
+          console.log(`Video ${video.id} thumbnail: ${thumbnailUrl}`);
+          
           return {
             id: video.id,
             title: video.title,
             description: video.description,
             videoUrl: video.video_url,
-            thumbnailUrl: video.thumbnail_url || '/placeholder.svg',
+            thumbnailUrl: thumbnailUrl,
             views: video.views || 0,
             likes: video.likes || 0,
             categoryId: video.category_id,
@@ -132,11 +146,12 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
             editorTier: editorTier,
             isHighlighted: video.is_highlighted || false,
             editor: profile.name || 'Unknown Editor',
-            thumbnail: video.thumbnail_url || '/placeholder.svg',
+            thumbnail: thumbnailUrl,
           };
         });
         
         if (isMounted.current) {
+          console.log(`Setting ${formattedVideos.length} formatted videos`);
           setVideos(formattedVideos);
         }
       } catch (error) {
@@ -147,6 +162,9 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
             description: 'Could not retrieve videos from the database.',
             variant: 'destructive',
           });
+          
+          // Also use sonner toast for more visibility
+          sonnerToast.error('Failed to load videos', 'Could not retrieve videos from the database.');
         }
       } finally {
         if (isMounted.current) {

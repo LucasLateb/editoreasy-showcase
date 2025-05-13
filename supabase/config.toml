@@ -6,4 +6,5 @@ project_id = "zaitoudikrddbzsfukzv"
 [storage.buckets]
 avatars = { public = true }
 videos = { public = true }
+thumbnails = { public = true }
 

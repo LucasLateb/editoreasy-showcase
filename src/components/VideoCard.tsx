@@ -16,6 +16,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const category = categories.find(c => c.id === video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
+  // Ensure thumbnail URL is valid
+  const thumbnailUrl = video.thumbnailUrl && video.thumbnailUrl !== 'null' 
+    ? video.thumbnailUrl 
+    : '/placeholder.svg';
+  
   return (
     <div 
       className={cn(
@@ -27,10 +32,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
     >
       {/* Video Thumbnail */}
       <Image
-        src={video.thumbnailUrl}
+        src={thumbnailUrl}
         alt={video.title}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"
+        fallbackSrc="/placeholder.svg"
       />
       
       {/* Overlay gradient */}
