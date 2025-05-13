@@ -44,6 +44,7 @@ export const useExploreData = (selectedCategory: Category | null) => {
   const isMounted = useRef(true);
   const isLoadingRef = useRef(false);
   const initialLoadComplete = useRef(false);
+  const editorsFetchedRef = useRef(false);
 
   // Handle component mounting/unmounting
   useEffect(() => {
@@ -191,9 +192,6 @@ export const useExploreData = (selectedCategory: Category | null) => {
 
   // Fetch editors once, with better tracking
   useEffect(() => {
-    // Use ref to track if this effect has run
-    const editorsFetchedRef = useRef(false);
-    
     const fetchEditors = async () => {
       // Skip if already fetched or fetching
       if (editorsFetchedRef.current || isLoadingRef.current) return;
