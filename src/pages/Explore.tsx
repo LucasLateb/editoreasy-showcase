@@ -52,7 +52,8 @@ const Explore: React.FC = () => {
             onOpenSearch={() => setIsSearchOpen(true)}
           />
 
-          <div className="w-full mb-10">
+          {/* Fixed height container to prevent layout shifts */}
+          <div className="w-full mb-10 min-h-[60vh]">
             <VideoGrid 
               videos={videos}
               isLoading={isLoadingVideos}

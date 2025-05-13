@@ -20,7 +20,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   // Show loading skeletons when data is loading
   if (isLoading) {
     return (
-      <div className="min-h-[50vh] w-full">
+      <div className="min-h-[60vh] w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="aspect-video rounded-lg overflow-hidden">
@@ -35,7 +35,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   // Show "no videos" message when there are no videos to display
   if (videos.length === 0) {
     return (
-      <div className="text-center py-12 min-h-[50vh] flex flex-col items-center justify-center border border-dashed border-muted-foreground/20 rounded-lg">
+      <div className="text-center py-12 min-h-[60vh] flex flex-col items-center justify-center border border-dashed border-muted-foreground/20 rounded-lg">
         <p className="text-muted-foreground text-lg">No videos found.</p>
         <p className="text-muted-foreground">
           {selectedCategory ? 'Try selecting a different category.' : 'Check back later for new content.'}
@@ -46,7 +46,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
 
   // Show the actual video grid when videos are available
   return (
-    <div className="min-h-[50vh]">
+    <div className="min-h-[60vh]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {videos.map((video) => (
           <div 

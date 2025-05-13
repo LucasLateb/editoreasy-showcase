@@ -32,8 +32,10 @@ export const useVideos = (selectedCategory: Category | null) => {
   const { toast: uiToast } = useToast();
 
   useEffect(() => {
+    let isMounted = true; // Track component mount state
+    setIsLoading(true); // Set loading to true immediately on category change
+    
     const fetchVideos = async () => {
-      setIsLoading(true);
       try {
         console.log('Fetching videos, selected category:', selectedCategory?.name);
         
@@ -67,8 +69,10 @@ export const useVideos = (selectedCategory: Category | null) => {
         console.log('Video data received:', videoData?.length || 0);
 
         if (!videoData || videoData.length === 0) {
-          setVideos([]);
-          setIsLoading(false);
+          if (isMounted) {
+            setVideos([]);
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -124,18 +128,29 @@ export const useVideos = (selectedCategory: Category | null) => {
         });
 
         console.log('Formatted videos:', formattedVideos.length);
-        setVideos(formattedVideos);
+        
+        if (isMounted) {
+          setVideos(formattedVideos);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast('Failed to load videos', {
           description: 'Could not retrieve videos from the database.',
         });
-      } finally {
-        setIsLoading(false);
+        
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchVideos();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [uiToast, selectedCategory]);
 
   return {
