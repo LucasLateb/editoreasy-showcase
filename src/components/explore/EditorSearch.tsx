@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -27,9 +28,14 @@ const EditorSearch: React.FC<EditorSearchProps> = ({
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredEditors = editors.filter(editor => 
-    editor.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Make sure editors is always an array
+  const editorsArray = Array.isArray(editors) ? editors : [];
+
+  const filteredEditors = searchTerm 
+    ? editorsArray.filter(editor => 
+        editor.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : editorsArray;
 
   const handleEditorSelect = (editorId: string) => {
     onOpenChange(false);
@@ -52,21 +58,27 @@ const EditorSearch: React.FC<EditorSearchProps> = ({
           <>
             <CommandEmpty>No editors found.</CommandEmpty>
             <CommandGroup heading="Editors">
-              {filteredEditors.map((editor) => (
-                <CommandItem
-                  key={editor.id}
-                  onSelect={() => handleEditorSelect(editor.id)}
-                  className="flex items-center"
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>{editor.name}</span>
-                  {editor.subscription_tier && editor.subscription_tier !== 'free' && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      • {editor.subscription_tier.charAt(0).toUpperCase() + editor.subscription_tier.slice(1)}
-                    </span>
-                  )}
-                </CommandItem>
-              ))}
+              {filteredEditors.length > 0 ? (
+                filteredEditors.map((editor) => (
+                  <CommandItem
+                    key={editor.id}
+                    onSelect={() => handleEditorSelect(editor.id)}
+                    className="flex items-center"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>{editor.name}</span>
+                    {editor.subscription_tier && editor.subscription_tier !== 'free' && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        • {editor.subscription_tier.charAt(0).toUpperCase() + editor.subscription_tier.slice(1)}
+                      </span>
+                    )}
+                  </CommandItem>
+                ))
+              ) : (
+                <div className="p-2 text-center">
+                  <p className="text-sm text-muted-foreground">No editors available</p>
+                </div>
+              )}
             </CommandGroup>
           </>
         )}

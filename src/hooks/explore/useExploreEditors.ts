@@ -27,35 +27,40 @@ export const useExploreEditors = () => {
     const fetchEditors = async () => {
       // Skip if already fetched or fetching
       if (editorsFetchedRef.current) return;
-      editorsFetchedRef.current = true;
       
       if (isMounted.current) {
         setIsLoading(true);
       }
       
       try {
+        console.log('Fetching editors...');
+        
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, subscription_tier, role')
-          .eq('role', 'monteur')
-          .order('name');
+          .eq('role', 'monteur');
         
         if (error) {
+          console.error('Error fetching editors from Supabase:', error);
           throw error;
         }
         
         // Stop if component unmounted
         if (!isMounted.current) return;
         
-        const editorsData = data.map(profile => ({
+        console.log('Editors fetched successfully:', data?.length || 0);
+        
+        // Ensure we have data before mapping
+        const editorsData = data ? data.map(profile => ({
           id: profile.id,
           name: profile.name || 'Unnamed Editor',
           subscription_tier: profile.subscription_tier,
           role: profile.role
-        }));
+        })) : [];
         
         if (isMounted.current) {
           setEditors(editorsData);
+          editorsFetchedRef.current = true;
         }
       } catch (error) {
         console.error('Error fetching editors:', error);
@@ -76,7 +81,7 @@ export const useExploreEditors = () => {
     fetchEditors();
     
     return () => {
-      editorsFetchedRef.current = false;
+      // No need to reset editorsFetchedRef here as it could cause infinite refetching
     };
   }, [toast]);
 

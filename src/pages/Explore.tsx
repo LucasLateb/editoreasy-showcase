@@ -29,6 +29,12 @@ const Explore: React.FC = () => {
     isLoadingEditors 
   } = useExploreData(selectedCategory);
 
+  // Debug log to track editors data
+  useEffect(() => {
+    console.log('Explore page - editors:', editors?.length || 0);
+    console.log('Explore page - isLoadingEditors:', isLoadingEditors);
+  }, [editors, isLoadingEditors]);
+
   const handleCategorySelect = (category: Category) => {
     if (isMounted.current) {
       setSelectedCategory(category);
@@ -53,9 +59,6 @@ const Explore: React.FC = () => {
     
     return () => {
       isMounted.current = false;
-      setIsSearchOpen(false);
-      setSelectedVideo(null);
-      setIsVideoDialogOpen(false);
     };
   }, []);
 
@@ -105,7 +108,7 @@ const Explore: React.FC = () => {
 
       {isSearchOpen && (
         <EditorSearch 
-          editors={editors}
+          editors={editors || []}
           isLoading={isLoadingEditors}
           isOpen={isSearchOpen}
           onOpenChange={(open) => isMounted.current && setIsSearchOpen(open)}
