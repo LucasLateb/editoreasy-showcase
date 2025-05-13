@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Toaster } from '@/components/ui/toaster';
@@ -13,6 +13,7 @@ import { useExploreData, ExploreVideoType } from '@/hooks/useExploreData';
 
 const Explore: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const isMounted = useRef(true);
   
   // Use refs instead of state for UI elements to prevent unnecessary rerenders
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -29,22 +30,29 @@ const Explore: React.FC = () => {
   } = useExploreData(selectedCategory);
 
   const handleCategorySelect = (category: Category) => {
-    setSelectedCategory(category);
+    if (isMounted.current) {
+      setSelectedCategory(category);
+    }
   };
 
   const handleClearCategory = () => {
-    setSelectedCategory(null);
+    if (isMounted.current) {
+      setSelectedCategory(null);
+    }
   };
 
   const handleVideoClick = (video: ExploreVideoType) => {
-    if (!video) return;
+    if (!video || !isMounted.current) return;
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };
 
-  // Cleanup effect
+  // Improved cleanup effect
   useEffect(() => {
+    isMounted.current = true;
+    
     return () => {
+      isMounted.current = false;
       setIsSearchOpen(false);
       setSelectedVideo(null);
       setIsVideoDialogOpen(false);
@@ -62,7 +70,7 @@ const Explore: React.FC = () => {
           <ExploreHeader 
             onSelectCategory={handleCategorySelect} 
             selectedCategory={selectedCategory}
-            onOpenSearch={() => setIsSearchOpen(true)}
+            onOpenSearch={() => isMounted.current && setIsSearchOpen(true)}
             isAuthenticated={isAuthenticated}
           />
 
@@ -80,11 +88,11 @@ const Explore: React.FC = () => {
       </main>
       <Footer />
 
-      {/* Dialogs */}
-      {selectedVideo && (
+      {/* Dialogs - Only render when needed */}
+      {selectedVideo && isVideoDialogOpen && (
         <VideoPlayerDialog
           isOpen={isVideoDialogOpen}
-          onClose={() => setIsVideoDialogOpen(false)}
+          onClose={() => isMounted.current && setIsVideoDialogOpen(false)}
           videoUrl={selectedVideo.videoUrl}
           title={selectedVideo.title}
           videoId={selectedVideo.id}
@@ -95,12 +103,14 @@ const Explore: React.FC = () => {
         />
       )}
 
-      <EditorSearch 
-        editors={editors}
-        isLoading={isLoadingEditors}
-        isOpen={isSearchOpen}
-        onOpenChange={setIsSearchOpen}
-      />
+      {isSearchOpen && (
+        <EditorSearch 
+          editors={editors}
+          isLoading={isLoadingEditors}
+          isOpen={isSearchOpen}
+          onOpenChange={(open) => isMounted.current && setIsSearchOpen(open)}
+        />
+      )}
     </div>
   );
 };
