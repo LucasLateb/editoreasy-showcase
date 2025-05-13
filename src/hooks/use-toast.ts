@@ -4,7 +4,7 @@ import { useState, ReactNode } from 'react';
 import { toast as sonnerToast, type ToastT } from 'sonner';
 
 export type Action = {
-  label: string;
+  label: string | ReactNode;
   onClick: () => void;
 };
 
