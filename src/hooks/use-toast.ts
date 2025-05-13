@@ -1,17 +1,19 @@
 
 // Custom hook for toast notifications
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { toast as sonnerToast, type ToastT } from 'sonner';
+
+export type Action = {
+  label: string;
+  onClick: () => void;
+};
 
 export type ToastProps = {
   title?: string;
   description?: string;
   variant?: 'default' | 'destructive' | 'success';
   duration?: number;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  action?: ReactNode | Action;
 };
 
 export function useToast() {
@@ -37,7 +39,7 @@ export function useToast() {
                 variant === 'success' ? 'success' : 'default';
 
     // Handle the toast based on content
-    if (action) {
+    if (action && typeof action === 'object' && 'label' in action && 'onClick' in action) {
       return sonnerToast[type](title, {
         description,
         action: {
