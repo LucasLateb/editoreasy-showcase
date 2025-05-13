@@ -36,7 +36,6 @@ export const useEditors = () => {
         toast({
           title: 'Failed to load editors',
           description: 'Could not retrieve editor profiles from the database.',
-          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);

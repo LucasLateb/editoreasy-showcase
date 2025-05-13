@@ -77,7 +77,6 @@ export const useVideos = (selectedCategory: Category | null) => {
           toast({
             title: 'Failed to load videos',
             description: 'Could not retrieve videos from the database.',
-            variant: 'destructive',
           });
           return;
         }
@@ -122,7 +121,6 @@ export const useVideos = (selectedCategory: Category | null) => {
         toast({
           title: 'Failed to load videos',
           description: 'Could not retrieve videos from the database.',
-          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);

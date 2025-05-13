@@ -1,12 +1,12 @@
 
 import React from 'react';
 import VideoCard from '@/components/VideoCard';
-import { Video } from '@/types';
+import { ExploreVideoType } from '@/hooks/useVideos';
 
 interface VideoGridProps {
-  videos: Video[];
+  videos: ExploreVideoType[];
   isLoading: boolean;
-  onVideoClick: (video: Video) => void;
+  onVideoClick: (video: ExploreVideoType) => void;
   selectedCategory?: string | null;
 }
 
