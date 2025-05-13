@@ -1,34 +1,20 @@
 
 import React, { useState } from 'react';
-import { Video } from '@/types';
-import { ExploreVideoType } from '@/hooks/useVideos';
+import { Video, Category, categories } from '@/types';
 import { Eye, Heart, Play, Star } from 'lucide-react';
-import { cn, formatNumber } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 
 interface VideoCardProps {
-  video: Video | ExploreVideoType;
+  video: Video;
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
+  const category = categories.find(c => c.id === video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
-  
-  // Handle thumbnailUrl, which exists in both types
-  const thumbnailUrl = video.thumbnailUrl || '';
-  
-  // Handle editor name - it could be editorName or editor property
-  const editorName = 'editorName' in video 
-    ? video.editorName 
-    : ('editor' in video ? video.editor : undefined);
-  
-  // Handle categoryName - might only exist in ExploreVideoType
-  const categoryName = 'categoryName' in video ? video.categoryName : undefined;
-  
-  // Handle editorAvatar
-  const editorAvatar = 'editorAvatar' in video ? video.editorAvatar : undefined;
   
   return (
     <div 
@@ -41,7 +27,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
     >
       {/* Video Thumbnail */}
       <Image
-        src={thumbnailUrl}
+        src={video.thumbnailUrl}
         alt={video.title}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"
@@ -81,34 +67,33 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       
       {/* Video info */}
       <div className="absolute bottom-0 left-0 right-0 p-4">
-        {'categoryId' in video && video.categoryId && (
+        {category && (
           <span className="inline-block px-2 py-1 mb-2 text-xs font-medium rounded-full bg-primary/20 backdrop-blur-sm text-primary-foreground">
-            {/* Display category name if available */}
-            {categoryName || 'Video'}
+            {category.name}
           </span>
         )}
         <h3 className="font-medium text-white mb-1 line-clamp-1">{video.title}</h3>
         
         {/* Editor info if available */}
-        {editorName && (
+        {video.editorName && (
           <div className="flex items-center mb-2">
             <div className="w-5 h-5 rounded-full bg-accent mr-2 overflow-hidden">
-              {editorAvatar ? (
-                <Image src={editorAvatar} alt={editorName} className="w-full h-full object-cover" />
+              {video.editorAvatar ? (
+                <Image src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
-                  {editorName.charAt(0)}
+                  {video.editorName.charAt(0)}
                 </div>
               )}
             </div>
-            <span className="text-xs text-white/80">{editorName}</span>
+            <span className="text-xs text-white/80">{video.editorName}</span>
           </div>
         )}
         
         <div className="flex items-center space-x-4 text-xs text-white/80">
           <div className="flex items-center">
             <Eye className="h-3 w-3 mr-1" />
-            <span>{formatNumber(video.views)}</span>
+            <span>{video.views}</span>
           </div>
           <div 
             className="flex items-center" 
