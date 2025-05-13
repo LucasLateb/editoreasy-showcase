@@ -34,11 +34,9 @@ export function Toaster() {
                 altText={typeof action.label === 'string' ? action.label : 'Action'}
                 onClick={(action as any).onClick}
               >
-                {action.label}
+                {action.label as ReactNode}
               </ToastAction>
-            ) : (
-              action as ReactNode
-            )}
+            ) : null}
             <ToastClose />
           </Toast>
         );

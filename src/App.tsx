@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,7 +26,7 @@ const queryClient = new QueryClient({
       staleTime: 60000, // Increased to 1 minute for better caching
       refetchOnWindowFocus: false,
       refetchOnReconnect: false, // Disable refetching on reconnect
-      cacheTime: 5 * 60 * 1000, // 5 minutes cache time
+      gcTime: 5 * 60 * 1000, // 5 minutes cache time (replacing cacheTime)
     },
   },
 });
