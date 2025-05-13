@@ -35,11 +35,6 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
 
-  // Ensure thumbnail URL is valid
-  const thumbnailUrl = video.thumbnailUrl && video.thumbnailUrl !== 'null' 
-    ? video.thumbnailUrl 
-    : '/placeholder.svg';
-
   const handleVideoClick = () => {
     setIsVideoDialogOpen(true);
   };
@@ -57,39 +52,27 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const handleEditSubmit = async (data: VideoEditFormData) => {
     setIsEditing(true);
     try {
-      console.log('Updating video with data:', data);
-      
       // Handle base64 image upload if the thumbnailUrl starts with "data:"
       let finalThumbnailUrl = data.thumbnailUrl;
       if (data.thumbnailUrl.startsWith('data:')) {
         const base64Data = data.thumbnailUrl.split(',')[1];
-        
-        console.log('Uploading thumbnail to Supabase storage...');
-        const filename = `${video.id}-${Date.now()}.jpg`;
-        
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('thumbnails')
-          .upload(filename, decode(base64Data), {
+          .upload(`${video.id}-${Date.now()}.jpg`, decode(base64Data), {
             contentType: 'image/jpeg',
             upsert: true
           });
 
-        if (uploadError) {
-          console.error('Error uploading thumbnail:', uploadError);
-          throw uploadError;
-        }
-        
-        console.log('Thumbnail uploaded successfully:', uploadData);
+        if (uploadError) throw uploadError;
         
         const { data: { publicUrl } } = supabase.storage
           .from('thumbnails')
           .getPublicUrl(uploadData.path);
           
-        console.log('Public URL for thumbnail:', publicUrl);
         finalThumbnailUrl = publicUrl;
       }
 
-      const { data: updateData, error } = await supabase
+      const { error } = await supabase
         .from('videos')
         .update({
           title: data.title,
@@ -99,15 +82,10 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         })
         .eq('id', video.id);
 
-      if (error) {
-        console.error('Error updating video in database:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Video updated successfully:', updateData);
       toast.success('Video updated successfully');
       setIsEditDialogOpen(false);
-      
       // Force a page reload to update the video list
       window.location.reload();
     } catch (error) {
@@ -126,10 +104,9 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
           onClick={handleVideoClick}
         >
           <Image 
-            src={thumbnailUrl} 
+            src={video.thumbnailUrl} 
             alt={video.title} 
             className="w-full h-full object-cover"
-            fallbackSrc="/placeholder.svg"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           {category && (

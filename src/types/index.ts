@@ -8,7 +8,6 @@ export interface User {
   likes: number;
   createdAt: Date;
   role?: string;
-  favoritedAt?: Date | null;
 }
 
 export interface Video {

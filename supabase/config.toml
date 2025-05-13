@@ -1,10 +1,1 @@
-
 project_id = "zaitoudikrddbzsfukzv"
-
-# Configuration pour les buckets de stockage
-[storage]
-[storage.buckets]
-avatars = { public = true }
-videos = { public = true }
-thumbnails = { public = true }
-

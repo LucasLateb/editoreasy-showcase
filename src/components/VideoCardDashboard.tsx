@@ -65,11 +65,8 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
 
       toast.success('Video updated successfully');
       setIsEditDialogOpen(false);
-      
-      // Use a more controlled approach to refresh without full page reload
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Force a page reload to update the video list
+      window.location.reload();
     } catch (error) {
       console.error('Error updating video:', error);
       toast.error('Failed to update video');
@@ -136,10 +133,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
           <Button 
             size="sm" 
             variant="destructive" 
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(video.id);
-            }}
+            onClick={() => onDelete(video.id)}
           >
             <Trash2 className="h-4 w-4 mr-1" />
             Delete
@@ -147,26 +141,21 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         </CardFooter>
       </Card>
 
-      {/* Only render dialogs when they're needed */}
-      {isVideoDialogOpen && (
-        <VideoPlayerDialog
-          isOpen={isVideoDialogOpen}
-          onClose={() => setIsVideoDialogOpen(false)}
-          videoUrl={video.videoUrl}
-          title={video.title}
-        />
-      )}
+      <VideoPlayerDialog
+        isOpen={isVideoDialogOpen}
+        onClose={() => setIsVideoDialogOpen(false)}
+        videoUrl={video.videoUrl}
+        title={video.title}
+      />
 
-      {isEditDialogOpen && (
-        <VideoEditDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          onSubmit={handleEditSubmit}
-          video={video}
-          categories={categories}
-          isLoading={isEditing}
-        />
-      )}
+      <VideoEditDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSubmit={handleEditSubmit}
+        video={video}
+        categories={categories}
+        isLoading={isEditing}
+      />
     </>
   );
 };

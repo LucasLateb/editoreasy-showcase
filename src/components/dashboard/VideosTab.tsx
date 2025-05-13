@@ -1,10 +1,10 @@
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { Video, Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Film } from 'lucide-react';
-import VideoCardDashboard from '@/components/VideoCardDashboard';
+import VideoCardDashboard from './VideoCardDashboard';
 
 interface VideosTabProps {
   videos: Video[];
@@ -21,20 +21,6 @@ const VideosTab: React.FC<VideosTabProps> = ({
   onUploadClick,
   onDeleteClick
 }) => {
-  const isMounted = useRef(true);
-  
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-  
-  const handleDelete = (videoId: string) => {
-    if (isMounted.current) {
-      onDeleteClick(videoId);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -50,7 +36,7 @@ const VideosTab: React.FC<VideosTabProps> = ({
           <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-xl font-medium mb-2">No videos yet</h3>
           <p className="text-muted-foreground mb-6">Upload your first video to start building your portfolio</p>
-          <Button onClick={() => isMounted.current && onUploadClick()}>
+          <Button onClick={onUploadClick}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Upload Video
           </Button>
@@ -69,7 +55,7 @@ const VideosTab: React.FC<VideosTabProps> = ({
             key={video.id}
             video={video}
             category={category}
-            onDelete={handleDelete}
+            onDelete={onDeleteClick}
           />
         );
       })}

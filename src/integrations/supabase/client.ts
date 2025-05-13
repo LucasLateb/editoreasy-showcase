@@ -23,28 +23,3 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     schema: 'public'
   }
 });
-
-// Ajout d'une fonction helper pour nettoyer l'état d'authentification
-export const cleanupAuthState = () => {
-  console.log("Nettoyage de l'état d'authentification");
-  // Supprimer tous les jetons d'authentification standard
-  localStorage.removeItem('supabase.auth.token');
-  
-  // Supprimer toutes les clés d'authentification Supabase de localStorage
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      console.log('Suppression de la clé:', key);
-      localStorage.removeItem(key);
-    }
-  });
-  
-  // Supprimer de sessionStorage si utilisé
-  if (typeof sessionStorage !== 'undefined') {
-    Object.keys(sessionStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        console.log('Suppression de la clé de session:', key);
-        sessionStorage.removeItem(key);
-      }
-    });
-  }
-};

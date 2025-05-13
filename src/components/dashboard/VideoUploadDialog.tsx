@@ -141,17 +141,22 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
       toast({
         title: 'Cancel upload?',
         description: 'Are you sure you want to cancel this upload?',
-        action: {
-          label: 'Yes, cancel',
-          onClick: () => {
-            onClose();
-            resetForm();
-            toast({
-              title: 'Upload cancelled',
-              description: 'Your video upload has been cancelled.',
-            });
-          }
-        },
+        action: (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              onClose();
+              resetForm();
+              toast({
+                title: 'Upload cancelled',
+                description: 'Your video upload has been cancelled.',
+              });
+            }}
+          >
+            Yes, cancel
+          </Button>
+        ),
       });
       return;
     }

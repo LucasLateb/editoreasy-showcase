@@ -13,30 +13,18 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
     const [imageSrc, setImageSrc] = useState<string | undefined>(src);
     const imgRef = useRef<HTMLImageElement>(null);
     const attemptedFallback = useRef(false);
-    const timestamp = useRef(Date.now());
     
     // Reset states when src changes
     useEffect(() => {
       setError(false);
       setLoaded(false);
       attemptedFallback.current = false;
-      
-      // Add timestamp to prevent caching issues with Supabase Storage
-      if (src && typeof src === 'string' && src.includes('supabase.co')) {
-        // Add or update timestamp parameter to bust cache
-        timestamp.current = Date.now();
-        const urlWithTimestamp = src.includes('?') 
-          ? `${src}&t=${timestamp.current}`
-          : `${src}?t=${timestamp.current}`;
-        setImageSrc(urlWithTimestamp);
-      } else {
-        setImageSrc(src);
-      }
+      setImageSrc(src);
     }, [src]);
     
     // Handle image loading error
     const handleError = () => {
-      console.log('Image error occurred for src:', imageSrc);
+      console.log('Image error occurred for src:', src);
       if (!attemptedFallback.current) {
         attemptedFallback.current = true;
         console.log('Attempting to use fallback image:', fallbackSrc);
