@@ -16,17 +16,21 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts && toasts.map(function ({ id, title, description, action, variant, ...props }) {
+      {toasts && toasts.map(function ({ id, title, description, action, ...props }) {
+        // Since 'variant' doesn't exist in ToastT, we'll default to 'default'
         return (
-          <Toast key={id} {...props} variant={variant === "destructive" ? "destructive" : "default"}>
+          <Toast key={id} {...props}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
                 <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            {action && typeof action === "object" && "label" in action ? (
-              <ToastAction altText={action.label} onClick={action.onClick}>
+            {action && typeof action === 'object' && 'label' in action ? (
+              <ToastAction 
+                altText={action.label || 'Action'} 
+                onClick={(action as any).onClick}
+              >
                 {action.label}
               </ToastAction>
             ) : (
