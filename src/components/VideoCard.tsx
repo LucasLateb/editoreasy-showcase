@@ -16,6 +16,20 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
+  // Handle thumbnailUrl, which exists in both types
+  const thumbnailUrl = video.thumbnailUrl || '';
+  
+  // Handle editor name - it could be editorName or editor property
+  const editorName = 'editorName' in video 
+    ? video.editorName 
+    : ('editor' in video ? video.editor : undefined);
+  
+  // Handle categoryName - might only exist in ExploreVideoType
+  const categoryName = 'categoryName' in video ? video.categoryName : undefined;
+  
+  // Handle editorAvatar
+  const editorAvatar = 'editorAvatar' in video ? video.editorAvatar : undefined;
+  
   return (
     <div 
       className={cn(
@@ -27,7 +41,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
     >
       {/* Video Thumbnail */}
       <Image
-        src={video.thumbnailUrl || video.thumbnail}
+        src={thumbnailUrl}
         alt={video.title}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"
@@ -70,24 +84,24 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         {'categoryId' in video && video.categoryId && (
           <span className="inline-block px-2 py-1 mb-2 text-xs font-medium rounded-full bg-primary/20 backdrop-blur-sm text-primary-foreground">
             {/* Display category name if available */}
-            {video.categoryName || 'Video'}
+            {categoryName || 'Video'}
           </span>
         )}
         <h3 className="font-medium text-white mb-1 line-clamp-1">{video.title}</h3>
         
         {/* Editor info if available */}
-        {(video.editorName || video.editor) && (
+        {editorName && (
           <div className="flex items-center mb-2">
             <div className="w-5 h-5 rounded-full bg-accent mr-2 overflow-hidden">
-              {video.editorAvatar ? (
-                <Image src={video.editorAvatar} alt={video.editorName || video.editor} className="w-full h-full object-cover" />
+              {editorAvatar ? (
+                <Image src={editorAvatar} alt={editorName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
-                  {(video.editorName || video.editor).charAt(0)}
+                  {editorName.charAt(0)}
                 </div>
               )}
             </div>
-            <span className="text-xs text-white/80">{video.editorName || video.editor}</span>
+            <span className="text-xs text-white/80">{editorName}</span>
           </div>
         )}
         
