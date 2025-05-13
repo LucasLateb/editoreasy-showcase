@@ -99,8 +99,10 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
               variant: 'destructive',
             });
             
-            // Also use sonner toast for more visibility
-            sonnerToast.error('Failed to load videos', 'Could not retrieve videos from the database.');
+            // Fix: Using the correct format for sonner toast
+            sonnerToast.error('Failed to load videos', {
+              description: 'Could not retrieve videos from the database.',
+            });
           }
           isLoadingRef.current = false;
           initialLoadComplete.current = true;
@@ -163,8 +165,10 @@ export const useExploreVideos = (selectedCategory: Category | null) => {
             variant: 'destructive',
           });
           
-          // Also use sonner toast for more visibility
-          sonnerToast.error('Failed to load videos', 'Could not retrieve videos from the database.');
+          // Fix: Using the correct format for sonner toast
+          sonnerToast.error('Failed to load videos', {
+            description: 'Could not retrieve videos from the database.',
+          });
         }
       } finally {
         if (isMounted.current) {
