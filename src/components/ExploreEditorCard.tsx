@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,7 +39,10 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
     const vimeoRegex = /vimeo\.com\/(?:video\/|)(\d+)/i;
     match = url.match(vimeoRegex);
     if (match && match[1]) {
-      return `https://player.vimeo.com/video/${match[1]}?autoplay=1&muted=1&loop=1&autopause=0&controls=0&title=0&byline=0&portrait=0`;
+      // Using background=1 for more reliable autoplay, muted, and loop for Vimeo.
+      // It also hides controls, title, byline, and portrait by default.
+      // Added autoplay=1 and autopause=0 for robustness.
+      return `https://player.vimeo.com/video/${match[1]}?background=1&autoplay=1&autopause=0&muted=1`;
     }
     // Direct video link (mp4, webm, etc.)
     if (url.match(/\.(mp4|webm|ogg)$/i)) {
@@ -110,7 +112,7 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
                   src={effectiveShowreelUrl}
                   className="w-full h-full"
                   frameBorder="0"
-                  allow="autoplay; fullscreen; picture-in-picture"
+                  allow="autoplay; fullscreen; picture-in-picture; muted" // Added muted to allow policy
                   allowFullScreen
                   title={`${editorName}'s Showreel`}
                 />
