@@ -92,10 +92,10 @@ const Explore: React.FC = () => {
   const [editors, setEditors] = useState<EditorProfileType[]>([]);
   const [isLoadingEditors, setIsLoadingEditors] = useState(false);
   
-  const [videos, setVideos] = useState<ExploreVideoType[]>([]);
+  const [videos, setVideos] = useState<VideoType[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<ExploreVideoType | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<VideoType | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("videos");
 
@@ -135,24 +135,25 @@ const Explore: React.FC = () => {
           return;
         }
 
-        const userIds = [...new Set(videoData.map(video => video.user_id))];
+        const userIds = [...new Set(videoData.map(video => video.user_id).filter(id => id))];
         
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, name, avatar_url, subscription_tier')
-          .in('id', userIds);
-          
-        if (profilesError) {
-          console.error('Error fetching profiles for videos:', profilesError);
-          setVideos([]);
-          setIsLoadingVideos(false);
-          return;
+        let profilesMap: Record<string, any> = {};
+        if (userIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, avatar_url, subscription_tier')
+            .in('id', userIds);
+            
+          if (profilesError) {
+            console.error('Error fetching profiles for videos:', profilesError);
+            // Continue without profile data if it fails, or handle differently
+          } else if (profilesData) {
+            profilesMap = profilesData.reduce((acc, profile) => {
+              acc[profile.id] = profile;
+              return acc;
+            }, {});
+          }
         }
-        
-        const profilesMap = (profilesData || []).reduce((acc, profile) => {
-          acc[profile.id] = profile;
-          return acc;
-        }, {} as Record<string, any>);
         
         const formattedVideos = videoData.map(video => {
           const profile = profilesMap[video.user_id] || {};
@@ -173,14 +174,11 @@ const Explore: React.FC = () => {
             categoryId: video.category_id,
             userId: video.user_id,
             createdAt: new Date(video.created_at),
-            date: new Date(video.created_at).toISOString().split('T')[0],
             editorName: profile.name || 'Unknown Editor',
             editorAvatar: profile.avatar_url || undefined,
             editorTier: editorTier,
             isHighlighted: video.is_highlighted || false,
-            editor: profile.name || 'Unknown Editor',
-            thumbnail: video.thumbnail_url || '/placeholder.svg',
-          };
+          } as VideoType;
         });
         
         setVideos(formattedVideos);
@@ -204,47 +202,61 @@ const Explore: React.FC = () => {
     const fetchEditorProfiles = async () => {
       setIsLoadingEditors(true);
       try {
-        const { data, error } = await supabase
+        // Step 1: Fetch profiles
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select(`
-            id,
-            name,
-            avatar_url,
-            subscription_tier,
-            role,
-            portfolio_settings (
-              specializations,
-              showreel_url,
-              showreel_thumbnail,
-              about
-            )
-          `)
+          .select('id, name, avatar_url, subscription_tier, role')
           .eq('role', 'monteur')
           .order('name');
-        
-        if (error) {
-          throw error;
+
+        if (profilesError) {
+          throw profilesError;
+        }
+
+        if (!profilesData || profilesData.length === 0) {
+          setEditors([]);
+          setIsLoadingEditors(false);
+          return;
+        }
+
+        const editorIds = profilesData.map(p => p.id);
+
+        // Step 2: Fetch portfolio_settings for these profiles
+        let portfolioSettingsMap: Record<string, any> = {};
+        if (editorIds.length > 0) {
+          const { data: settingsData, error: settingsError } = await supabase
+            .from('portfolio_settings')
+            .select('user_id, specializations, showreel_url, showreel_thumbnail, about')
+            .in('user_id', editorIds);
+
+          if (settingsError) {
+            // Log error but continue, profiles can exist without settings
+            console.error('Error fetching portfolio settings:', settingsError);
+          } else if (settingsData) {
+            portfolioSettingsMap = settingsData.reduce((acc, setting) => {
+              acc[setting.user_id] = setting;
+              return acc;
+            }, {});
+          }
         }
         
-        const editorsData = data.map(profile => {
-          const settings = Array.isArray(profile.portfolio_settings) 
-                           ? profile.portfolio_settings[0] 
-                           : profile.portfolio_settings;
-
+        // Step 3: Combine data
+        const combinedEditorsData = profilesData.map(profile => {
+          const settings = portfolioSettingsMap[profile.id] || {};
           return {
             id: profile.id,
             name: profile.name || 'Unnamed Editor',
             avatar_url: profile.avatar_url,
             subscription_tier: profile.subscription_tier,
             role: profile.role,
-            specializations: settings?.specializations || [],
-            showreel_url: settings?.showreel_url,
-            showreel_thumbnail: settings?.showreel_thumbnail,
-            about: settings?.about,
+            specializations: settings.specializations || [],
+            showreel_url: settings.showreel_url,
+            showreel_thumbnail: settings.showreel_thumbnail,
+            about: settings.about,
           };
         });
         
-        setEditors(editorsData);
+        setEditors(combinedEditorsData);
       } catch (error) {
         console.error('Error fetching editor profiles:', error);
         toast({
@@ -272,19 +284,19 @@ const Explore: React.FC = () => {
 
   const handleCategorySelect = (category: Category) => {
     setSelectedCategory(category);
-    setActiveTab("videos");
+    setActiveTab("videos"); // Switch to videos tab when a category is selected
   };
 
-  const handleVideoClick = (video: ExploreVideoType) => {
+  const handleVideoClick = (video: VideoType) => { // Changed from ExploreVideoType
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };
 
   const transformEditorDataForCard = (editor: EditorProfileType): ExploreEditorCardData => ({
     id: editor.id,
-    name: editor.name,
+    name: editor.name || 'Unnamed Editor', // Ensure name is not null
     avatarUrl: editor.avatar_url,
-    specializations: editor.specializations,
+    specializations: editor.specializations || [], // Ensure specializations is not null
     showreelUrl: editor.showreel_url,
     showreelThumbnail: editor.showreel_thumbnail,
   });
@@ -342,14 +354,14 @@ const Explore: React.FC = () => {
                     <div className="text-center py-12">
                       <p className="text-muted-foreground">No videos found. {selectedCategory ? 'Try selecting a different category or clearing the filter.' : ''}</p>
                        {selectedCategory && (
-                        <Button variant="link" onClick={() => setSelectedCategory(null)}>Clear category filter</Button>
+                        <Button variant="link" onClick={() => { setSelectedCategory(null); setActiveTab("videos"); }}>Clear category filter</Button>
                       )}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {videos.map((video) => (
-                        <div key={video.id} onClick={() => handleVideoClick(video)}>
-                          <VideoCard video={video as unknown as VideoType} />
+                        <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                          <VideoCard video={video} />
                         </div>
                       ))}
                     </div>
@@ -412,7 +424,7 @@ const Explore: React.FC = () => {
                   <CommandItem
                     key={editor.id}
                     onSelect={() => handleEditorSelectCommand(editor.id)}
-                    className="flex items-center"
+                    className="flex items-center cursor-pointer"
                   >
                     <Users className="mr-2 h-4 w-4" />
                     <span>{editor.name}</span>
