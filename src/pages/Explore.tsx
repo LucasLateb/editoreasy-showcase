@@ -202,27 +202,22 @@ const Explore: React.FC = () => {
     const fetchEditorProfiles = async () => {
       setIsLoadingEditors(true);
       try {
-        // Step 1: Fetch profiles
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, subscription_tier, role')
           .eq('role', 'monteur')
           .order('name');
 
-        if (profilesError) {
-          throw profilesError;
-        }
-
-        if (!profilesData || profilesData.length === 0) {
+        if (profilesError) throw profilesError;
+        if (!profilesData) {
           setEditors([]);
           setIsLoadingEditors(false);
           return;
         }
 
         const editorIds = profilesData.map(p => p.id);
-
-        // Step 2: Fetch portfolio_settings for these profiles
         let portfolioSettingsMap: Record<string, any> = {};
+
         if (editorIds.length > 0) {
           const { data: settingsData, error: settingsError } = await supabase
             .from('portfolio_settings')
@@ -230,7 +225,6 @@ const Explore: React.FC = () => {
             .in('user_id', editorIds);
 
           if (settingsError) {
-            // Log error but continue, profiles can exist without settings
             console.error('Error fetching portfolio settings:', settingsError);
           } else if (settingsData) {
             portfolioSettingsMap = settingsData.reduce((acc, setting) => {
@@ -240,7 +234,6 @@ const Explore: React.FC = () => {
           }
         }
         
-        // Step 3: Combine data
         const combinedEditorsData = profilesData.map(profile => {
           const settings = portfolioSettingsMap[profile.id] || {};
           return {
@@ -252,7 +245,7 @@ const Explore: React.FC = () => {
             specializations: settings.specializations || [],
             showreel_url: settings.showreel_url,
             showreel_thumbnail: settings.showreel_thumbnail,
-            about: settings.about,
+            about: settings.about, // about is already fetched
           };
         });
         
@@ -261,7 +254,7 @@ const Explore: React.FC = () => {
         console.error('Error fetching editor profiles:', error);
         toast({
           title: 'Failed to load editor profiles',
-          description: 'Could not retrieve editor profiles from the database.',
+          description: (error as Error).message || 'Could not retrieve editor profiles.',
           variant: 'destructive',
         });
         setEditors([]);
@@ -269,7 +262,6 @@ const Explore: React.FC = () => {
         setIsLoadingEditors(false);
       }
     };
-
     fetchEditorProfiles();
   }, [toast]);
 
@@ -287,18 +279,19 @@ const Explore: React.FC = () => {
     setActiveTab("videos"); // Switch to videos tab when a category is selected
   };
 
-  const handleVideoClick = (video: VideoType) => { // Changed from ExploreVideoType
+  const handleVideoClick = (video: VideoType) => { 
     setSelectedVideo(video);
     setIsVideoDialogOpen(true);
   };
 
   const transformEditorDataForCard = (editor: EditorProfileType): ExploreEditorCardData => ({
     id: editor.id,
-    name: editor.name || 'Unnamed Editor', // Ensure name is not null
+    name: editor.name || 'Unnamed Editor',
     avatarUrl: editor.avatar_url,
-    specializations: editor.specializations || [], // Ensure specializations is not null
+    specializations: editor.specializations || [],
     showreelUrl: editor.showreel_url,
     showreelThumbnail: editor.showreel_thumbnail,
+    about: editor.about || null, // S'assurer que about est transmis
   });
 
   return (

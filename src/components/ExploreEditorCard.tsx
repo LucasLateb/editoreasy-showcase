@@ -14,6 +14,7 @@ export type ExploreEditorCardData = {
   specializations?: string[] | null;
   showreelUrl?: string | null;
   showreelThumbnail?: string | null;
+  about?: string | null; // Ajout du champ about
   // Add other fields from EditorType if needed for display, e.g., subscriptionTier
 };
 
@@ -73,10 +74,19 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
     return null; // Not a supported video URL for direct embed playback
   };
 
-  const effectiveShowreelUrl = editor.showreelUrl ? getEmbedUrl(editor.showreelUrl) : null;
+  const isVimeoShowreel = !!editor.showreelUrl && /vimeo\.com\/(?:video\/|)(\d+)/i.test(editor.showreelUrl);
+  const effectiveShowreelUrl = editor.showreelUrl && !isVimeoShowreel ? getEmbedUrl(editor.showreelUrl) : null; // Ne pas générer d'URL embed pour Vimeo ici si on ne veut pas de player
   const isDirectVideo = effectiveShowreelUrl && effectiveShowreelUrl.match(/\.(mp4|webm|ogg)$/i);
 
   useEffect(() => {
+    // Ne pas lire la vidéo si c'est un showreel Vimeo ou si on n'est pas en survol pour les vidéos directes
+    if (isVimeoShowreel) {
+      if (videoRef.current && isDirectVideo) { // Potentiellement, mettre en pause si elle jouait avant
+         (videoRef.current as HTMLVideoElement).pause();
+      }
+      return; 
+    }
+
     if (isHovering && videoRef.current && isDirectVideo) {
       (videoRef.current as HTMLVideoElement).play().catch(error => {
         console.warn("Video play failed:", error);
@@ -84,22 +94,22 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
     } else if (!isHovering && videoRef.current && isDirectVideo) {
       (videoRef.current as HTMLVideoElement).pause();
     }
-  }, [isHovering, isDirectVideo]);
+  }, [isHovering, isDirectVideo, isVimeoShowreel]);
 
   return (
     <Link to={`/editor/${editor.id}`} className="block group">
       <Card 
-        className="h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover-scale"
+        className="h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover-scale relative" // Ajout de relative pour le positionnement absolu de l'overlay
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
         <CardContent className="p-0 flex flex-col h-full">
           <div className="relative w-full aspect-video bg-muted overflow-hidden">
-            {isHovering && effectiveShowreelUrl ? (
+            {(isHovering && effectiveShowreelUrl && !isVimeoShowreel) ? ( // Condition pour afficher le lecteur vidéo/iframe
               isDirectVideo ? (
                 <video
                   ref={videoRef as React.RefObject<HTMLVideoElement>}
-                  src={effectiveShowreelUrl}
+                  src={effectiveShowreelUrl} // Sera null pour Vimeo ici, donc cette branche n'est pas prise pour Vimeo
                   className="w-full h-full object-cover"
                   autoPlay
                   muted
@@ -109,10 +119,10 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
               ) : (
                 <iframe
                   ref={videoRef as React.RefObject<HTMLIFrameElement>}
-                  src={effectiveShowreelUrl}
+                  src={effectiveShowreelUrl} // Sera null pour Vimeo ici
                   className="w-full h-full"
                   frameBorder="0"
-                  allow="autoplay; fullscreen; picture-in-picture; muted" // Added muted to allow policy
+                  allow="autoplay; fullscreen; picture-in-picture; muted"
                   allowFullScreen
                   title={`${editorName}'s Showreel`}
                 />
@@ -125,9 +135,13 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
                   fallbackSrc="/placeholder.svg"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <Play className="h-12 w-12 text-white/80 fill-white/70" />
-                </div>
+                {/* L'icône Play ne s'affiche que si ce n'est pas un showreel Vimeo en survol, 
+                    car l'overlay Vimeo prendra le dessus */}
+                {!(isHovering && isVimeoShowreel) && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Play className="h-12 w-12 text-white/80 fill-white/70" />
+                    </div>
+                )}
               </>
             )}
           </div>
@@ -161,6 +175,42 @@ const ExploreEditorCard: React.FC<ExploreEditorCardProps> = ({ editor }) => {
             </div>
           </div>
         </CardContent>
+
+        {/* Overlay pour Vimeo au survol */}
+        {isHovering && isVimeoShowreel && (
+          <div className="absolute inset-0 bg-card text-card-foreground p-4 flex flex-col justify-start overflow-y-auto animate-fade-in z-10">
+            <div className="flex items-center mb-3">
+              <Avatar className="h-12 w-12 mr-3 border-2 border-background shadow-sm">
+                <AvatarImage src={editor.avatarUrl || undefined} alt={editorName} />
+                <AvatarFallback className="text-lg">{editorName.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <h3 className="text-lg font-semibold story-link truncate">{editorName}</h3>
+            </div>
+            
+            <div className="mb-3 flex-shrink-0">
+              <h4 className="text-sm font-semibold mb-1 text-primary flex items-center">
+                À propos
+              </h4>
+            </div>
+            <div className="text-sm text-muted-foreground overflow-y-auto scrollbar-thin scrollbar-thumb-muted/40 scrollbar-track-transparent flex-grow mb-3 pr-1">
+              {editor.about || 'Aucune information disponible.'}
+            </div>
+
+            {editor.specializations && editor.specializations.length > 0 && (
+              <div className="flex-shrink-0">
+                <h4 className="text-sm font-semibold mb-1.5 text-primary flex items-center">
+                  <Briefcase size={16} className="mr-1.5" />
+                  Spécialisations
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {editor.specializations.map((spec, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-2 py-0.5">{spec}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </Link>
   );
