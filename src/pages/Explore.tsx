@@ -360,13 +360,13 @@ const Explore: React.FC = () => {
                     <div className="flex justify-center py-12">
                       <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
                     </div>
-                  ) : displayEditors.length === 0 ? (
+                  ) : editors.length === 0 ? (
                     <div className="text-center py-12">
                       <p className="text-muted-foreground">No editors found.</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {displayEditors.map((editor) => (
+                      {editors.map((editor) => (
                         <ExploreEditorCard key={editor.id} editor={transformEditorDataForCard(editor)} />
                       ))}
                     </div>
