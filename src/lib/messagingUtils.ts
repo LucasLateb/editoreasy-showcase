@@ -16,13 +16,16 @@ export const getOrCreateConversation = async (currentUserId: string, targetUserI
   }
 
   const sortedParticipantIds = [currentUserId, targetUserId].sort();
+  // Format the array as a string in the format '{id1,id2}' for the .eq() filter
+  const participantIdsString = `{${sortedParticipantIds.join(',')}}`;
 
   try {
     // Check if conversation already exists
     let { data: existingConversation, error: fetchError } = await supabase
       .from('conversations')
       .select('id')
-      .eq('participant_ids', sortedParticipantIds)
+      // Use the correctly formatted string for the .eq() filter
+      .eq('participant_ids', participantIdsString) 
       .limit(1)
       .single();
 
@@ -37,6 +40,7 @@ export const getOrCreateConversation = async (currentUserId: string, targetUserI
     }
 
     // Create new conversation
+    // For insert, the Supabase client handles JS arrays correctly.
     const { data: newConversation, error: insertError } = await supabase
       .from('conversations')
       .insert({ participant_ids: sortedParticipantIds })
@@ -67,3 +71,4 @@ export const getOrCreateConversation = async (currentUserId: string, targetUserI
     return null;
   }
 };
+
