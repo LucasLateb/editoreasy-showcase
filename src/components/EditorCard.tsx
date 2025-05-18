@@ -11,6 +11,8 @@ import { useToast } from '@/components/ui/use-toast'; // Shadcn toast
 import { toast as sonnerToast } from 'sonner'; // Sonner toast
 import { useAuth } from '@/contexts/AuthContext';
 import { getOrCreateConversation } from '@/lib/messagingUtils';
+import { Card, CardContent, CardFooter } from '@/components/ui/card'; // Added Card, CardContent, CardFooter
+import { useProfileLikes } from '@/hooks/useLikes'; // Added useProfileLikes
 
 interface EditorCardProps {
   editor: User & {
