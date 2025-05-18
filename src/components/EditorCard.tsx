@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, Star, Play, Mail, Share2, Briefcase, Film } from 'lucide-react';
@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { useProfileLikes } from '@/hooks/useLikes';
+import { useToast } from '@/components/ui/use-toast'; // Shadcn toast
+import { toast as sonnerToast } from 'sonner'; // Sonner toast
+import { useAuth } from '@/contexts/AuthContext';
+import { getOrCreateConversation } from '@/lib/messagingUtils';
 
 interface EditorCardProps {
   editor: User & {
@@ -32,6 +33,9 @@ const EditorCard: React.FC<EditorCardProps> = ({
 }) => {
   const animationDelay = `${0.1 + index * 0.1}s`;
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { toast: shadcnOriginalToast } = useToast(); // Original shadcn toast
   const { toast } = useToast();
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(editor.id, editor.likes);
   
@@ -59,13 +63,30 @@ const EditorCard: React.FC<EditorCardProps> = ({
     return 'Free';
   };
 
-  const handleContact = (e: React.MouseEvent) => {
+  const handleContact = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toast({
-      title: "Contact Request Sent",
-      description: `Your request to contact ${editor.name} has been sent.`,
-    });
+    if (!currentUser) {
+      sonnerToast.error('You must be logged in to contact an editor.');
+      navigate('/login');
+      return;
+    }
+    if (!editor || !editor.id) {
+        sonnerToast.error('Editor information is missing.');
+        return;
+    }
+
+    sonnerToast.info('Starting conversation...');
+    const conversationId = await getOrCreateConversation(currentUser.id, editor.id);
+
+    if (conversationId) {
+      sonnerToast.success(`Conversation with ${editor.name} started! Redirecting...`);
+      navigate('/dashboard?tab=messaging');
+      // Optionally, pass conversationId to pre-select it on the messaging tab
+      // navigate(`/dashboard?tab=messaging&conversationId=${conversationId}`);
+    } else {
+      // Error toast is handled by getOrCreateConversation
+    }
   };
 
   const handleShare = (e: React.MouseEvent) => {
@@ -218,7 +239,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
               variant="outline" 
               size="sm" 
               className="px-2 py-1 h-8 relative z-20"
-              onClick={handleContact}
+              onClick={handleContact} // Updated handler
             >
               <Mail className="h-4 w-4 mr-1" />
               <span className="text-xs">Contact</span>

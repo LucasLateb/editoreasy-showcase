@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,6 +10,9 @@ import { useProfileLikes } from '@/hooks/useLikes';
 import { useEditorFavorites } from '@/hooks/useEditorFavorites';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { getOrCreateConversation } from '@/lib/messagingUtils';
+import { toast } from 'sonner';
 
 interface ProfileCardProps {
   currentUser: any;
@@ -33,7 +35,7 @@ interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
-  currentUser,
+  currentUser, // This is the profile owner
   about,
   setAbout,
   specializations,
@@ -48,13 +50,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   handleAddSpecialization,
   handleRemoveSpecialization,
   isViewOnly = false,
-  editorData,
+  editorData, // This is the profile owner if isViewOnly
   totalVideos = 0
 }) => {
-  // Determine which user data to display
   const displayUser = isViewOnly ? editorData : currentUser;
   const userId = displayUser?.id;
-  const { currentUser: authUser } = useAuth();
+  const { currentUser: authUser } = useAuth(); // This is the logged-in user
+  const navigate = useNavigate();
   
   // Use profile likes hook to get like functionality
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);
@@ -84,6 +86,28 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     
     // Default fallback
     return 'Free';
+  };
+  
+  const handleContactEditor = async () => {
+    if (!authUser) {
+      toast.error('You must be logged in to contact an editor.');
+      navigate('/login');
+      return;
+    }
+    if (!displayUser || !displayUser.id) {
+      toast.error('Editor information is missing.');
+      return;
+    }
+
+    toast.info('Starting conversation...');
+    const conversationId = await getOrCreateConversation(authUser.id, displayUser.id);
+
+    if (conversationId) {
+      toast.success(`Conversation with ${displayUser.name} started! Redirecting...`);
+      navigate('/dashboard?tab=messaging');
+    } else {
+      // Error handling is in getOrCreateConversation
+    }
   };
   
   return (
@@ -229,7 +253,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         </div>
         
         <div className="flex flex-col gap-2">
-          <Button className="w-full">
+          <Button className="w-full" onClick={handleContactEditor}>
             <Mail className="mr-2 h-4 w-4" />
             Contact Me
           </Button>

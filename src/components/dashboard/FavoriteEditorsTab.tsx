@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Heart, Search, Mail, ExternalLink } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -14,10 +13,11 @@ import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { getOrCreateConversation } from '@/lib/messagingUtils';
 
 const FavoriteEditorsTab = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const { fetchFavoriteEditors } = useEditorFavorites();
   const [favoriteEditors, setFavoriteEditors] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,8 +64,26 @@ const FavoriteEditorsTab = () => {
     }
   };
 
-  const handleMessageClick = (editor: User) => {
-    toast.success(`Your message to ${editor.name} has been sent.`);
+  const handleMessageClick = async (editor: User) => {
+    if (!currentUser) {
+      toast.error('You must be logged in to contact an editor.');
+      navigate('/login'); // Or handle as appropriate
+      return;
+    }
+    if (!editor || !editor.id) {
+        toast.error('Editor information is missing.');
+        return;
+    }
+    
+    toast.info('Starting conversation...');
+    const conversationId = await getOrCreateConversation(currentUser.id, editor.id);
+
+    if (conversationId) {
+      toast.success(`Conversation with ${editor.name} started! Redirecting...`);
+      navigate('/dashboard?tab=messaging');
+    } else {
+      // Error toast is handled by getOrCreateConversation
+    }
   };
 
   if (isLoading) {
