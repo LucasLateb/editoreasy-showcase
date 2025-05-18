@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Video, categories } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, UploadCloud, Film, Play } from 'lucide-react';
+import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -17,6 +17,7 @@ import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import MessagingTab from '@/components/dashboard/MessagingTab';
 import PlanTab from '@/components/dashboard/PlanTab';
 import FavoriteEditorsTab from '@/components/dashboard/FavoriteEditorsTab';
+import { Badge } from '@/components/ui/badge';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -260,6 +261,8 @@ const Dashboard: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
   
+  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0); // State for unread messages count
+
   // Get the active tab from URL query parameters
   const searchParams = new URLSearchParams(location.search);
   const activeTabFromUrl = searchParams.get('tab');
@@ -275,10 +278,9 @@ const Dashboard: React.FC = () => {
         fetchPortfolioSettings()
       ]);
     } else if (currentUser) {
-      // For clients, we don't need to fetch videos or portfolio settings
       setIsLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, isClient]); // Added isClient to dependencies
   
   const fetchPortfolioSettings = async () => {
     if (!currentUser?.id) return;
@@ -308,12 +310,13 @@ const Dashboard: React.FC = () => {
   };
   
   const fetchUserVideos = async () => {
+    if (!currentUser?.id) return; // Added check for currentUser.id
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('videos')
         .select('*')
-        .eq('user_id', currentUser?.id)
+        .eq('user_id', currentUser.id) // Use currentUser.id
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -414,7 +417,6 @@ const Dashboard: React.FC = () => {
       let thumbnailUrl = uploadData.thumbnailUrl;
       let videoUrl = uploadData.videoUrl;
       
-      // Handle thumbnail file upload
       if (thumbnailFile) {
         const fileExt = thumbnailFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
@@ -432,21 +434,19 @@ const Dashboard: React.FC = () => {
           throw new Error(`Error uploading thumbnail: ${thumbnailError.message}`);
         }
         
-        const { data: thumbnailUrlData } = await supabase.storage
+        const { data: thumbnailUrlData } = supabase.storage // Removed await as getPublicUrl is not async
           .from('videos')
           .getPublicUrl(filePath);
         
         thumbnailUrl = thumbnailUrlData.publicUrl;
       }
       
-      // Handle video file upload for file upload type
       if (uploadData.uploadType === 'file' && videoFile) {
         const fileExt = videoFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `videos/${currentUser.id}/${fileName}`;
         
-        // Using .upload method with proper options
-        const { data: videoData, error: videoError } = await supabase.storage
+        const { error: videoError } = await supabase.storage // Removed data as it's not used for upload directly
           .from('videos')
           .upload(filePath, videoFile, {
             cacheControl: '3600',
@@ -458,14 +458,13 @@ const Dashboard: React.FC = () => {
           throw new Error(`Error uploading video: ${videoError.message}`);
         }
         
-        const { data: videoUrlData } = await supabase.storage
+        const { data: videoUrlData } = supabase.storage // Removed await
           .from('videos')
           .getPublicUrl(filePath);
         
         videoUrl = videoUrlData.publicUrl;
       }
       
-      // Create the video record in the database
       const newVideoData = {
         title: uploadData.title,
         description: uploadData.description,
@@ -561,7 +560,7 @@ const Dashboard: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-secondary">
-      <Navbar />
+      <Navbar /> {/* We will update Navbar later for its badge */}
       
       <main className="pt-28 pb-16 px-4 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -615,15 +614,23 @@ const Dashboard: React.FC = () => {
           </>
         )}
         
-        <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="mb-6">
+        <Tabs defaultValue={defaultTab} className="w-full" onValueChange={(value) => navigate(`/dashboard?tab=${value}`)}>
+          <TabsList className="mb-6 grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6">
             {!isClient && (
               <>
                 <TabsTrigger value="videos">My Videos</TabsTrigger>
                 <TabsTrigger value="showreel">My Showreel</TabsTrigger>
               </>
             )}
-            <TabsTrigger value="messaging">Messaging</TabsTrigger>
+            <TabsTrigger value="messaging" className="relative">
+              <MessageSquare className="mr-2 h-4 w-4 sm:hidden" /> {/* Icon for smaller screens */}
+              <span className="hidden sm:inline">Messaging</span>
+              {totalUnreadMessages > 0 && (
+                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {totalUnreadMessages > 9 ? '9+' : totalUnreadMessages}
+                </Badge>
+              )}
+            </TabsTrigger>
             {isClient && <TabsTrigger value="favorite-editors">Favorite Editors</TabsTrigger>}
             {!isClient && (
               <>
@@ -667,7 +674,7 @@ const Dashboard: React.FC = () => {
           )}
           
           <TabsContent value="messaging">
-            <MessagingTab />
+            <MessagingTab onTotalUnreadChange={setTotalUnreadMessages} />
           </TabsContent>
           
           {isClient && (
