@@ -16,16 +16,17 @@ export const getOrCreateConversation = async (currentUserId: string, targetUserI
   }
 
   const sortedParticipantIds = [currentUserId, targetUserId].sort();
-  // The .eq() filter with an array column type expects a JavaScript array.
-  // const participantIdsString = `{${sortedParticipantIds.join(',')}}`; // This line caused the TypeScript error and was an incorrect approach here.
 
   try {
-    // Check if conversation already exists
-    // Pass the string[] directly, as expected by the TypeScript types for .eq() on an array column.
+    // Check if conversation already exists using array containment operators
+    // This checks if participant_ids contains all elements of sortedParticipantIds
+    // AND sortedParticipantIds contains all elements of participant_ids.
+    // This is equivalent to checking for array equality if elements are unique and order is consistent.
     let { data: existingConversation, error: fetchError } = await supabase
       .from('conversations')
       .select('id')
-      .eq('participant_ids', sortedParticipantIds) // Corrected: pass the array directly
+      .contains('participant_ids', sortedParticipantIds)
+      .containedBy('participant_ids', sortedParticipantIds)
       .limit(1)
       .single();
 
@@ -71,3 +72,4 @@ export const getOrCreateConversation = async (currentUserId: string, targetUserI
     return null;
   }
 };
+
