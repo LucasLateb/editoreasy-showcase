@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,10 +14,26 @@ interface MessageAreaProps {
   otherParticipant: AuthUser | null | undefined;
 }
 
+// Helper function to map Supabase profile data to AuthUser type (can be imported if moved to utils)
+const mapSupabaseProfileToAuthUser = (profile: any): AuthUser | null => {
+  if (!profile) return null;
+  return {
+    id: profile.id,
+    name: profile.name || undefined,
+    email: profile.email || undefined,
+    avatarUrl: profile.avatar_url || undefined,
+    bio: profile.bio || undefined,
+    subscriptionTier: profile.subscription_tier === 'premium' || profile.subscription_tier === 'pro' ? profile.subscription_tier : 'free',
+    likes: profile.likes || 0,
+    createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
+    role: profile.role || undefined,
+  };
+};
+
 const fetchMessages = async (conversationId: string): Promise<Message[]> => {
   const { data, error } = await supabase
     .from('messages')
-    .select('*, sender:profiles(id, name, avatar_url)')
+    .select('*, sender:profiles(id, name, email, avatar_url, bio, subscription_tier, likes, created_at, role)')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 
@@ -26,7 +41,13 @@ const fetchMessages = async (conversationId: string): Promise<Message[]> => {
     console.error('Error fetching messages:', error);
     throw error;
   }
-  return data || [];
+
+  if (!data) return [];
+
+  return data.map((msg: any) => ({
+    ...msg,
+    sender: mapSupabaseProfileToAuthUser(msg.sender),
+  }));
 };
 
 const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, otherParticipant }) => {
@@ -46,13 +67,16 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
     if (!selectedConversationId) return;
 
     const channel = supabase
-      .channel(`messages:${selectedConversationId}`)
+      .channel(`messages:${selectedConversationId}`) // Unique channel per conversation
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedConversationId}` },
         (payload) => {
-          console.log('New message received via realtime!', payload);
+          console.log('New message received via realtime in MessageArea!', payload);
+          // Option 1: Optimistic update (more complex)
+          // Option 2: Invalidate and refetch (simpler)
           queryClient.invalidateQueries({ queryKey: ['messages', selectedConversationId] });
+          queryClient.invalidateQueries({ queryKey: ['conversations', undefined] }); // Also update last message preview in conv list
         }
       )
       .subscribe();

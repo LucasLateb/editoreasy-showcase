@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +14,7 @@ interface ConversationListProps {
   selectedConversationId: string | null;
 }
 
-const fetchConversations = async (userId: string) => {
+const fetchConversations = async (userId: string): Promise<Conversation[]> => {
   const { data, error } = await supabase
     .from('conversations')
     .select('*')
@@ -29,17 +28,32 @@ const fetchConversations = async (userId: string) => {
   return data || [];
 };
 
-const fetchUserProfile = async (userId: string) => {
+const mapSupabaseProfileToAuthUser = (profile: any): AuthUser | null => {
+  if (!profile) return null;
+  return {
+    id: profile.id,
+    name: profile.name || undefined,
+    email: profile.email || undefined,
+    avatarUrl: profile.avatar_url || undefined,
+    bio: profile.bio || undefined,
+    subscriptionTier: profile.subscription_tier === 'premium' || profile.subscription_tier === 'pro' ? profile.subscription_tier : 'free',
+    likes: profile.likes || 0,
+    createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
+    role: profile.role || undefined,
+  };
+}
+
+const fetchUserProfile = async (userId: string): Promise<AuthUser | null> => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, name, email, avatar_url, bio, subscription_tier, likes, created_at, role')
     .eq('id', userId)
     .single();
   if (error) {
     console.error(`Error fetching profile for user ${userId}:`, error);
     return null;
   }
-  return data as AuthUser;
+  return mapSupabaseProfileToAuthUser(data);
 };
 
 const fetchLastMessage = async (conversationId: string): Promise<MessageType | null> => {
@@ -54,7 +68,7 @@ const fetchLastMessage = async (conversationId: string): Promise<MessageType | n
   if (error && error.code !== 'PGRST116') { // PGRST116: single row not found
     console.error('Error fetching last message:', error);
   }
-  return data as MessageType | null;
+  return data as MessageType | null; // Assuming MessageType structure is simple and doesn't need deep mapping here
 };
 
 
@@ -89,17 +103,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
           const lastMessage = await fetchLastMessage(conv.id);
           return { 
             ...conv, 
-            otherParticipant: otherParticipant ? {
-              id: otherParticipant.id,
-              name: otherParticipant.name,
-              email: otherParticipant.email,
-              avatarUrl: otherParticipant.avatarUrl,
-              bio: otherParticipant.bio,
-              subscriptionTier: otherParticipant.subscriptionTier,
-              likes: otherParticipant.likes,
-              createdAt: new Date(otherParticipant.createdAt || Date.now()), // Ensure createdAt is a Date
-              role: otherParticipant.role,
-            } : null,
+            otherParticipant, // Use the mapped participant
             lastMessagePreview: lastMessage?.content 
           };
         })
@@ -134,11 +138,11 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
         async (payload) => {
             console.log('New message received for potential conversation update!', payload);
             // Check if this message belongs to one of the current user's conversations
-            const message = payload.new as MessageType;
+            const message = payload.new as MessageType; // Assume MessageType is simple
             const conversation = enrichedConversations.find(c => c.id === message.conversation_id);
             if (conversation) {
                 queryClient.invalidateQueries({ queryKey: ['conversations', currentUser.id] });
-                queryClient.invalidateQueries({ queryKey: ['messages', message.conversation_id] });
+                // queryClient.invalidateQueries({ queryKey: ['messages', message.conversation_id] }); // This is handled by MessageArea
             }
         }
       )
@@ -193,7 +197,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
             <ConversationListItem
               key={conversation.id}
               conversation={conversation}
-              currentUser={currentUser as AuthUser}
+              currentUser={currentUser as AuthUser} // Assuming currentUser is correctly typed or mapped elsewhere
               onSelectConversation={onSelectConversation}
               isSelected={selectedConversationId === conversation.id}
             />
