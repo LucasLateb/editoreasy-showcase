@@ -98,7 +98,6 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
   const enrichAndSetConversations = useCallback(async (convsToEnrich: Conversation[], currentUserId: string) => {
     console.log('[MessagingTab] Starting to enrich conversations:', convsToEnrich.length);
     setIsEnriching(true);
-    const currentlySelectedId = selectedConversationId; 
     const enriched = await Promise.all(
       convsToEnrich.map(async (conv) => {
         const otherParticipantId = conv.participant_ids.find(id => id !== currentUserId);
@@ -108,21 +107,29 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
         }
         const lastMessage = await fetchLastMessage(conv.id);
         
-        const existingConv = enrichedConversations.find(ec => ec.id === conv.id);
-        let unread_count = existingConv?.unread_count || 0;
+        // Use unread_count directly from the conversation object fetched from DB
+        // This avoids using potentially stale unread_count from a closure over enrichedConversations
+        const unread_count = conv.unread_count || 0;
 
         return {
-          ...conv,
+          ...conv, // Includes id, participant_ids, last_message_at, and unread_count from DB
           otherParticipant: otherParticipantProfile,
           lastMessagePreview: lastMessage?.content,
-          unread_count: unread_count, 
+          // unread_count is already included via ...conv
         };
       })
     );
     console.log('[MessagingTab] Finished enriching conversations. Result:', enriched);
+    
+    // When setting enriched conversations, ensure existing dynamic unread counts (from subscriptions) are preserved
+    // if the raw data's unread_count is meant to be a baseline.
+    // However, if DB unread_count is source of truth upon fresh load/enrich, then direct set is fine.
+    // The new message subscription directly updates enrichedConversations with functional updates,
+    // so this full replacement here during enrichment should be okay if rawConversations.unread_count is the baseline.
     setEnrichedConversations(enriched);
     setIsEnriching(false);
-  }, [selectedConversationId, currentUser?.id]); // Removed enrichedConversations to avoid loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]); // Removed enrichedConversations from deps of this useCallback
 
   useEffect(() => {
     if (rawConversations && currentUser?.id) {
@@ -130,7 +137,7 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
       enrichAndSetConversations(rawConversations, currentUser.id);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawConversations, currentUser?.id]);
+  }, [rawConversations, currentUser?.id]); // enrichAndSetConversations is stable due to useCallback
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -164,6 +171,8 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
             const newMessage = payload.new as MessageType;
             console.log('[MessagingTab] New message received via subscription:', newMessage);
             
+            // Check against local enrichedConversations state directly.
+            // enrichedConversations dependency in the main useEffect for subscriptions will ensure this closure is up-to-date.
             const targetConversation = enrichedConversations.find(c => c.id === newMessage.conversation_id);
             
             if (!targetConversation) {
@@ -219,7 +228,7 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
       supabase.removeChannel(messagesChannel);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, queryClient, selectedConversationId, enrichedConversations]); // enrichedConversations added back to handle targetConversation check reliably.
+  }, [currentUser?.id, queryClient, selectedConversationId, enrichedConversations]);
 
   const handleSelectConversation = useCallback((conversationId: string, participant: AuthUser | null | undefined) => {
     console.log(`[MessagingTab] Selecting conversation ${conversationId}. Participant:`, participant);
@@ -231,31 +240,49 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
         conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
       )
     );
-  }, [setSelectedConversationId, setOtherParticipant, setEnrichedConversations]);
+  }, [setSelectedConversationId, setOtherParticipant]); // Removed setEnrichedConversations, functional update is fine.
 
   useEffect(() => {
     const conversationIdFromUrl = searchParams.get('conversationId');
+    
+    if (!conversationIdFromUrl) {
+        // If there's no conversationId in the URL, but there was one selected,
+        // and it's not in the searchParams anymore (e.g. user manually changed URL or navigated back),
+        // we don't necessarily need to do anything here unless we want to clear selection.
+        // For now, if no ID in URL, this effect does nothing further.
+        return;
+    }
   
-    if (conversationIdFromUrl && enrichedConversations.length > 0 && !isLoadingConversationsInitial && !isEnriching) {
+    console.log(`[MessagingTab] URL Effect: conversationIdFromUrl = ${conversationIdFromUrl}, enrichedConversations count = ${enrichedConversations.length}, isLoadingConvInitial = ${isLoadingConversationsInitial}, isEnriching = ${isEnriching}`);
+    
+    // Only attempt to find and select if conversations are loaded and not currently being enriched
+    if (enrichedConversations.length > 0 && !isLoadingConversationsInitial && !isEnriching) {
       const conversationToSelect = enrichedConversations.find(conv => conv.id === conversationIdFromUrl);
+      console.log(`[MessagingTab] URL Effect: Attempting to find conversation. Found:`, conversationToSelect);
+
       if (conversationToSelect) {
         if (selectedConversationId !== conversationIdFromUrl) {
-          console.log(`[MessagingTab] Selecting conversation ${conversationIdFromUrl} from URL. Participant:`, conversationToSelect.otherParticipant);
+          console.log(`[MessagingTab] URL Effect: Selecting conversation ${conversationIdFromUrl} from URL. Participant:`, conversationToSelect.otherParticipant);
           handleSelectConversation(conversationIdFromUrl, conversationToSelect.otherParticipant);
         }
-        // Clear the param after processing
+        // Clear the param only AFTER successfully finding and attempting to select
+        console.log(`[MessagingTab] URL Effect: Clearing conversationId ${conversationIdFromUrl} from URL params.`);
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete('conversationId');
         setSearchParams(newSearchParams, { replace: true });
       } else {
-        console.warn(`[MessagingTab] Conversation ID ${conversationIdFromUrl} from URL not found. Clearing param.`);
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete('conversationId');
-        setSearchParams(newSearchParams, { replace: true });
+        // Conversation not found in the current list. Do NOT clear the param.
+        // It might appear in a subsequent update of enrichedConversations.
+        console.warn(`[MessagingTab] URL Effect: Conversation ID ${conversationIdFromUrl} from URL NOT FOUND in current enriched list. Waiting for list updates.`);
       }
+    } else {
+      // Conditions not met to process (e.g., still loading, enriching, or list is empty but URL param exists)
+      console.log(`[MessagingTab] URL Effect: conversationIdFromUrl=${conversationIdFromUrl} present, but conditions not met to select yet (list empty, loading, or enriching). Will re-evaluate if dependencies change.`);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, setSearchParams, enrichedConversations, selectedConversationId, isLoadingConversationsInitial, isEnriching, handleSelectConversation, currentUser?.id]);
+  }, [searchParams, enrichedConversations, isLoadingConversationsInitial, isEnriching, handleSelectConversation, currentUser?.id]); 
+  // Removed selectedConversationId from deps: it caused issues if selection happened fast, and this effect re-ran.
+  // Removed setSearchParams from deps as it's stable.
   
   useEffect(() => {
     if (onTotalUnreadChange) {
