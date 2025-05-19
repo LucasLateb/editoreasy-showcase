@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Conversation } from '@/types/messaging';
 import { User as AuthUser } from '@/types';
 import NotificationDot from '@/components/ui/NotificationDot';
+import { Badge } from '@/components/ui/badge';
 
 interface ConversationListItemProps {
   conversation: Conversation;
@@ -22,11 +23,12 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
 
   const hasUnreadMessages = conversation.unread_count && conversation.unread_count > 0;
 
-  let itemClassName = 'p-3 hover:bg-muted cursor-pointer flex items-center space-x-3';
+  let itemClassName = 'p-3 hover:bg-muted cursor-pointer flex items-center space-x-3 transition-all';
+  
   if (isSelected) {
     itemClassName += ' bg-muted';
   } else if (hasUnreadMessages) {
-    itemClassName += ' bg-sky-100 dark:bg-sky-800';
+    itemClassName += ' bg-sky-100 dark:bg-sky-800/30 border-l-4 border-sky-500';
   }
 
   return (
@@ -39,9 +41,13 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
         <AvatarFallback>{FallbackName}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{otherParticipant?.name || 'Unknown User'}</p>
+        <p className={`text-sm truncate ${hasUnreadMessages ? 'font-bold' : 'font-medium'}`}>
+          {otherParticipant?.name || 'Unknown User'}
+        </p>
         {conversation.lastMessagePreview && (
-          <p className="text-xs text-muted-foreground truncate">{conversation.lastMessagePreview}</p>
+          <p className={`text-xs ${hasUnreadMessages ? 'text-foreground' : 'text-muted-foreground'} truncate`}>
+            {conversation.lastMessagePreview}
+          </p>
         )}
       </div>
       <div className="flex flex-col items-end space-y-1 justify-center">
@@ -51,7 +57,11 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
           </p>
         )}
         {hasUnreadMessages && (
-          <NotificationDot className="mt-1" />
+          conversation.unread_count > 1 ? (
+            <NotificationDot className="mt-1" showCount count={conversation.unread_count} />
+          ) : (
+            <NotificationDot className="mt-1" />
+          )
         )}
       </div>
     </div>

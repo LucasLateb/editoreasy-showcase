@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,12 +14,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import NotificationDot from '@/components/ui/NotificationDot';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar: React.FC = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
   // Check if user is a client
   const isClient = currentUser?.role === 'client';
@@ -47,6 +51,43 @@ const Navbar: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Check for unread messages
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const fetchUnreadCount = async () => {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('unread_count')
+        .contains('participant_ids', [currentUser.id])
+        .neq('unread_count', 0);
+
+      if (!error && data && data.length > 0) {
+        setHasUnreadMessages(true);
+      } else {
+        setHasUnreadMessages(false);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Subscribe to changes in conversations table to update notification badge in real-time
+    const conversationsChannel = supabase
+      .channel('public:conversations:navbar-rls-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations', filter: `participant_ids=cs.{"${currentUser.id}"}` },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(conversationsChannel);
+    };
+  }, [currentUser?.id]);
 
   return (
     <nav 
@@ -87,11 +128,14 @@ const Navbar: React.FC = () => {
               <Link 
                 to="/dashboard" 
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
+                  "text-sm font-medium transition-colors hover:text-primary relative",
                   location.pathname === "/dashboard" ? "text-primary" : "text-foreground/80"
                 )}
               >
                 Dashboard
+                {hasUnreadMessages && (
+                  <NotificationDot className="absolute -right-3 -top-1" />
+                )}
               </Link>
               {/* Only show Portfolio link for editors (non-client users) */}
               {!isClient && (
@@ -125,20 +169,28 @@ const Navbar: React.FC = () => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0 hover:bg-transparent">
+                <Button variant="ghost" className="p-0 hover:bg-transparent relative">
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.name} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {currentUser?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
+                  {hasUnreadMessages && (
+                    <NotificationDot className="absolute -right-1 -top-1" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 mt-1 mr-1" align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/dashboard" className="w-full cursor-pointer">Dashboard</Link>
+                  <Link to="/dashboard" className="w-full cursor-pointer relative flex items-center">
+                    Dashboard
+                    {hasUnreadMessages && (
+                      <NotificationDot className="ml-2" />
+                    )}
+                  </Link>
                 </DropdownMenuItem>
                 {/* Only show Portfolio link in dropdown for editors (non-client users) */}
                 {!isClient && (
