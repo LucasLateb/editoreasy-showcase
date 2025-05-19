@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ConversationList from './ConversationList';
 import MessageArea from './MessageArea';
@@ -75,6 +75,7 @@ interface MessagingTabProps {
 
 const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
@@ -109,41 +110,27 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
         
         const existingConv = enrichedConversations.find(ec => ec.id === conv.id);
         let unread_count = existingConv?.unread_count || 0;
-        // Log for understanding unread count source during enrichment
-        // console.log(`[MessagingTab] Enriching conv ${conv.id}. Existing unread: ${unread_count}, Last message sender: ${lastMessage?.sender_id}, Current user: ${currentUserId}, Selected: ${currentlySelectedId}, New message during enrich: ${lastMessage?.sender_id !== currentUserId && conv.id !== currentlySelectedId}`);
-        
-        // This logic was intended for initial load. Unread for new messages is handled by subscription.
-        // If a last message exists, is not from current user, and conversation is not selected, it might be unread.
-        // However, relying on subscription is better for real-time unread updates.
-        // For initial enrichment, if unread_count is not already set by a previous state or subscription,
-        // and the last message is from the other user, we could consider it unread.
-        // But this gets complex with already existing `unread_count`.
-        // Best to let subscriptions handle increments and selection handle reset.
-        // The `unread_count` from `existingConv` should be preserved.
 
         return {
           ...conv,
           otherParticipant: otherParticipantProfile,
           lastMessagePreview: lastMessage?.content,
-          unread_count: unread_count, // Preserve existing unread count during enrichment
+          unread_count: unread_count, 
         };
       })
     );
     console.log('[MessagingTab] Finished enriching conversations. Result:', enriched);
     setEnrichedConversations(enriched);
     setIsEnriching(false);
-  }, [selectedConversationId, currentUser?.id]); // Removed enrichedConversations to avoid loop, but this needs careful thought for unread persistence
+  }, [selectedConversationId, currentUser?.id]); // Removed enrichedConversations to avoid loop
 
   useEffect(() => {
     if (rawConversations && currentUser?.id) {
       console.log('[MessagingTab] Raw conversations fetched, enriching...');
-      // Pass a stable reference of enrichedConversations to enrichAndSetConversations
-      // or ensure enrichAndSetConversations correctly handles unread counts without it in deps.
-      // Current approach: enrichAndSetConversations reads selectedConversationId and currentUser.id from its closure.
       enrichAndSetConversations(rawConversations, currentUser.id);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawConversations, currentUser?.id]); // enrichAndSetConversations not in deps
+  }, [rawConversations, currentUser?.id]);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -177,19 +164,11 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
             const newMessage = payload.new as MessageType;
             console.log('[MessagingTab] New message received via subscription:', newMessage);
             
-            // Check if the message belongs to any of the current user's conversations
-            // This requires checking if currentUser.id is in participant_ids of the conversation for this message
-            // For simplicity, we'll update if the conversation is already in enrichedConversations.
-            // A more robust way would be to fetch conversation details if not found.
-
             const targetConversation = enrichedConversations.find(c => c.id === newMessage.conversation_id);
             
             if (!targetConversation) {
               console.log(`[MessagingTab] New message for conversation ${newMessage.conversation_id} not in current list. Invalidating conversations query.`);
               queryClient.invalidateQueries({ queryKey: ['conversations', currentUser.id]});
-              // The re-fetch and enrichment process should add the new conversation with its message.
-              // Unread count for brand new conversation on first message would be 1 if not from current user.
-              // This will be handled by subsequent enrichment logic if it's a truly new convo.
               return;
             }
 
@@ -202,19 +181,17 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
                   if (!isCurrentUserSender && conv.id !== selectedConversationId) {
                     newUnreadCount = (conv.unread_count || 0) + 1;
                     console.log(`[MessagingTab] Incrementing unread count for conv ${conv.id} to ${newUnreadCount}.`);
-                  } else {
-                     // console.log(`[MessagingTab] Message from current user or conv ${conv.id} is selected. Unread count remains ${newUnreadCount}.`);
                   }
                   
                   return { 
                     ...conv, 
                     lastMessagePreview: newMessage.content,
-                    last_message_at: newMessage.created_at, // Ensure this is a string
+                    last_message_at: newMessage.created_at,
                     unread_count: newUnreadCount
                   };
                 }
                 return conv;
-              }).sort((a, b) => { // Keep conversations sorted by last message
+              }).sort((a, b) => {
                 const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
                 const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
                 return dateB - dateA;
@@ -242,27 +219,47 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
       supabase.removeChannel(messagesChannel);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, queryClient, selectedConversationId]); // Removed enrichedConversations to prevent re-subscribing too often.
-                                                              // Logic inside subscription now uses its closure or fetches fresh state if needed.
+  }, [currentUser?.id, queryClient, selectedConversationId, enrichedConversations]); // enrichedConversations added back to handle targetConversation check reliably.
 
-
-  const handleSelectConversation = (conversationId: string, participant: AuthUser | null | undefined) => {
+  const handleSelectConversation = useCallback((conversationId: string, participant: AuthUser | null | undefined) => {
     console.log(`[MessagingTab] Selecting conversation ${conversationId}. Participant:`, participant);
     setSelectedConversationId(conversationId);
     setOtherParticipant(participant);
 
-    // Reset unread count for the selected conversation
     setEnrichedConversations(prevConvs => 
       prevConvs.map(conv =>
         conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
       )
     );
-  };
+  }, [setSelectedConversationId, setOtherParticipant, setEnrichedConversations]);
+
+  useEffect(() => {
+    const conversationIdFromUrl = searchParams.get('conversationId');
+  
+    if (conversationIdFromUrl && enrichedConversations.length > 0 && !isLoadingConversationsInitial && !isEnriching) {
+      const conversationToSelect = enrichedConversations.find(conv => conv.id === conversationIdFromUrl);
+      if (conversationToSelect) {
+        if (selectedConversationId !== conversationIdFromUrl) {
+          console.log(`[MessagingTab] Selecting conversation ${conversationIdFromUrl} from URL. Participant:`, conversationToSelect.otherParticipant);
+          handleSelectConversation(conversationIdFromUrl, conversationToSelect.otherParticipant);
+        }
+        // Clear the param after processing
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('conversationId');
+        setSearchParams(newSearchParams, { replace: true });
+      } else {
+        console.warn(`[MessagingTab] Conversation ID ${conversationIdFromUrl} from URL not found. Clearing param.`);
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('conversationId');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams, enrichedConversations, selectedConversationId, isLoadingConversationsInitial, isEnriching, handleSelectConversation, currentUser?.id]);
   
   useEffect(() => {
     if (onTotalUnreadChange) {
       const total = enrichedConversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
-      // console.log('[MessagingTab] Calculating total unread messages:', total, 'from conversations:', enrichedConversations.map(c => ({id: c.id, unread: c.unread_count })));
       onTotalUnreadChange(total);
     }
   }, [enrichedConversations, onTotalUnreadChange]);

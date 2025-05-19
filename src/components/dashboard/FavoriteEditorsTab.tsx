@@ -80,7 +80,7 @@ const FavoriteEditorsTab = () => {
 
     if (conversationId) {
       toast.success(`Conversation with ${editor.name} started! Redirecting...`);
-      navigate('/dashboard?tab=messaging');
+      navigate(`/dashboard?tab=messaging&conversationId=${conversationId}`);
     } else {
       // Error toast is handled by getOrCreateConversation
     }
