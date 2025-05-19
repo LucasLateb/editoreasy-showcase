@@ -6,7 +6,7 @@ import { Video, categories } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import VideoUploadDialog, { UploadFormData } from '@/components/dashboard/VideoUploadDialog';
@@ -17,7 +17,7 @@ import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import MessagingTab from '@/components/dashboard/MessagingTab';
 import PlanTab from '@/components/dashboard/PlanTab';
 import FavoriteEditorsTab from '@/components/dashboard/FavoriteEditorsTab';
-import { Badge } from '@/components/ui/badge';
+import NotificationDot from '@/components/ui/NotificationDot';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -28,11 +28,11 @@ interface ShowreelTabProps {
 }
 
 const ShowreelTab: React.FC<ShowreelTabProps> = ({ 
-  videos, 
-  isLoading, 
+  videos: localVideos, 
+  isLoading: localIsLoading, 
   onSetShowreel,
-  currentShowreelUrl,
-  currentShowreelThumbnail
+  currentShowreelUrl: localCurrentShowreelUrl,
+  currentShowreelThumbnail: localCurrentShowreelThumbnail
 }) => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [customUrl, setCustomUrl] = useState('');
@@ -42,7 +42,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   const [videoToConfirm, setVideoToConfirm] = useState<Video | null>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
-  const { toast } = useToast();
+  const { toast: localToast } = useToast();
   
   const handleSelectShowreel = (video: Video) => {
     setVideoToConfirm(video);
@@ -62,13 +62,13 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         }
         
         setSelectedVideo(videoToConfirm);
-        toast({
+        localToast({
           title: "Showreel updated",
           description: "Your portfolio showreel has been updated successfully."
         });
       } catch (error) {
         console.error("Invalid video URL:", error);
-        toast({
+        localToast({
           title: "Invalid URL",
           description: "The selected video has an invalid URL format.",
           variant: "destructive"
@@ -87,13 +87,13 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         }
         
         onSetShowreel(customUrl.trim(), customThumbnailUrl || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81');
-        toast({
+        localToast({
           title: "Showreel updated",
           description: "Your portfolio showreel has been updated successfully."
         });
       } catch (error) {
         console.error("Invalid custom URL:", error);
-        toast({
+        localToast({
           title: "Invalid URL",
           description: error instanceof Error ? error.message : "The URL format is invalid.",
           variant: "destructive"
@@ -106,7 +106,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
     setShowVideo(true);
   };
   
-  if (isLoading) {
+  if (localIsLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -114,7 +114,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
     );
   }
   
-  const isEmbedCode = currentShowreelUrl && currentShowreelUrl.includes('<iframe');
+  const isEmbedCode = localCurrentShowreelUrl && localCurrentShowreelUrl.includes('<iframe');
   const extractSrcFromEmbed = (embedCode: string) => {
     try {
       const srcMatch = embedCode.match(/src="([^"]+)"/);
@@ -126,21 +126,21 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   };
   
   let displayUrl = '';
-  if (isEmbedCode && currentShowreelUrl) {
-    displayUrl = extractSrcFromEmbed(currentShowreelUrl);
-  } else if (currentShowreelUrl) {
-    displayUrl = currentShowreelUrl;
+  if (isEmbedCode && localCurrentShowreelUrl) {
+    displayUrl = extractSrcFromEmbed(localCurrentShowreelUrl);
+  } else if (localCurrentShowreelUrl) {
+    displayUrl = localCurrentShowreelUrl;
   }
   
   return (
     <div className="space-y-8">
       <div className="bg-background p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Current Showreel</h2>
-        {currentShowreelUrl ? (
+        {localCurrentShowreelUrl ? (
           <div className="aspect-video relative mb-4">
             <div className="relative w-full h-full">
               <img 
-                src={currentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'} 
+                src={localCurrentShowreelThumbnail || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81'} 
                 alt="Showreel thumbnail" 
                 className="w-full h-full object-cover border rounded-md cursor-pointer"
                 onClick={() => setVideoPlayerOpen(true)}
@@ -163,20 +163,20 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         )}
       </div>
       
-      {currentShowreelUrl && (
+      {localCurrentShowreelUrl && (
         <VideoPlayerDialog
           isOpen={videoPlayerOpen}
           onClose={() => setVideoPlayerOpen(false)}
-          videoUrl={currentShowreelUrl}
+          videoUrl={localCurrentShowreelUrl}
           title="My Showreel"
         />
       )}
-
-{videos.length > 0 && (
+  
+{localVideos.length > 0 && (
         <div className="bg-background p-6 rounded-lg border shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Select from Your Videos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {videos.map((video) => (
+            {localVideos.map((video) => (
               <div 
                 key={video.id} 
                 className={`relative cursor-pointer border rounded-md overflow-hidden ${selectedVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
@@ -230,8 +230,6 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
         </p>
       </div>
       
-      
-      {/* Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
@@ -261,14 +259,12 @@ const Dashboard: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
   
-  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0); // State for unread messages count
+  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
 
-  // Get the active tab from URL query parameters
   const searchParams = new URLSearchParams(location.search);
   const activeTabFromUrl = searchParams.get('tab');
   const isClient = currentUser?.role === 'client';
   
-  // Determine default tab based on user role
   const defaultTab = activeTabFromUrl || (isClient ? 'messaging' : 'videos');
   
   useEffect(() => {
@@ -278,9 +274,12 @@ const Dashboard: React.FC = () => {
         fetchPortfolioSettings()
       ]);
     } else if (currentUser) {
+      // For clients, or if not editor, just stop loading
+      fetchPortfolioSettings(); // Clients might still have portfolio settings if they were editors before
       setIsLoading(false);
     }
-  }, [currentUser, isClient]); // Added isClient to dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, isClient]);
   
   const fetchPortfolioSettings = async () => {
     if (!currentUser?.id) return;
@@ -301,22 +300,26 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching portfolio settings:', error);
-      toast({
-        title: "Error loading showreel",
-        description: "There was a problem loading your showreel settings.",
-        variant: "destructive"
-      });
+      // Do not toast here for client role, as it might be confusing.
+      // Only toast for editor role if it fails.
+      if (!isClient) {
+        toast({
+          title: "Error loading showreel",
+          description: "There was a problem loading your showreel settings.",
+          variant: "destructive"
+        });
+      }
     }
   };
   
   const fetchUserVideos = async () => {
-    if (!currentUser?.id) return; // Added check for currentUser.id
+    if (!currentUser?.id) return; 
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('videos')
         .select('*')
-        .eq('user_id', currentUser.id) // Use currentUser.id
+        .eq('user_id', currentUser.id) 
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -434,7 +437,7 @@ const Dashboard: React.FC = () => {
           throw new Error(`Error uploading thumbnail: ${thumbnailError.message}`);
         }
         
-        const { data: thumbnailUrlData } = supabase.storage // Removed await as getPublicUrl is not async
+        const { data: thumbnailUrlData } = supabase.storage
           .from('videos')
           .getPublicUrl(filePath);
         
@@ -446,7 +449,7 @@ const Dashboard: React.FC = () => {
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `videos/${currentUser.id}/${fileName}`;
         
-        const { error: videoError } = await supabase.storage // Removed data as it's not used for upload directly
+        const { error: videoError } = await supabase.storage
           .from('videos')
           .upload(filePath, videoFile, {
             cacheControl: '3600',
@@ -458,7 +461,7 @@ const Dashboard: React.FC = () => {
           throw new Error(`Error uploading video: ${videoError.message}`);
         }
         
-        const { data: videoUrlData } = supabase.storage // Removed await
+        const { data: videoUrlData } = supabase.storage
           .from('videos')
           .getPublicUrl(filePath);
         
@@ -552,15 +555,15 @@ const Dashboard: React.FC = () => {
       setDeleteConfirmOpen(false);
     }
   };
-  
+
   if (!currentUser) {
     navigate('/login');
     return null;
   }
-  
+
   return (
     <div className="min-h-screen bg-secondary">
-      <Navbar /> {/* We will update Navbar later for its badge */}
+      <Navbar /> {/* Navbar cannot be modified to show notification dot here due to file permissions */}
       
       <main className="pt-28 pb-16 px-4 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -622,13 +625,11 @@ const Dashboard: React.FC = () => {
                 <TabsTrigger value="showreel">My Showreel</TabsTrigger>
               </>
             )}
-            <TabsTrigger value="messaging" className="relative">
-              <MessageSquare className="mr-2 h-4 w-4 sm:hidden" /> {/* Icon for smaller screens */}
+            <TabsTrigger value="messaging" className="relative flex items-center space-x-2">
+              <MessageSquare className="h-4 w-4 sm:hidden" />
               <span className="hidden sm:inline">Messaging</span>
               {totalUnreadMessages > 0 && (
-                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  {totalUnreadMessages > 9 ? '9+' : totalUnreadMessages}
-                </Badge>
+                <NotificationDot />
               )}
             </TabsTrigger>
             {isClient && <TabsTrigger value="favorite-editors">Favorite Editors</TabsTrigger>}

@@ -57,13 +57,13 @@ const fetchUserProfile = async (userId: string): Promise<AuthUser | null> => {
 const fetchLastMessage = async (conversationId: string): Promise<MessageType | null> => {
   const { data, error } = await supabase
     .from('messages')
-    .select('content, created_at, sender_id') // Added sender_id for unread logic
+    .select('content, created_at, sender_id')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .limit(1)
     .single();
 
-  if (error && error.code !== 'PGRST116') {
+  if (error && error.code !== 'PGRST116') { // PGRST116: no rows found, which is fine for last message
     console.error('Error fetching last message:', error);
   }
   return data as MessageType | null;
@@ -108,32 +108,42 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
         const lastMessage = await fetchLastMessage(conv.id);
         
         const existingConv = enrichedConversations.find(ec => ec.id === conv.id);
-        // Retain existing unread count if not a brand new conversation from initial fetch, 
-        // or if it's updated by subscription (which handles its own unread logic)
         let unread_count = existingConv?.unread_count || 0;
-        console.log(`[MessagingTab] Enriching conv ${conv.id}. Existing unread: ${unread_count}, Last message sender: ${lastMessage?.sender_id}, Current user: ${currentUserId}, Selected: ${currentlySelectedId}`);
+        // Log for understanding unread count source during enrichment
+        // console.log(`[MessagingTab] Enriching conv ${conv.id}. Existing unread: ${unread_count}, Last message sender: ${lastMessage?.sender_id}, Current user: ${currentUserId}, Selected: ${currentlySelectedId}, New message during enrich: ${lastMessage?.sender_id !== currentUserId && conv.id !== currentlySelectedId}`);
+        
+        // This logic was intended for initial load. Unread for new messages is handled by subscription.
+        // If a last message exists, is not from current user, and conversation is not selected, it might be unread.
+        // However, relying on subscription is better for real-time unread updates.
+        // For initial enrichment, if unread_count is not already set by a previous state or subscription,
+        // and the last message is from the other user, we could consider it unread.
+        // But this gets complex with already existing `unread_count`.
+        // Best to let subscriptions handle increments and selection handle reset.
+        // The `unread_count` from `existingConv` should be preserved.
 
         return {
           ...conv,
           otherParticipant: otherParticipantProfile,
           lastMessagePreview: lastMessage?.content,
-          unread_count: unread_count,
+          unread_count: unread_count, // Preserve existing unread count during enrichment
         };
       })
     );
     console.log('[MessagingTab] Finished enriching conversations. Result:', enriched);
     setEnrichedConversations(enriched);
     setIsEnriching(false);
-  }, [selectedConversationId, enrichedConversations, currentUser?.id]); // Added currentUser.id to ensure currentUserId is up-to-date
+  }, [selectedConversationId, currentUser?.id]); // Removed enrichedConversations to avoid loop, but this needs careful thought for unread persistence
 
   useEffect(() => {
     if (rawConversations && currentUser?.id) {
       console.log('[MessagingTab] Raw conversations fetched, enriching...');
+      // Pass a stable reference of enrichedConversations to enrichAndSetConversations
+      // or ensure enrichAndSetConversations correctly handles unread counts without it in deps.
+      // Current approach: enrichAndSetConversations reads selectedConversationId and currentUser.id from its closure.
       enrichAndSetConversations(rawConversations, currentUser.id);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawConversations, currentUser?.id]); // enrichAndSetConversations is not added to avoid re-enriching on every unread_count change
-
+  }, [rawConversations, currentUser?.id]); // enrichAndSetConversations not in deps
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -141,7 +151,7 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
     console.log('[MessagingTab] Setting up Supabase subscriptions for user:', currentUser.id);
 
     const conversationsChannel = supabase
-      .channel('public:conversations:messagingtab-rls-debug') 
+      .channel('public:conversations:messagingtab-rls-realtime') 
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'conversations', filter: `participant_ids=cs.{"${currentUser.id}"}` },
@@ -151,11 +161,15 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
         }
       )
       .subscribe((status, err) => {
-        console.log('[MessagingTab] Conversations channel status:', status, 'Error:', err);
+        if (status === 'SUBSCRIBED') {
+          console.log('[MessagingTab] Successfully subscribed to conversations channel.');
+        } else {
+          console.error('[MessagingTab] Conversations channel subscription error:', status, err);
+        }
       });
     
     const messagesChannel = supabase
-      .channel('public:messages:messagingtab-rls-debug') 
+      .channel('public:messages:messagingtab-rls-realtime') 
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
@@ -163,20 +177,23 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
             const newMessage = payload.new as MessageType;
             console.log('[MessagingTab] New message received via subscription:', newMessage);
             
-            const conversationExists = enrichedConversations.some(c => c.id === newMessage.conversation_id);
-            if (!conversationExists) {
-              console.log('[MessagingTab] New message for a conversation not yet in the list. Invalidating conversations query.');
+            // Check if the message belongs to any of the current user's conversations
+            // This requires checking if currentUser.id is in participant_ids of the conversation for this message
+            // For simplicity, we'll update if the conversation is already in enrichedConversations.
+            // A more robust way would be to fetch conversation details if not found.
+
+            const targetConversation = enrichedConversations.find(c => c.id === newMessage.conversation_id);
+            
+            if (!targetConversation) {
+              console.log(`[MessagingTab] New message for conversation ${newMessage.conversation_id} not in current list. Invalidating conversations query.`);
               queryClient.invalidateQueries({ queryKey: ['conversations', currentUser.id]});
-              // The re-fetch and enrichment will handle this new conversation.
-              // Potentially, we might want to mark it as unread here if we fetch and enrich it immediately.
-              // For now, relying on the query invalidation.
+              // The re-fetch and enrichment process should add the new conversation with its message.
+              // Unread count for brand new conversation on first message would be 1 if not from current user.
+              // This will be handled by subsequent enrichment logic if it's a truly new convo.
               return;
             }
 
-            console.log('[MessagingTab] Processing new message for unread count. Current selectedConversationId:', selectedConversationId);
-
             setEnrichedConversations(prevConvs => {
-              console.log('[MessagingTab] Updating enrichedConversations. Previous state:', prevConvs);
               const updatedConvs = prevConvs.map(conv => {
                 if (conv.id === newMessage.conversation_id) {
                   const isCurrentUserSender = newMessage.sender_id === currentUser.id;
@@ -184,29 +201,24 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
 
                   if (!isCurrentUserSender && conv.id !== selectedConversationId) {
                     newUnreadCount = (conv.unread_count || 0) + 1;
-                    console.log(`[MessagingTab] Incrementing unread count for conv ${conv.id} to ${newUnreadCount}. Message from other user, and conv not selected.`);
-                  } else if (isCurrentUserSender) {
-                    console.log(`[MessagingTab] Message from current user for conv ${conv.id}. Unread count remains ${newUnreadCount}.`);
-                  } else if (conv.id === selectedConversationId) {
-                    // If convo is selected, new messages are implicitly read, so unread count should not increment.
-                    // It should have been set to 0 on selection.
-                    console.log(`[MessagingTab] New message for currently selected conv ${conv.id}. Unread count remains ${newUnreadCount}.`);
+                    console.log(`[MessagingTab] Incrementing unread count for conv ${conv.id} to ${newUnreadCount}.`);
+                  } else {
+                     // console.log(`[MessagingTab] Message from current user or conv ${conv.id} is selected. Unread count remains ${newUnreadCount}.`);
                   }
                   
                   return { 
                     ...conv, 
                     lastMessagePreview: newMessage.content,
-                    last_message_at: newMessage.created_at,
+                    last_message_at: newMessage.created_at, // Ensure this is a string
                     unread_count: newUnreadCount
                   };
                 }
                 return conv;
-              }).sort((a, b) => {
+              }).sort((a, b) => { // Keep conversations sorted by last message
                 const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
                 const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
                 return dateB - dateA;
               });
-              console.log('[MessagingTab] Updated enrichedConversations state:', updatedConvs);
               return updatedConvs;
             });
 
@@ -217,7 +229,11 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
         }
       )
       .subscribe((status, err) => {
-        console.log('[MessagingTab] Messages channel status:', status, 'Error:', err);
+         if (status === 'SUBSCRIBED') {
+          console.log('[MessagingTab] Successfully subscribed to messages channel.');
+        } else {
+          console.error('[MessagingTab] Messages channel subscription error:', status, err);
+        }
       });
 
     return () => {
@@ -225,7 +241,9 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
       supabase.removeChannel(conversationsChannel);
       supabase.removeChannel(messagesChannel);
     };
-  }, [currentUser?.id, queryClient, enrichedConversations, selectedConversationId]); // Re-added enrichedConversations and selectedConversationId carefully.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, queryClient, selectedConversationId]); // Removed enrichedConversations to prevent re-subscribing too often.
+                                                              // Logic inside subscription now uses its closure or fetches fresh state if needed.
 
 
   const handleSelectConversation = (conversationId: string, participant: AuthUser | null | undefined) => {
@@ -233,20 +251,18 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
     setSelectedConversationId(conversationId);
     setOtherParticipant(participant);
 
-    setEnrichedConversations(prevConvs => {
-      console.log('[MessagingTab] Resetting unread count for selected conversation. Previous state:', prevConvs);
-      const updatedConvs = prevConvs.map(conv =>
+    // Reset unread count for the selected conversation
+    setEnrichedConversations(prevConvs => 
+      prevConvs.map(conv =>
         conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
-      );
-      console.log('[MessagingTab] Updated enrichedConversations state after selection:', updatedConvs);
-      return updatedConvs;
-    });
+      )
+    );
   };
   
   useEffect(() => {
     if (onTotalUnreadChange) {
       const total = enrichedConversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
-      console.log('[MessagingTab] Calculating total unread messages:', total, 'from conversations:', enrichedConversations.map(c => ({id: c.id, unread: c.unread_count })));
+      // console.log('[MessagingTab] Calculating total unread messages:', total, 'from conversations:', enrichedConversations.map(c => ({id: c.id, unread: c.unread_count })));
       onTotalUnreadChange(total);
     }
   }, [enrichedConversations, onTotalUnreadChange]);

@@ -2,12 +2,12 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Conversation } from '@/types/messaging';
-import { User as AuthUser } from '@/types'; // Renamed to avoid conflict with User type if any
-import { Badge } from "@/components/ui/badge";
+import { User as AuthUser } from '@/types';
+import NotificationDot from '@/components/ui/NotificationDot'; // Importer le nouveau composant
 
 interface ConversationListItemProps {
   conversation: Conversation;
-  currentUser: AuthUser;
+  currentUser: AuthUser; // Retiré car non utilisé directement ici, mais peut être utile si on le rajoute
   onSelectConversation: (conversationId: string, otherParticipant: AuthUser | null | undefined) => void;
   isSelected: boolean;
 }
@@ -35,16 +35,14 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
           <p className="text-xs text-muted-foreground truncate">{conversation.lastMessagePreview}</p>
         )}
       </div>
-      <div className="flex flex-col items-end space-y-1">
+      <div className="flex flex-col items-end space-y-1 justify-center">
         {conversation.last_message_at && (
-          <p className="text-xs text-muted-foregroundwhitespace-nowrap">
+          <p className="text-xs text-muted-foreground whitespace-nowrap">
             {new Date(conversation.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
         {conversation.unread_count && conversation.unread_count > 0 && (
-          <Badge variant="destructive" className="px-2 py-0.5 text-xs">
-            {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
-          </Badge>
+          <NotificationDot className="mt-1" />
         )}
       </div>
     </div>
