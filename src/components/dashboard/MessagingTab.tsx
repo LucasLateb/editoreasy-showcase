@@ -276,25 +276,29 @@ const MessagingTab: React.FC<MessagingTabProps> = ({ onTotalUnreadChange }) => {
     );
   }
 
-  const canAccessMessaging = currentUser?.subscriptionTier === 'premium' || currentUser?.subscriptionTier === 'pro';
+  const canAccessMessaging = currentUser?.role === 'client' || 
+                             currentUser?.subscriptionTier === 'premium' || 
+                             currentUser?.subscriptionTier === 'pro';
 
   if (!canAccessMessaging) {
     return (
       <div className="space-y-8 p-4 md:p-6">
         <Alert variant="default">
           <MessageCircle className="h-5 w-5" />
-          <AlertTitle>Premium Feature</AlertTitle>
+          <AlertTitle>Premium Feature or Client Access</AlertTitle>
           <AlertDescription>
-            Messaging is only available on <span className="font-semibold">Premium</span> and <span className="font-semibold">Pro</span> plans.
-            Upgrade your plan to connect with other users directly.
+            Messaging is available for clients, or for users on <span className="font-semibold">Premium</span> and <span className="font-semibold">Pro</span> plans.
+            Upgrade your plan if you are not a client and wish to access messaging.
           </AlertDescription>
-          <Button
-            variant="default"
-            className="mt-4"
-            onClick={() => navigate('/pricing')}
-          >
-            Upgrade Plan
-          </Button>
+          {currentUser?.role !== 'client' && (
+            <Button
+              variant="default"
+              className="mt-4"
+              onClick={() => navigate('/pricing')}
+            >
+              Upgrade Plan
+            </Button>
+          )}
         </Alert>
         <div className="bg-background p-6 rounded-lg border shadow-sm">
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
