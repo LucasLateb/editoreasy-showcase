@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import NotificationDot from '@/components/ui/NotificationDot';
 import { supabase } from '@/integrations/supabase/client';
+import { type PostgrestError } from '@supabase/supabase-js';
 
 const Navbar: React.FC = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
@@ -54,35 +54,59 @@ const Navbar: React.FC = () => {
 
   // Check for unread messages
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      setHasUnreadMessages(false); // Ensure it's false if no user
+      return;
+    }
+
+    // Define the expected shape of a single item in the data array
+    type ConversationUnreadInfo = {
+      unread_count: number | null;
+    };
 
     const fetchUnreadCount = async () => {
       const { data, error } = await supabase
         .from('conversations')
         .select('unread_count')
-        .contains('participant_ids', [currentUser.id])
+        .contains('participant_ids', [currentUser.id]) // currentUser.id is known to be non-null here
         .neq('unread_count', 0);
 
-      if (!error && data && data.length > 0) {
-        setHasUnreadMessages(true);
+      // Explicitly type data and error
+      const typedData = data as (ConversationUnreadInfo[] | null);
+      const typedError = error as (PostgrestError | null);
+
+      if (!typedError && typedData && typedData.length > 0) {
+        // Ensure at least one conversation actually has a positive unread_count
+        // This is somewhat redundant given .neq('unread_count', 0) but adds robustness
+        const anyUnread = typedData.some(conv => conv.unread_count && conv.unread_count > 0);
+        setHasUnreadMessages(anyUnread);
       } else {
         setHasUnreadMessages(false);
+        if (typedError) {
+          console.error('Error fetching unread count for Navbar:', typedError.message);
+        }
       }
     };
 
     fetchUnreadCount();
 
-    // Subscribe to changes in conversations table to update notification badge in real-time
     const conversationsChannel = supabase
       .channel('public:conversations:navbar-rls-realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'conversations', filter: `participant_ids=cs.{"${currentUser.id}"}` },
-        () => {
+        (payload) => {
+          // console.log('Navbar: Conversation change received via RLS, refetching unread count', payload);
           fetchUnreadCount();
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          // console.log('Navbar: Successfully subscribed to conversations RLS channel.');
+        } else if (err) {
+          console.error('Navbar: Conversations RLS channel subscription error:', err);
+        }
+      });
 
     return () => {
       supabase.removeChannel(conversationsChannel);
@@ -137,7 +161,6 @@ const Navbar: React.FC = () => {
                   <NotificationDot className="absolute -right-3 -top-1" />
                 )}
               </Link>
-              {/* Only show Portfolio link for editors (non-client users) */}
               {!isClient && (
                 <Link 
                   to="/portfolio" 
@@ -192,7 +215,6 @@ const Navbar: React.FC = () => {
                     )}
                   </Link>
                 </DropdownMenuItem>
-                {/* Only show Portfolio link in dropdown for editors (non-client users) */}
                 {!isClient && (
                   <DropdownMenuItem asChild>
                     <Link to="/portfolio" className="w-full cursor-pointer">My Portfolio</Link>
