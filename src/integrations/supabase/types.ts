@@ -15,18 +15,21 @@ export type Database = {
           id: string
           last_message_at: string | null
           participant_ids: string[]
+          unread_count: number | null
         }
         Insert: {
           created_at?: string
           id?: string
           last_message_at?: string | null
           participant_ids: string[]
+          unread_count?: number | null
         }
         Update: {
           created_at?: string
           id?: string
           last_message_at?: string | null
           participant_ids?: string[]
+          unread_count?: number | null
         }
         Relationships: []
       }

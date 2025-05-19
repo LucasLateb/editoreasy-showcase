@@ -71,14 +71,15 @@ const Navbar: React.FC = () => {
         .contains('participant_ids', [currentUser.id]) // currentUser.id is known to be non-null here
         .neq('unread_count', 0);
 
-      // Explicitly type data and error
-      const typedData = data as (ConversationUnreadInfo[] | null);
+      // Force cast through unknown, as TypeScript's inferred type for 'data' might be incorrect
+      // if the auto-generated Supabase types are not yet updated with the new column.
+      const typedData = data as unknown as (ConversationUnreadInfo[] | null);
       const typedError = error as (PostgrestError | null);
 
       if (!typedError && typedData && typedData.length > 0) {
         // Ensure at least one conversation actually has a positive unread_count
         // This is somewhat redundant given .neq('unread_count', 0) but adds robustness
-        const anyUnread = typedData.some(conv => conv.unread_count && conv.unread_count > 0);
+        const anyUnread = typedData.some(conv => conv && conv.unread_count && conv.unread_count > 0);
         setHasUnreadMessages(anyUnread);
       } else {
         setHasUnreadMessages(false);
@@ -96,7 +97,6 @@ const Navbar: React.FC = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'conversations', filter: `participant_ids=cs.{"${currentUser.id}"}` },
         (payload) => {
-          // console.log('Navbar: Conversation change received via RLS, refetching unread count', payload);
           fetchUnreadCount();
         }
       )
