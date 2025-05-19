@@ -3,11 +3,11 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Conversation } from '@/types/messaging';
 import { User as AuthUser } from '@/types';
-import NotificationDot from '@/components/ui/NotificationDot'; // Importer le nouveau composant
+import NotificationDot from '@/components/ui/NotificationDot';
 
 interface ConversationListItemProps {
   conversation: Conversation;
-  currentUser: AuthUser; // Retiré car non utilisé directement ici, mais peut être utile si on le rajoute
+  currentUser: AuthUser;
   onSelectConversation: (conversationId: string, otherParticipant: AuthUser | null | undefined) => void;
   isSelected: boolean;
 }
@@ -20,9 +20,18 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
   const otherParticipant = conversation.otherParticipant;
   const FallbackName = otherParticipant?.name ? otherParticipant.name.substring(0, 2).toUpperCase() : '??';
 
+  const hasUnreadMessages = conversation.unread_count && conversation.unread_count > 0;
+
+  let itemClassName = 'p-3 hover:bg-muted cursor-pointer flex items-center space-x-3';
+  if (isSelected) {
+    itemClassName += ' bg-muted';
+  } else if (hasUnreadMessages) {
+    itemClassName += ' bg-sky-100 dark:bg-sky-800';
+  }
+
   return (
     <div
-      className={`p-3 hover:bg-muted cursor-pointer flex items-center space-x-3 ${isSelected ? 'bg-muted' : ''}`}
+      className={itemClassName}
       onClick={() => onSelectConversation(conversation.id, otherParticipant)}
     >
       <Avatar>
@@ -41,7 +50,7 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
             {new Date(conversation.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
-        {conversation.unread_count && conversation.unread_count > 0 && (
+        {hasUnreadMessages && (
           <NotificationDot className="mt-1" />
         )}
       </div>
