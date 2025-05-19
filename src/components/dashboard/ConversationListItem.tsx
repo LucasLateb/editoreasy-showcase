@@ -22,18 +22,11 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
 
   const hasUnreadMessages = conversation.unread_count && conversation.unread_count > 0;
 
-  // Build className with conditional logic for proper highlighting
-  let itemClassName = 'p-3 cursor-pointer flex items-center space-x-3 border-l-4 transition-all';
-  
+  let itemClassName = 'p-3 hover:bg-muted cursor-pointer flex items-center space-x-3';
   if (isSelected) {
-    // Selected conversation gets muted background and border
-    itemClassName += ' bg-muted border-l-primary';
+    itemClassName += ' bg-muted';
   } else if (hasUnreadMessages) {
-    // Unread messages get blue highlight and border for extra emphasis
-    itemClassName += ' bg-sky-100 dark:bg-sky-800 border-l-sky-500';
-  } else {
-    // Default state with transparent border
-    itemClassName += ' hover:bg-muted border-l-transparent';
+    itemClassName += ' bg-sky-100 dark:bg-sky-800';
   }
 
   return (
@@ -46,13 +39,9 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
         <AvatarFallback>{FallbackName}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${hasUnreadMessages ? 'font-semibold' : ''}`}>
-          {otherParticipant?.name || 'Unknown User'}
-        </p>
+        <p className="text-sm font-medium truncate">{otherParticipant?.name || 'Unknown User'}</p>
         {conversation.lastMessagePreview && (
-          <p className="text-xs text-muted-foreground truncate">
-            {conversation.lastMessagePreview}
-          </p>
+          <p className="text-xs text-muted-foreground truncate">{conversation.lastMessagePreview}</p>
         )}
       </div>
       <div className="flex flex-col items-end space-y-1 justify-center">
