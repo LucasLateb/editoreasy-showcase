@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -40,15 +41,22 @@ serve(async (req: Request) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { planId, planName, planPriceInCents, successUrl, cancelUrl } = await req.json();
-    logStep("Request body parsed", { planId, planName, planPriceInCents, successUrl, cancelUrl });
+    logStep("Request body parsed (raw)", { planId, planName, planPriceInCents, successUrl, cancelUrl });
 
     if (!planId || !planName || typeof planPriceInCents !== 'number' || !successUrl || !cancelUrl) {
       logStep("Missing parameters in request body");
       throw new Error("Missing or invalid required parameters: planId (string), planName (string), planPriceInCents (number), successUrl (string), cancelUrl (string).");
     }
 
+    const roundedPlanPriceInCents = Math.round(planPriceInCents);
+    logStep("Request body parsed (rounded price)", { planId, planName, planPriceInCents: roundedPlanPriceInCents, successUrl, cancelUrl });
+
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2023-10-16",
+      // Enabling telemetry helps Stripe improve their library.
+      // You can disable it if you prefer by setting telemetry: false
+      telemetry: true, 
     });
 
     logStep("Looking up Stripe customer by email", { email: user.email });
@@ -70,20 +78,20 @@ serve(async (req: Request) => {
       line_items: [
         {
           price_data: {
-            currency: "eur",
+            currency: "eur", // Assuming currency is EUR, adjust if necessary
             product_data: {
               name: planName,
-              metadata: { plan_id: planId } //  Stripe convention is often lowercase with underscores
+              metadata: { plan_id: planId }
             },
-            unit_amount: planPriceInCents,
+            unit_amount: roundedPlanPriceInCents, // Use the rounded price
             recurring: { interval: "month" },
           },
           quantity: 1,
         },
       ],
       metadata: {
-        user_id: user.id, // Supabase user ID
-        plan_id: planId,   // Your app's plan ID
+        user_id: user.id,
+        plan_id: planId,
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
@@ -95,10 +103,25 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (error) {
-    logStep("Error in function", { message: error.message, stack: error.stack });
-    return new Response(JSON.stringify({ error: error.message }), {
+    logStep("Error in function", { message: error.message, stack: error.stack, type: error.type, code: error.code, statusCode: error.statusCode });
+    
+    let statusCode = 500;
+    let errorMessage = error.message || "An unknown error occurred while creating checkout session.";
+
+    if (error.type === 'StripeInvalidRequestError') {
+      statusCode = error.statusCode || 400; // Stripe often sends statusCode with errors
+      errorMessage = `Stripe API Error: ${error.message}`;
+    } else if (errorMessage === "User not authenticated.") {
+      statusCode = 401;
+    } else if (errorMessage === "User email not found." || errorMessage.startsWith("Missing or invalid required parameters")) {
+      statusCode = 400;
+    }
+    // For other errors, default to 500
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: statusCode,
     });
   }
 });
+
