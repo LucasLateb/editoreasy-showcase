@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Video, categories } from '@/types';
+import { Video, categories, SubscriptionPlan, subscriptionPlans } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
@@ -18,6 +18,7 @@ import MessagingTab from '@/components/dashboard/MessagingTab';
 import PlanTab from '@/components/dashboard/PlanTab';
 import FavoriteEditorsTab from '@/components/dashboard/FavoriteEditorsTab';
 import NotificationDot from '@/components/ui/NotificationDot';
+import { toast as sonnerToast } from 'sonner';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -244,7 +245,7 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
 };
 
 const Dashboard: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, fetchAndUpdateUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
@@ -263,6 +264,8 @@ const Dashboard: React.FC = () => {
 
   const searchParams = new URLSearchParams(location.search);
   const activeTabFromUrl = searchParams.get('tab');
+  const checkoutStatus = searchParams.get('checkout_status');
+  const planIdFromUrl = searchParams.get('plan_id');
   const isClient = currentUser?.role === 'client';
   
   const defaultTab = activeTabFromUrl || (isClient ? 'messaging' : 'videos');
@@ -274,12 +277,41 @@ const Dashboard: React.FC = () => {
         fetchPortfolioSettings()
       ]);
     } else if (currentUser) {
-      // For clients, or if not editor, just stop loading
-      fetchPortfolioSettings(); // Clients might still have portfolio settings if they were editors before
+      fetchPortfolioSettings(); 
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isClient]);
+
+  useEffect(() => {
+    const handleCheckoutStatus = async () => {
+      if (checkoutStatus && currentUser?.id) {
+        if (checkoutStatus === 'success' && planIdFromUrl) {
+          const planName = subscriptionPlans.find(p => p.id === planIdFromUrl)?.name || 'new plan';
+          sonnerToast.info(`Processing your ${planName} subscription...`);
+          try {
+            const { error: invokeError } = await supabase.functions.invoke('check-subscription');
+            if (invokeError) throw invokeError;
+
+            // Refresh user data from AuthContext
+            await fetchAndUpdateUser(currentUser.id);
+            
+            sonnerToast.success(`Successfully subscribed to ${planName}! Your plan has been updated.`);
+          } catch (error) {
+            console.error('Error finalizing subscription:', error);
+            sonnerToast.error('Failed to update subscription status. Please refresh or contact support.');
+          }
+        } else if (checkoutStatus === 'cancel') {
+          sonnerToast.info('Subscription process was canceled.');
+        }
+        // Clean URL
+        navigate('/dashboard?tab=plan', { replace: true });
+      }
+    };
+
+    handleCheckoutStatus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutStatus, planIdFromUrl, currentUser, fetchAndUpdateUser, navigate]);
   
   const fetchPortfolioSettings = async () => {
     if (!currentUser?.id) return;
@@ -300,8 +332,6 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching portfolio settings:', error);
-      // Do not toast here for client role, as it might be confusing.
-      // Only toast for editor role if it fails.
       if (!isClient) {
         toast({
           title: "Error loading showreel",
@@ -563,7 +593,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-secondary">
-      <Navbar /> {/* Navbar cannot be modified to show notification dot here due to file permissions */}
+      <Navbar />
       
       <main className="pt-28 pb-16 px-4 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
