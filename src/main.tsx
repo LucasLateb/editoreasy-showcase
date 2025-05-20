@@ -2,6 +2,10 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { handleModuleLoadingError } from './utils/errorBoundary';
+
+// Initialiser le gestionnaire d'erreurs de chargement de module
+handleModuleLoadingError();
 
 // Find the root element
 const rootElement = document.getElementById("root");
