@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   updateAvatar: (avatarUrl: string) => Promise<void>;
+  fetchAndUpdateUser: (userId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -286,6 +286,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchAndUpdateUser = async (userId: string): Promise<void> => {
+    if (!userId) {
+      console.warn('fetchAndUpdateUser called without userId');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile for update:', profileError);
+        // We don't necessarily throw or clear user here,
+        // to avoid logging out the user if the profile fetch fails temporarily.
+        // The UI relying on currentUser should handle its absence or staleness.
+        return; 
+      }
+
+      if (profileData) {
+        const user: User = {
+          id: profileData.id,
+          name: profileData.name,
+          email: profileData.email, // Assumes email is on profiles table
+          avatarUrl: profileData.avatar_url,
+          bio: profileData.bio,
+          subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
+          likes: profileData.likes,
+          createdAt: new Date(profileData.created_at),
+          role: profileData.role || 'monteur'
+        };
+        setCurrentUser(user);
+      } else {
+        console.warn(`Profile not found for user ID during update: ${userId}`);
+        // setCurrentUser(null); // Or, keep existing user if profile vanishes?
+      }
+    } catch (error) {
+      console.error('Failed to fetch and update user:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     loading,
@@ -293,7 +338,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     isAuthenticated: !!currentUser,
-    updateAvatar
+    updateAvatar,
+    fetchAndUpdateUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
