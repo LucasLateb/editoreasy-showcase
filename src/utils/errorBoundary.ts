@@ -1,4 +1,3 @@
-
 // Improved module error handling with retries and more robust recovery
 
 // Function to handle module loading errors
@@ -111,7 +110,9 @@ export const handleModuleLoadingError = () => {
             console.error('Error clearing cache:', e);
           }
           
-          window.location.reload(true); // Force reload from server
+          // Use cache-busting URL modification instead of window.location.reload(true)
+          window.location.href = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 
+            'cache_bust=' + Date.now();
         }, 500);
       }
     }
