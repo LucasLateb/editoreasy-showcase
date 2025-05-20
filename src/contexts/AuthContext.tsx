@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'; // shadcn toast for internal context messages
 
 interface AuthContextType {
   currentUser: User | null;
@@ -12,6 +11,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   updateAvatar: (avatarUrl: string) => Promise<void>;
+  refreshCurrentUserSubscription: () => Promise<void>; // Nouvelle fonction
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,7 +27,34 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { toast } = useToast(); // shadcn toast
+
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+    if (data) {
+      return {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        avatarUrl: data.avatar_url,
+        bio: data.bio,
+        subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
+        likes: data.likes,
+        createdAt: new Date(data.created_at),
+        role: data.role || 'monteur'
+      };
+    }
+    return null;
+  };
 
   useEffect(() => {
     // Check if we're on a password reset page with recovery token
@@ -36,39 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);
+      const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
+                                 window.location.hash.includes('type=recovery');
       if (session) {
-        // Skip profile fetch if we're in password reset flow
         if (isPasswordResetFlow) {
           setCurrentUser(null);
           setLoading(false);
           return;
         }
-
-        // Fetch the user profile from our profiles table
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          setCurrentUser(null);
-        } else if (data) {
-          // Convert data to match our User type
-          const user: User = {
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            avatarUrl: data.avatar_url,
-            bio: data.bio,
-            subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
-            likes: data.likes,
-            createdAt: new Date(data.created_at),
-            role: data.role || 'monteur'
-          };
-          setCurrentUser(user);
-        }
+        const userProfile = await fetchUserProfile(session.user.id);
+        setCurrentUser(userProfile);
       } else {
         setCurrentUser(null);
       }
@@ -77,38 +82,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check current session on mount
     const checkSession = async () => {
-      // Skip session check if we're in password reset flow
+      setLoading(true);
+      const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
+                                 window.location.hash.includes('type=recovery');
       if (isPasswordResetFlow) {
         setLoading(false);
         return;
       }
-
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Fetch the user profile
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user profile:', error);
-        } else if (data) {
-          // Convert data to match our User type
-          const user: User = {
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            avatarUrl: data.avatar_url,
-            bio: data.bio,
-            subscriptionTier: (data.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
-            likes: data.likes,
-            createdAt: new Date(data.created_at),
-            role: data.role || 'monteur'
-          };
-          setCurrentUser(user);
-        }
+        const userProfile = await fetchUserProfile(session.user.id);
+        setCurrentUser(userProfile);
       }
       setLoading(false);
     };
@@ -132,33 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         throw error;
       }
+      if (!data.user) throw new Error("Login failed, no user data returned.");
 
-      // Fetch user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      // Convert to our User type
-      const user: User = {
-        id: profileData.id,
-        name: profileData.name,
-        email: profileData.email,
-        avatarUrl: profileData.avatar_url,
-        bio: profileData.bio,
-        subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
-        likes: profileData.likes,
-        createdAt: new Date(profileData.created_at),
-        role: profileData.role || 'monteur'
-      };
-
-      setCurrentUser(user);
-      return user;
+      const userProfile = await fetchUserProfile(data.user.id);
+      if (!userProfile) throw new Error("Failed to fetch profile after login.");
+      
+      setCurrentUser(userProfile);
+      return userProfile;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -177,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             name,
-            role // Ensure the role is passed correctly
+            role
           },
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
@@ -190,47 +154,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!data.user) {
         throw new Error('No user returned from signUp');
       }
+      
+      // The trigger handle_new_user should create the profile. Let's try to fetch it.
+      // Add a small delay to allow the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 1000)); 
+      
+      const userProfile = await fetchUserProfile(data.user.id);
 
-      // At this point the user has been created and our trigger should have created a profile
-      // Let's fetch it to confirm
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        // If we can't find the profile, it might be because the trigger hasn't run yet
-        // Let's create a temporary user object from what we know
-        const user: User = {
+      if (userProfile) {
+        setCurrentUser(userProfile);
+        return userProfile;
+      } else {
+        // Fallback if profile not found immediately (e.g. trigger delay)
+        console.warn("Profile not immediately found after registration, creating temporary user object.");
+        const tempUser: User = {
           id: data.user.id,
           name: name,
           email: email,
           subscriptionTier: 'free' as const,
           likes: 0,
           createdAt: new Date(),
-          role: role // Use the provided role
+          role: role
         };
-        
-        setCurrentUser(user);
-        return user;
+        setCurrentUser(tempUser);
+        return tempUser;
       }
-
-      // Convert to our User type
-      const user: User = {
-        id: profileData.id,
-        name: profileData.name,
-        email: profileData.email,
-        avatarUrl: profileData.avatar_url,
-        bio: profileData.bio,
-        subscriptionTier: (profileData.subscription_tier || 'free') as 'free' | 'premium' | 'pro',
-        likes: profileData.likes,
-        createdAt: new Date(profileData.created_at),
-        role: profileData.role || role // Use the profile role or the provided role
-      };
-      
-      setCurrentUser(user);
-      return user;
     } catch (error) {
       console.error('Register error:', error);
       throw error;
@@ -268,7 +216,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      // Update the current user state
       setCurrentUser(prev => prev ? {...prev, avatarUrl} : null);
       
       toast({
@@ -286,6 +233,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshCurrentUserSubscription = async () => {
+    if (!currentUser) {
+      console.warn("refreshCurrentUserSubscription called without a current user.");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Call check-subscription to ensure Stripe data is synced to our DB
+      const { error: functionError } = await supabase.functions.invoke('check-subscription');
+      if (functionError) {
+        throw functionError;
+      }
+
+      // Re-fetch the user profile from our database as check-subscription updates it
+      const updatedProfile = await fetchUserProfile(currentUser.id);
+      if (updatedProfile) {
+        setCurrentUser(updatedProfile);
+      } else {
+        // This case should ideally not happen if check-subscription and fetchUserProfile are robust
+        console.error("Failed to fetch profile after subscription refresh.");
+        // Potentially revert to old user state or handle error more gracefully
+      }
+    } catch (error) {
+      console.error('Error refreshing user subscription:', error);
+      toast({
+        title: "Subscription Update Failed",
+        description: "Could not update your subscription details. Please try refreshing the page.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     loading,
@@ -293,7 +274,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     isAuthenticated: !!currentUser,
-    updateAvatar
+    updateAvatar,
+    refreshCurrentUserSubscription, // Exposer la nouvelle fonction
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check, Settings } from 'lucide-react';
 import { subscriptionPlans, SubscriptionPlan } from '@/types';
@@ -9,20 +10,45 @@ import { supabase } from '@/integrations/supabase/client';
 import { FunctionsHttpError } from '@supabase/functions-js';
 
 const PlanTab: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshCurrentUserSubscription } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const getErrorMessage = async (error: any, defaultMessage: string): Promise<string> => {
     if (error instanceof FunctionsHttpError) {
-      // Check if context has a more specific error message
       if (error.context && typeof error.context === 'object' && 'error' in error.context && typeof error.context.error === 'string') {
         return error.context.error;
       }
-      return error.message; // Fallback to the general FunctionsHttpError message
+      return error.message; 
     } else if (error && typeof error === 'object' && 'message' in error) {
       return String(error.message);
     }
     return defaultMessage;
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const checkoutStatus = params.get('checkout_status');
+    const planId = params.get('plan_id');
+
+    if (checkoutStatus === 'success' && planId) {
+      const plan = subscriptionPlans.find(p => p.id === planId);
+      const planName = plan ? plan.name : 'votre nouveau plan';
+      
+      toast.success(`Abonnement réussi ! Votre ${planName} est maintenant actif.`);
+      
+      refreshCurrentUserSubscription().catch(err => {
+        console.error("Error during post-checkout refresh:", err);
+        // Toast d'erreur déjà géré dans refreshCurrentUserSubscription
+      });
+
+      // Nettoyer les paramètres de l'URL
+      navigate(location.pathname, { replace: true });
+    } else if (checkoutStatus === 'cancel') {
+      toast.info('Le processus d\'abonnement a été annulé.');
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate, refreshCurrentUserSubscription]);
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!currentUser) {
@@ -65,7 +91,7 @@ const PlanTab: React.FC = () => {
       toast.dismiss(loadingToastId);
       const message = await getErrorMessage(error, 'Could not process your subscription request.');
       toast.error(`Failed to create checkout session: ${message}`);
-      console.error('Error creating checkout session:', error); // Logs the whole error object
+      console.error('Error creating checkout session:', error);
       if (error instanceof FunctionsHttpError) {
         console.error('FunctionsHttpError message for create-checkout:', error.message);
         console.error('FunctionsHttpError context for create-checkout:', error.context);
@@ -102,7 +128,7 @@ const PlanTab: React.FC = () => {
       toast.dismiss(loadingToastId);
       const message = await getErrorMessage(error, 'Could not retrieve customer portal URL.');
       toast.error(`Failed to open subscription management: ${message}`);
-      console.error('Error redirecting to customer portal:', error); // Logs the whole error object
+      console.error('Error redirecting to customer portal:', error);
       if (error instanceof FunctionsHttpError) {
         console.error('FunctionsHttpError message for customer-portal:', error.message);
         console.error('FunctionsHttpError context for customer-portal:', error.context);
