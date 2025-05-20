@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { FunctionsHttpError } from '@supabase/functions-js'; // Import FunctionsHttpError
+import { FunctionsHttpError } from '@supabase/functions-js';
 
 const PlanTab: React.FC = () => {
   const { currentUser } = useAuth();
@@ -19,11 +19,12 @@ const PlanTab: React.FC = () => {
           return errJson.error;
         }
       } catch (parseError) {
-        // If parsing fails, fall back to default message or error.message
         console.error("Failed to parse error response from function:", parseError);
       }
+    } else if (error && typeof error === 'object' && 'message' in error) {
+        return String(error.message);
     }
-    return error.message || defaultMessage;
+    return defaultMessage;
   };
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
@@ -65,12 +66,16 @@ const PlanTab: React.FC = () => {
       }
     } catch (error: any) {
       toast.dismiss(loadingToastId);
-      const message = await getErrorMessage(error, 'Could not retrieve checkout session URL.');
+      const message = await getErrorMessage(error, 'Could not process your subscription request.');
       toast.error(`Failed to create checkout session: ${message}`);
       console.error('Error creating checkout session:', error);
       if (error instanceof FunctionsHttpError) {
         console.error('FunctionsHttpError context for create-checkout:', error.context);
         console.error('FunctionsHttpError response for create-checkout:', error.response);
+        const responseText = await error.response.text();
+        console.error('FunctionsHttpError response text for create-checkout:', responseText);
+      } else {
+        console.error('Non-FunctionsHttpError details for create-checkout:', JSON.stringify(error, null, 2));
       }
     }
   };
@@ -90,13 +95,12 @@ const PlanTab: React.FC = () => {
       });
 
       if (error) {
-        throw error; // This will be caught by the catch block
+        throw error;
       }
 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        // This case might not be reachable if error is thrown for non-URL responses
         throw new Error('Could not retrieve customer portal URL.');
       }
     } catch (error: any) {
@@ -107,6 +111,10 @@ const PlanTab: React.FC = () => {
       if (error instanceof FunctionsHttpError) {
         console.error('FunctionsHttpError context for customer-portal:', error.context);
         console.error('FunctionsHttpError response for customer-portal:', error.response);
+        const responseText = await error.response.text();
+        console.error('FunctionsHttpError response text for customer-portal:', responseText);
+      } else {
+        console.error('Non-FunctionsHttpError details for customer-portal:', JSON.stringify(error, null, 2));
       }
     }
   };

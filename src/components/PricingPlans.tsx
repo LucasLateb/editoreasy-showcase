@@ -23,8 +23,10 @@ const PricingPlans: React.FC = () => {
       } catch (parseError) {
         console.error("Failed to parse error response from function:", parseError);
       }
+    } else if (error && typeof error === 'object' && 'message' in error) {
+        return String(error.message);
     }
-    return error.message || defaultMessage;
+    return defaultMessage;
   };
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
@@ -66,12 +68,16 @@ const PricingPlans: React.FC = () => {
       }
     } catch (error: any) {
       toast.dismiss(loadingToastId);
-      const message = await getErrorMessage(error, 'Could not retrieve checkout session URL.');
+      const message = await getErrorMessage(error, 'Could not process your subscription request.');
       toast.error(`Failed to create checkout session: ${message}`);
       console.error('Error creating checkout session:', error);
       if (error instanceof FunctionsHttpError) {
         console.error('FunctionsHttpError context for create-checkout:', error.context);
         console.error('FunctionsHttpError response for create-checkout:', error.response);
+        const responseText = await error.response.text();
+        console.error('FunctionsHttpError response text for create-checkout:', responseText);
+      } else {
+        console.error('Non-FunctionsHttpError details for create-checkout:', JSON.stringify(error, null, 2));
       }
     }
   };
