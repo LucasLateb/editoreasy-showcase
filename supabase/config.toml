@@ -1,1 +1,11 @@
+
 project_id = "zaitoudikrddbzsfukzv"
+
+[functions.create-checkout]
+  verify_jwt = true # Nécessite que l'utilisateur soit authentifié
+
+[functions.check-subscription]
+  verify_jwt = true # Nécessite que l'utilisateur soit authentifié
+
+[functions.customer-portal]
+  verify_jwt = true # Nécessite que l'utilisateur soit authentifié
