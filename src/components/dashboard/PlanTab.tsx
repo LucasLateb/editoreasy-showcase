@@ -6,9 +6,25 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError } from '@supabase/functions-js'; // Import FunctionsHttpError
 
 const PlanTab: React.FC = () => {
   const { currentUser } = useAuth();
+
+  const getErrorMessage = async (error: any, defaultMessage: string): Promise<string> => {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const errJson = await error.response.json();
+        if (errJson.error) {
+          return errJson.error;
+        }
+      } catch (parseError) {
+        // If parsing fails, fall back to default message or error.message
+        console.error("Failed to parse error response from function:", parseError);
+      }
+    }
+    return error.message || defaultMessage;
+  };
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!currentUser) {
@@ -26,8 +42,8 @@ const PlanTab: React.FC = () => {
     const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
     const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
 
+    const loadingToastId = toast.loading('Redirecting to checkout...');
     try {
-      toast.loading('Redirecting to checkout...');
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           planId: plan.id,
@@ -48,10 +64,14 @@ const PlanTab: React.FC = () => {
         throw new Error('Could not retrieve checkout session URL.');
       }
     } catch (error: any) {
-      toast.dismiss();
-      toast.error(`Failed to create checkout session: ${error.message}`);
-      console.error('Error creating checkout session:', error); // Log the full error object
-      console.error('Detailed error structure for create-checkout:', JSON.stringify(error, null, 2));
+      toast.dismiss(loadingToastId);
+      const message = await getErrorMessage(error, 'Could not retrieve checkout session URL.');
+      toast.error(`Failed to create checkout session: ${message}`);
+      console.error('Error creating checkout session:', error);
+      if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError context for create-checkout:', error.context);
+        console.error('FunctionsHttpError response for create-checkout:', error.response);
+      }
     }
   };
 
@@ -63,26 +83,31 @@ const PlanTab: React.FC = () => {
 
     const returnUrl = `${window.location.origin}/dashboard?tab=plan`;
 
+    const loadingToastId = toast.loading('Redirecting to subscription management...');
     try {
-      toast.loading('Redirecting to subscription management...');
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         body: { returnUrl },
       });
 
       if (error) {
-        throw error;
+        throw error; // This will be caught by the catch block
       }
 
       if (data.url) {
         window.location.href = data.url;
       } else {
+        // This case might not be reachable if error is thrown for non-URL responses
         throw new Error('Could not retrieve customer portal URL.');
       }
     } catch (error: any) {
-      toast.dismiss();
-      toast.error(`Failed to open subscription management: ${error.message}`);
-      console.error('Error redirecting to customer portal:', error); // Log the full error object
-      console.error('Detailed error structure for customer-portal:', JSON.stringify(error, null, 2));
+      toast.dismiss(loadingToastId);
+      const message = await getErrorMessage(error, 'Could not retrieve customer portal URL.');
+      toast.error(`Failed to open subscription management: ${message}`);
+      console.error('Error redirecting to customer portal:', error);
+      if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError context for customer-portal:', error.context);
+        console.error('FunctionsHttpError response for customer-portal:', error.response);
+      }
     }
   };
 

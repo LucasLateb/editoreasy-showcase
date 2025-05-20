@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,10 +7,25 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { FunctionsHttpError } from '@supabase/functions-js';
 
 const PricingPlans: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+
+  const getErrorMessage = async (error: any, defaultMessage: string): Promise<string> => {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const errJson = await error.response.json();
+        if (errJson.error) {
+          return errJson.error;
+        }
+      } catch (parseError) {
+        console.error("Failed to parse error response from function:", parseError);
+      }
+    }
+    return error.message || defaultMessage;
+  };
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (plan.id === 'free') {
@@ -29,8 +43,8 @@ const PricingPlans: React.FC = () => {
     const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
     const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
 
+    const loadingToastId = toast.loading('Redirecting to checkout...');
     try {
-      toast.loading('Redirecting to checkout...');
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           planId: plan.id,
@@ -51,9 +65,14 @@ const PricingPlans: React.FC = () => {
         throw new Error('Could not retrieve checkout session URL.');
       }
     } catch (error: any) {
-      toast.dismiss();
-      toast.error(`Failed to create checkout session: ${error.message}`);
+      toast.dismiss(loadingToastId);
+      const message = await getErrorMessage(error, 'Could not retrieve checkout session URL.');
+      toast.error(`Failed to create checkout session: ${message}`);
       console.error('Error creating checkout session:', error);
+      if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError context for create-checkout:', error.context);
+        console.error('FunctionsHttpError response for create-checkout:', error.response);
+      }
     }
   };
 
@@ -130,4 +149,3 @@ const PricingPlans: React.FC = () => {
 };
 
 export default PricingPlans;
-
