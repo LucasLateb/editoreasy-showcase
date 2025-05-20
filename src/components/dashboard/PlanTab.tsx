@@ -13,16 +13,13 @@ const PlanTab: React.FC = () => {
 
   const getErrorMessage = async (error: any, defaultMessage: string): Promise<string> => {
     if (error instanceof FunctionsHttpError) {
-      try {
-        const errJson = await error.response.json();
-        if (errJson.error) {
-          return errJson.error;
-        }
-      } catch (parseError) {
-        console.error("Failed to parse error response from function:", parseError);
+      // Check if context has a more specific error message
+      if (error.context && typeof error.context === 'object' && 'error' in error.context && typeof error.context.error === 'string') {
+        return error.context.error;
       }
+      return error.message; // Fallback to the general FunctionsHttpError message
     } else if (error && typeof error === 'object' && 'message' in error) {
-        return String(error.message);
+      return String(error.message);
     }
     return defaultMessage;
   };
@@ -68,12 +65,10 @@ const PlanTab: React.FC = () => {
       toast.dismiss(loadingToastId);
       const message = await getErrorMessage(error, 'Could not process your subscription request.');
       toast.error(`Failed to create checkout session: ${message}`);
-      console.error('Error creating checkout session:', error);
+      console.error('Error creating checkout session:', error); // Logs the whole error object
       if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError message for create-checkout:', error.message);
         console.error('FunctionsHttpError context for create-checkout:', error.context);
-        console.error('FunctionsHttpError response for create-checkout:', error.response);
-        const responseText = await error.response.text();
-        console.error('FunctionsHttpError response text for create-checkout:', responseText);
       } else {
         console.error('Non-FunctionsHttpError details for create-checkout:', JSON.stringify(error, null, 2));
       }
@@ -107,12 +102,10 @@ const PlanTab: React.FC = () => {
       toast.dismiss(loadingToastId);
       const message = await getErrorMessage(error, 'Could not retrieve customer portal URL.');
       toast.error(`Failed to open subscription management: ${message}`);
-      console.error('Error redirecting to customer portal:', error);
+      console.error('Error redirecting to customer portal:', error); // Logs the whole error object
       if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError message for customer-portal:', error.message);
         console.error('FunctionsHttpError context for customer-portal:', error.context);
-        console.error('FunctionsHttpError response for customer-portal:', error.response);
-        const responseText = await error.response.text();
-        console.error('FunctionsHttpError response text for customer-portal:', responseText);
       } else {
         console.error('Non-FunctionsHttpError details for customer-portal:', JSON.stringify(error, null, 2));
       }

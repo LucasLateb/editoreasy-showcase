@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { subscriptionPlans, SubscriptionPlan } from '@/types';
@@ -15,16 +15,13 @@ const PricingPlans: React.FC = () => {
 
   const getErrorMessage = async (error: any, defaultMessage: string): Promise<string> => {
     if (error instanceof FunctionsHttpError) {
-      try {
-        const errJson = await error.response.json();
-        if (errJson.error) {
-          return errJson.error;
-        }
-      } catch (parseError) {
-        console.error("Failed to parse error response from function:", parseError);
+      // Check if context has a more specific error message
+      if (error.context && typeof error.context === 'object' && 'error' in error.context && typeof error.context.error === 'string') {
+        return error.context.error;
       }
+      return error.message; // Fallback to the general FunctionsHttpError message
     } else if (error && typeof error === 'object' && 'message' in error) {
-        return String(error.message);
+      return String(error.message);
     }
     return defaultMessage;
   };
@@ -70,12 +67,10 @@ const PricingPlans: React.FC = () => {
       toast.dismiss(loadingToastId);
       const message = await getErrorMessage(error, 'Could not process your subscription request.');
       toast.error(`Failed to create checkout session: ${message}`);
-      console.error('Error creating checkout session:', error);
+      console.error('Error creating checkout session:', error); // Logs the whole error object
       if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError message for create-checkout:', error.message);
         console.error('FunctionsHttpError context for create-checkout:', error.context);
-        console.error('FunctionsHttpError response for create-checkout:', error.response);
-        const responseText = await error.response.text();
-        console.error('FunctionsHttpError response text for create-checkout:', responseText);
       } else {
         console.error('Non-FunctionsHttpError details for create-checkout:', JSON.stringify(error, null, 2));
       }
