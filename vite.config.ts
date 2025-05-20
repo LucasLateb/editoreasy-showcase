@@ -20,43 +20,6 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    include: [
-      'react', 
-      'react-dom', 
-      'react-router-dom',
-      '@tanstack/react-query',
-      'lucide-react',
-      '@radix-ui/react-slot',
-      'clsx',
-      'tailwind-merge',
-      'sonner',
-      'recharts'
-    ],
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@radix-ui') || id.includes('lucide-react') || id.includes('cmdk') || id.includes('sonner')) {
-              return 'vendor-ui';
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-query';
-            }
-            if (id.includes('recharts')) {
-              return 'vendor-charts';
-            }
-            // Catch-all for other node_modules
-            return 'vendor-others';
-          }
-        },
-      },
-    },
-  },
+  // Les sections optimizeDeps et build ont été temporairement supprimées pour le débogage.
 }));
 
