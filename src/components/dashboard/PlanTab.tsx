@@ -1,18 +1,17 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Settings } from 'lucide-react';
 import { subscriptionPlans, SubscriptionPlan } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client'; // Added supabase import
+import { supabase } from '@/integrations/supabase/client';
 
 const PlanTab: React.FC = () => {
   const { currentUser } = useAuth();
 
-  const handleSubscribe = async (plan: SubscriptionPlan) => { // Changed planId to plan object
-    if (!currentUser) { // Should not happen in dashboard, but good check
+  const handleSubscribe = async (plan: SubscriptionPlan) => {
+    if (!currentUser) {
       toast.error('User not authenticated. Please re-login.');
       return;
     }
@@ -24,7 +23,6 @@ const PlanTab: React.FC = () => {
     }
 
     const planPriceInCents = plan.price * 100;
-    // Success/Cancel URLs could point back to the dashboard or a specific confirmation page
     const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
     const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
 
@@ -41,32 +39,84 @@ const PlanTab: React.FC = () => {
       });
 
       if (error) {
-        throw error; // Supabase client throws on error, this will be caught
+        throw error;
       }
 
       if (data.url) {
-        window.location.href = data.url; // Redirect to Stripe checkout
+        window.location.href = data.url;
       } else {
         throw new Error('Could not retrieve checkout session URL.');
       }
     } catch (error: any) {
-      toast.dismiss(); // Dismiss loading toast
+      toast.dismiss();
       toast.error(`Failed to create checkout session: ${error.message}`);
       console.error('Error creating checkout session:', error);
     }
   };
 
+  const handleManageSubscription = async () => {
+    if (!currentUser) {
+      toast.error('User not authenticated. Please re-login.');
+      return;
+    }
+
+    const returnUrl = `${window.location.origin}/dashboard?tab=plan`;
+
+    try {
+      toast.loading('Redirecting to subscription management...');
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        body: { returnUrl },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Could not retrieve customer portal URL.');
+      }
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error(`Failed to open subscription management: ${error.message}`);
+      console.error('Error redirecting to customer portal:', error);
+    }
+  };
+
   const currentPlanId = currentUser?.subscriptionTier || 'free';
+
+  let displayedPlans: SubscriptionPlan[] = subscriptionPlans;
+  if (currentPlanId === 'premium') {
+    displayedPlans = subscriptionPlans.filter(plan => plan.id !== 'free');
+  } else if (currentPlanId === 'pro') {
+    displayedPlans = subscriptionPlans.filter(plan => plan.id === 'pro');
+  }
+
+  const showManageButton = currentPlanId === 'premium' || currentPlanId === 'pro';
 
   return (
     <div>
       <div className="mb-8">
         <h2 className="text-2xl font-semibold">Subscription Plans</h2>
-        <p className="text-muted-foreground">Choose the perfect plan for your video editing needs</p>
+        <p className="text-muted-foreground">Choose or manage your plan for video editing needs</p>
       </div>
 
+      {showManageButton && (
+        <div className="mb-8 p-6 border rounded-lg bg-card">
+          <h3 className="text-lg font-semibold mb-2">Manage Your Subscription</h3>
+          <p className="text-muted-foreground mb-4">
+            You can manage your current subscription, update payment methods, or view invoices through our secure portal.
+          </p>
+          <Button onClick={handleManageSubscription} variant="outline">
+            <Settings className="mr-2 h-4 w-4" />
+            Manage Plan
+          </Button>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-3 gap-8">
-        {subscriptionPlans.map((plan) => {
+        {displayedPlans.map((plan) => {
           const isCurrentPlan = currentPlanId === plan.id;
           
           return (
@@ -74,11 +124,11 @@ const PlanTab: React.FC = () => {
               key={plan.id}
               className={cn(
                 "rounded-2xl border p-8 flex flex-col h-full",
-                plan.popular ? "shadow-lg ring-2 ring-primary relative z-10 bg-background" : "bg-background/50",
+                plan.popular && currentPlanId !== 'pro' ? "shadow-lg ring-2 ring-primary relative z-10 bg-background" : "bg-background/50",
                 isCurrentPlan && "border-primary/50 bg-primary/5"
               )}
             >
-              {plan.popular && (
+              {plan.popular && currentPlanId !== 'pro' && plan.id !== currentPlanId && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground rounded-full px-4 py-1 text-sm font-medium">
                   Most Popular
                 </div>
@@ -117,18 +167,18 @@ const PlanTab: React.FC = () => {
               
               <div className="mt-8">
                 <Button
-                  onClick={() => handleSubscribe(plan)} // Pass the whole plan object
+                  onClick={() => handleSubscribe(plan)}
                   className={cn(
                     "w-full", 
                     isCurrentPlan 
                       ? "bg-green-600 hover:bg-green-700 text-white cursor-default"
-                      : plan.popular 
+                      : plan.popular && currentPlanId !== 'pro'
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                         : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   )}
-                  disabled={isCurrentPlan && plan.id !== 'free'} // Allow 'subscribing' to free even if current
+                  disabled={isCurrentPlan && plan.id !== 'free'}
                 >
-                  {isCurrentPlan ? 'Current Plan' : (plan.id === 'free' ? 'Switch to Free' : 'Subscribe')}
+                  {isCurrentPlan ? 'Current Plan' : (plan.id === 'free' ? 'Switch to Free' : `Subscribe to ${plan.name}`)}
                 </Button>
               </div>
             </div>
@@ -140,4 +190,3 @@ const PlanTab: React.FC = () => {
 };
 
 export default PlanTab;
-
