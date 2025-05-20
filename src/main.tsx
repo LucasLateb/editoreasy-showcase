@@ -2,10 +2,6 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { handleModuleLoadingError } from './utils/errorBoundary';
-
-// Initialize module error handler before anything else
-handleModuleLoadingError();
 
 // Find the root element
 const rootElement = document.getElementById("root");
@@ -18,7 +14,7 @@ if (rootElement) {
     
     // Add event listener for unhandled errors
     window.addEventListener('error', (event) => {
-      console.error('Unhandled error:', event.error || event.message);
+      console.error('Unhandled error:', event.error);
     });
 
     // Add event listener for unhandled promise rejections
@@ -50,8 +46,8 @@ if (rootElement) {
       <div style="padding: 20px; text-align: center;">
         <h2>Something went wrong</h2>
         <p>The application couldn't be loaded. Please try refreshing the page.</p>
-        <button onclick="localStorage.clear(); sessionStorage.clear(); location.reload(true);" style="padding: 8px 16px; margin-top: 16px;">
-          Clear Cache & Refresh
+        <button onclick="location.reload()" style="padding: 8px 16px; margin-top: 16px;">
+          Refresh Page
         </button>
       </div>
     `;
