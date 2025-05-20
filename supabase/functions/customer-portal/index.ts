@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -54,8 +55,6 @@ serve(async (req: Request) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
       logStep("No Stripe customer found for this user", { email: user.email });
-      // It's possible a user might try to access portal before ever subscribing
-      // Depending on UX, you might redirect them to pricing or show an error.
       throw new Error("No Stripe customer account found for this user. Please subscribe to a plan first.");
     }
     const customerId = customers.data[0].id;
@@ -74,9 +73,23 @@ serve(async (req: Request) => {
     });
   } catch (error) {
     logStep("Error in function", { message: error.message, stack: error.stack });
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    let statusCode = 500;
+    const errorMessage = error.message || "An unknown error occurred.";
+
+    if (errorMessage === "No Stripe customer account found for this user. Please subscribe to a plan first.") {
+      statusCode = 404; // Not Found - customer does not exist for Stripe
+    } else if (errorMessage === "User not authenticated.") {
+      statusCode = 401; // Unauthorized
+    } else if (errorMessage === "User email is required for Stripe customer portal." || errorMessage === "Missing required parameter: returnUrl.") {
+      statusCode = 400; // Bad Request - missing parameters or invalid input
+    }
+    // For other errors, it remains 500 (Internal Server Error)
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: statusCode,
     });
   }
 });
+
