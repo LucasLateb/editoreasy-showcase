@@ -50,7 +50,8 @@ const PlanTab: React.FC = () => {
     } catch (error: any) {
       toast.dismiss();
       toast.error(`Failed to create checkout session: ${error.message}`);
-      console.error('Error creating checkout session:', error);
+      console.error('Error creating checkout session:', error); // Log the full error object
+      console.error('Detailed error structure for create-checkout:', JSON.stringify(error, null, 2));
     }
   };
 
@@ -80,7 +81,8 @@ const PlanTab: React.FC = () => {
     } catch (error: any) {
       toast.dismiss();
       toast.error(`Failed to open subscription management: ${error.message}`);
-      console.error('Error redirecting to customer portal:', error);
+      console.error('Error redirecting to customer portal:', error); // Log the full error object
+      console.error('Detailed error structure for customer-portal:', JSON.stringify(error, null, 2));
     }
   };
 
