@@ -2,20 +2,61 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { subscriptionPlans } from '@/types';
+import { subscriptionPlans, SubscriptionPlan } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client'; // Added supabase import
 
 const PlanTab: React.FC = () => {
   const { currentUser } = useAuth();
 
-  const handleSubscribe = (planId: string) => {
-    toast.info(`Subscription to ${planId} plan will be implemented soon.`);
+  const handleSubscribe = async (plan: SubscriptionPlan) => { // Changed planId to plan object
+    if (!currentUser) { // Should not happen in dashboard, but good check
+      toast.error('User not authenticated. Please re-login.');
+      return;
+    }
+    
+    const currentPlanId = currentUser?.subscriptionTier || 'free';
+    if (plan.id === currentPlanId) {
+        toast.info("This is already your current plan.");
+        return;
+    }
+
+    const planPriceInCents = plan.price * 100;
+    // Success/Cancel URLs could point back to the dashboard or a specific confirmation page
+    const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
+    const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
+
+    try {
+      toast.loading('Redirecting to checkout...');
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          planId: plan.id,
+          planName: plan.name,
+          planPriceInCents,
+          successUrl,
+          cancelUrl,
+        },
+      });
+
+      if (error) {
+        throw error; // Supabase client throws on error, this will be caught
+      }
+
+      if (data.url) {
+        window.location.href = data.url; // Redirect to Stripe checkout
+      } else {
+        throw new Error('Could not retrieve checkout session URL.');
+      }
+    } catch (error: any) {
+      toast.dismiss(); // Dismiss loading toast
+      toast.error(`Failed to create checkout session: ${error.message}`);
+      console.error('Error creating checkout session:', error);
+    }
   };
 
-  // Get user's current plan
-  const currentPlan = currentUser?.subscriptionTier || 'free';
+  const currentPlanId = currentUser?.subscriptionTier || 'free';
 
   return (
     <div>
@@ -26,7 +67,7 @@ const PlanTab: React.FC = () => {
 
       <div className="grid md:grid-cols-3 gap-8">
         {subscriptionPlans.map((plan) => {
-          const isCurrentPlan = currentPlan === plan.id;
+          const isCurrentPlan = currentPlanId === plan.id;
           
           return (
             <div 
@@ -76,7 +117,7 @@ const PlanTab: React.FC = () => {
               
               <div className="mt-8">
                 <Button
-                  onClick={() => handleSubscribe(plan.id)}
+                  onClick={() => handleSubscribe(plan)} // Pass the whole plan object
                   className={cn(
                     "w-full", 
                     isCurrentPlan 
@@ -85,9 +126,9 @@ const PlanTab: React.FC = () => {
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                         : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   )}
-                  disabled={isCurrentPlan}
+                  disabled={isCurrentPlan && plan.id !== 'free'} // Allow 'subscribing' to free even if current
                 >
-                  {isCurrentPlan ? 'Current Plan' : 'Subscribe'}
+                  {isCurrentPlan ? 'Current Plan' : (plan.id === 'free' ? 'Switch to Free' : 'Subscribe')}
                 </Button>
               </div>
             </div>
@@ -99,3 +140,4 @@ const PlanTab: React.FC = () => {
 };
 
 export default PlanTab;
+

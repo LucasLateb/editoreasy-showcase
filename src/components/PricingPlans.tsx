@@ -1,12 +1,62 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { subscriptionPlans } from '@/types';
+import { subscriptionPlans, SubscriptionPlan } from '@/types';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const PricingPlans: React.FC = () => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubscribe = async (plan: SubscriptionPlan) => {
+    if (plan.id === 'free') {
+      navigate('/register');
+      return;
+    }
+
+    if (!currentUser) {
+      toast.info('Please log in or register to subscribe to a plan.');
+      navigate('/login');
+      return;
+    }
+
+    const planPriceInCents = plan.price * 100;
+    const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
+    const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
+
+    try {
+      toast.loading('Redirecting to checkout...');
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          planId: plan.id,
+          planName: plan.name,
+          planPriceInCents,
+          successUrl,
+          cancelUrl,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Could not retrieve checkout session URL.');
+      }
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error(`Failed to create checkout session: ${error.message}`);
+      console.error('Error creating checkout session:', error);
+    }
+  };
+
   return (
     <section className="py-16 md:py-24 bg-accent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,18 +109,17 @@ const PricingPlans: React.FC = () => {
               </ul>
               
               <div className="mt-8">
-                <Link to="/register">
-                  <Button
-                    className={cn(
-                      "w-full", 
-                      plan.popular 
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                        : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                    )}
-                  >
-                    {plan.id === 'free' ? 'Get Started' : 'Subscribe Now'}
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => handleSubscribe(plan)}
+                  className={cn(
+                    "w-full", 
+                    plan.popular 
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                      : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                  )}
+                >
+                  {plan.id === 'free' ? 'Get Started' : 'Subscribe Now'}
+                </Button>
               </div>
             </div>
           ))}
@@ -81,3 +130,4 @@ const PricingPlans: React.FC = () => {
 };
 
 export default PricingPlans;
+
