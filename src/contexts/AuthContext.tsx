@@ -43,37 +43,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const fetchSubscriptionDetails = useCallback(async () => {
-    console.log('[AuthContext] Fetching subscription details...');
+    console.log('[AuthContext] Attempting to fetch subscription details...');
     setLoadingSubscription(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('[AuthContext] Error getting session:', sessionError);
+        setSubscriptionDetails(null);
+        setLoadingSubscription(false);
+        // Potentially toast an error about session retrieval
+        toast({
+          title: "Erreur de session",
+          description: "Impossible de récupérer la session utilisateur.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!sessionData.session) {
-        console.log('[AuthContext] No session, cannot fetch subscription details.');
+        console.log('[AuthContext] No active session, cannot fetch subscription details.');
         setSubscriptionDetails(null);
         setLoadingSubscription(false);
         return;
       }
+      
+      console.log('[AuthContext] Session found. Invoking "check-subscription" function.');
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('check-subscription');
+      console.log('[AuthContext] "check-subscription" invocation complete.', { functionData, functionError: functionError ? { name: functionError.name, message: functionError.message, context: (functionError as any).context } : null });
 
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) {
-        console.error('Error fetching subscription details:', error);
+
+      if (functionError) {
+        console.error('[AuthContext] Error fetching subscription details from function:', functionError);
         toast({
           title: "Erreur de synchronisation",
           description: "Impossible de vérifier les détails de votre abonnement.",
           variant: "destructive",
         });
-        setSubscriptionDetails(null);
-      } else if (data) {
-        console.log('[AuthContext] Subscription details received:', data);
+        setSubscriptionDetails(null); // Ensure state is cleared on error
+      } else if (functionData) {
+        console.log('[AuthContext] Subscription details received:', functionData);
         setSubscriptionDetails({
-          isSubscribed: data.subscribed,
-          tier: data.subscription_tier,
-          status: data.status,
-          currentPeriodEnd: data.current_period_end,
+          isSubscribed: functionData.subscribed,
+          tier: functionData.subscription_tier,
+          status: functionData.status,
+          currentPeriodEnd: functionData.current_period_end,
         });
         // Optionally, refresh currentUser if subscription_tier in profiles was updated by the edge function
         // This requires re-fetching profile data
-        if (currentUser && data.subscription_tier && currentUser.subscriptionTier !== data.subscription_tier) {
+        if (currentUser && functionData.subscription_tier && currentUser.subscriptionTier !== functionData.subscription_tier) {
             // Re-fetch profile to update currentUser.subscriptionTier
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
@@ -81,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .eq('id', currentUser.id)
               .single();
             if (profileError) {
-                console.error('Error re-fetching user profile after subscription update:', profileError);
+                console.error('[AuthContext] Error re-fetching user profile after subscription update:', profileError);
             } else if (profileData) {
                 const updatedUser: AppUserType = {
                     id: profileData.id,
@@ -95,31 +112,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     role: profileData.role || 'monteur'
                 };
                 setCurrentUser(updatedUser);
+                console.log('[AuthContext] Updated currentUser with new subscriptionTier from profile:', updatedUser.subscriptionTier);
             }
         }
+      } else {
+        console.warn('[AuthContext] "check-subscription" returned no data and no error.');
+        // Potentially handle this case, though typically either data or error should be present.
+        setSubscriptionDetails(null);
       }
-    } catch (e) {
-      console.error('Unexpected error fetching subscription details:', e);
+    } catch (e: any) {
+      console.error('[AuthContext] Unexpected error in fetchSubscriptionDetails:', e);
       toast({
-        title: "Erreur",
+        title: "Erreur Inattendue",
         description: "Une erreur inattendue est survenue lors de la vérification de l'abonnement.",
         variant: "destructive",
       });
       setSubscriptionDetails(null);
     } finally {
       setLoadingSubscription(false);
-      console.log('[AuthContext] Finished fetching subscription details.');
+      console.log('[AuthContext] Finished fetchSubscriptionDetails.');
     }
-  }, [toast, currentUser]); // Added currentUser to dependency array for re-fetch logic
+  }, [toast, currentUser]); // currentUser dependency is important
 
   useEffect(() => {
     const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
                                window.location.hash.includes('type=recovery');
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AuthContext] Auth state changed:', event, session);
+      console.log('[AuthContext] Auth state changed:', event, session ? { userId: session.user.id, event } : event);
       if (session) {
         if (isPasswordResetFlow) {
+          console.log('[AuthContext] Password reset flow detected, skipping profile fetch and subscription details.');
           setCurrentUser(null);
           setSubscriptionDetails(null);
           setLoading(false);
@@ -134,8 +157,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (error) {
-          console.error('Error fetching user profile:', error);
-          setCurrentUser(null);
+          console.error('[AuthContext] Error fetching user profile on auth state change:', error);
+          setCurrentUser(null); // Clear user on profile fetch error
         } else if (data) {
           const user: AppUserType = {
             id: data.id,
@@ -149,20 +172,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: data.role || 'monteur'
           };
           setCurrentUser(user);
+          console.log('[AuthContext] User set from auth state change:', user.id);
         }
         // Fetch subscription details after user is set or session changes
-        fetchSubscriptionDetails();
+        // Ensure this is called even if profile fetch fails but session is valid,
+        // though currentUser might be null in that case.
+        // The fetchSubscriptionDetails itself checks for session.
+        await fetchSubscriptionDetails();
 
       } else {
+        console.log('[AuthContext] No session from auth state change. Clearing user and subscription.');
         setCurrentUser(null);
         setSubscriptionDetails(null);
       }
-      setLoading(false); // setLoadingSubscription is handled by fetchSubscriptionDetails
+      setLoading(false);
     });
 
     const checkSession = async () => {
-      console.log('[AuthContext] Checking session...');
+      console.log('[AuthContext] Initial session check...');
       if (isPasswordResetFlow) {
+        console.log('[AuthContext] Password reset flow detected during initial check, skipping profile fetch and subscription details.');
         setLoading(false);
         setLoadingSubscription(false);
         return;
@@ -170,6 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log('[AuthContext] Session exists on initial check:', session.user.id);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -177,7 +207,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (error) {
-          console.error('Error fetching user profile on initial load:', error);
+          console.error('[AuthContext] Error fetching user profile on initial load:', error);
+          // setCurrentUser(null) might be too aggressive here if profile is just temporarily unavailable
         } else if (data) {
           const user: AppUserType = {
             id: data.id,
@@ -191,13 +222,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: data.role || 'monteur'
           };
           setCurrentUser(user);
+          console.log('[AuthContext] User set from initial session check:', user.id);
         }
-        // Fetch subscription details after initial session check
-        await fetchSubscriptionDetails(); // ensure this completes
+        await fetchSubscriptionDetails();
       } else {
-         setSubscriptionDetails(null); // No session, no subscription details
+         console.log('[AuthContext] No session on initial check. Clearing subscription details.');
+         setSubscriptionDetails(null);
       }
-      setLoading(false); // setLoadingSubscription is handled by fetchSubscriptionDetails
+      setLoading(false);
     };
 
     checkSession();
@@ -205,11 +237,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [fetchSubscriptionDetails]); // Added fetchSubscriptionDetails to dependency array
+  }, [fetchSubscriptionDetails]);
 
   const login = async (email: string, password: string): Promise<AppUserType> => {
     setLoading(true);
-    
+    console.log('[AuthContext] Attempting login for:', email);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -217,10 +249,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        console.error('[AuthContext] Login error (supabase.auth.signInWithPassword):', error);
         throw error;
       }
+      if (!data.user) {
+         console.error('[AuthContext] Login successful but no user data returned.');
+         throw new Error('Login did not return user data.');
+      }
 
-      // Fetch user profile
+      console.log('[AuthContext] Login successful, fetching profile for user:', data.user.id);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -228,10 +265,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profileError) {
+        console.error('[AuthContext] Error fetching profile after login:', profileError);
         throw profileError;
       }
+      if (!profileData) {
+        console.error('[AuthContext] Profile not found for user after login:', data.user.id);
+        throw new Error('Profile not found for user.');
+      }
 
-      // Convert to our User type
       const user: AppUserType = {
         id: profileData.id,
         name: profileData.name,
@@ -245,12 +286,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       setCurrentUser(user);
-      await fetchSubscriptionDetails(); // Fetch subscription details after login
+      console.log('[AuthContext] User set after login, fetching subscription details.');
+      await fetchSubscriptionDetails();
       return user;
     } catch (error) {
-      console.error('Login error:', error);
-      setCurrentUser(null); // Ensure currentUser is null on error
-      setSubscriptionDetails(null); // Clear subscription details on login error
+      console.error('[AuthContext] Overall login process error:', error);
+      setCurrentUser(null);
+      setSubscriptionDetails(null);
       throw error;
     } finally {
       setLoading(false);
@@ -259,45 +301,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (name: string, email: string, password: string, role: string = 'monteur'): Promise<AppUserType> => {
     setLoading(true);
-    
+    console.log('[AuthContext] Attempting registration for:', email);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name,
-            role 
-          },
+          data: { name, role },
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
 
       if (error) {
+        console.error('[AuthContext] Registration error (supabase.auth.signUp):', error);
         throw error;
       }
-
       if (!data.user) {
-        throw new Error('No user returned from signUp');
+        console.error('[AuthContext] Registration successful but no user data returned.');
+        // This case might mean email confirmation is pending.
+        // Supabase returns a user object even if email is unconfirmed, but session might be null.
+        // If user is null, it implies a more critical issue with signUp.
+        throw new Error('Registration did not return user data.');
       }
-
+      console.log('[AuthContext] Registration successful, user ID:', data.user.id);
+      
+      // Profile might not be created by trigger immediately, or user is not auto-logged-in yet
+      // The onAuthStateChange listener should handle setting the user and fetching profile/subscription.
+      // For now, we can optimistically set some basic user info if needed, or rely on onAuthStateChange.
+      // Let's try to fetch profile, but be mindful it might not exist yet if trigger is slow or not set up.
+      
+      let userToSet: AppUserType;
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
         .single();
 
-      let userToSet: AppUserType;
-
       if (profileError || !profileData) {
-        console.warn('Profile not found immediately after signup, or error fetching. Using provided data.', profileError);
+        console.warn('[AuthContext] Profile not found immediately after signup, or error fetching. Using provided data.', profileError);
+        // This path might be taken if user creation trigger for profile is async or email verification is required first
         userToSet = {
           id: data.user.id,
           name: name,
           email: email,
-          subscriptionTier: 'free' as const,
+          subscriptionTier: 'free' as const, // New users are free by default
           likes: 0,
-          createdAt: new Date(),
+          createdAt: new Date(data.user.created_at || Date.now()), // Use user.created_at if available
           role: role 
         };
       } else {
@@ -314,12 +363,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
       
-      setCurrentUser(userToSet);
-      // New user is 'free' by default, check-subscription will confirm if anything else
-      await fetchSubscriptionDetails(); 
-      return userToSet;
+      // setCurrentUser(userToSet); // onAuthStateChange will handle this.
+      // If signUp doesn't create a session immediately (e.g. email confirmation needed),
+      // onAuthStateChange will trigger when session becomes active.
+      
+      // We still call fetchSubscriptionDetails, it will check for session internally.
+      // For a new user, this will likely return 'not subscribed'.
+      // await fetchSubscriptionDetails(); // This might be redundant if onAuthStateChange fires.
+                                        // Let's rely on onAuthStateChange to call it.
+      
+      console.log('[AuthContext] User registration processed. Awaiting auth state change for full user setup.');
+      // The user object returned here might be partial if profile not fully ready.
+      // The AppUserType is primarily established via onAuthStateChange + profile fetch.
+      return userToSet; // Return the best available user info for now.
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('[AuthContext] Overall registration process error:', error);
       setCurrentUser(null);
       setSubscriptionDetails(null);
       throw error;
@@ -329,12 +387,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    console.log('[AuthContext] Logging out.');
     try {
       await supabase.auth.signOut();
-      setCurrentUser(null);
-      setSubscriptionDetails(null); // Clear subscription details on logout
+      // onAuthStateChange will handle setting currentUser and subscriptionDetails to null.
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[AuthContext] Logout error:', error);
       toast({
         title: "Logout failed",
         description: "There was an error signing out.",
@@ -345,9 +403,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateAvatar = async (avatarUrl: string) => {
     if (!currentUser) {
+      toast({ title: "Erreur", description: "Utilisateur non authentifié.", variant: "destructive" });
       throw new Error('User not authenticated');
     }
 
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -355,23 +415,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', currentUser.id);
 
       if (error) {
+        console.error('Error updating avatar in DB:', error);
         throw error;
       }
 
       setCurrentUser(prev => prev ? {...prev, avatarUrl} : null);
       
       toast({
-        title: "Avatar updated",
-        description: "Your profile picture has been successfully updated.",
+        title: "Avatar mis à jour",
+        description: "Votre photo de profil a été mise à jour avec succès.",
       });
     } catch (error) {
-      console.error('Error updating avatar:', error);
+      console.error('Error in updateAvatar function:', error);
       toast({
-        title: "Update failed",
-        description: "There was an error updating your avatar.",
+        title: "Échec de la mise à jour",
+        description: "Une erreur s'est produite lors de la mise à jour de votre avatar.",
         variant: "destructive"
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -385,7 +448,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateAvatar,
     subscriptionDetails,
     loadingSubscription,
-    refreshSubscriptionDetails: fetchSubscriptionDetails, // Expose the memoized fetch function
+    refreshSubscriptionDetails: fetchSubscriptionDetails,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
