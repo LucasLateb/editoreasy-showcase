@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -66,7 +67,7 @@ serve(async (req: Request) => {
       customer: customer.id,
       status: "all",
       limit: 10,
-      expand: ["data.items.data.price"], // Modification ici pour suivre la suggestion de Stripe
+      expand: ["data.items.data.price"], 
     });
 
     let subToProcess = subscriptions.data.find(s => s.status === 'active') || subscriptions.data.find(s => s.status === 'trialing');
@@ -81,15 +82,30 @@ serve(async (req: Request) => {
     if (subToProcess) {
       logStep("Processing subscription", { subId: subToProcess.id, status: subToProcess.status });
       
-      const firstItemPrice = subToProcess.items?.data?.[0]?.price;
-      if (!firstItemPrice || typeof firstItemPrice === 'string') { // Check if price is an object
-        throw new Error("Subscription item price is missing or not expanded correctly.");
+      let planId = subToProcess.metadata?.plan_id || null; // Prioritize subscription metadata
+
+      if (!planId) {
+        logStep("plan_id not found in subscription metadata, trying price metadata", { subId: subToProcess.id });
+        const firstItemPrice = subToProcess.items?.data?.[0]?.price;
+        if (firstItemPrice && typeof firstItemPrice !== 'string') { // Check if price is an object
+          planId = getPlanIdFromPriceProduct(firstItemPrice as Stripe.Price); // Fallback to price metadata
+        }
       }
-      const planId = getPlanIdFromPriceProduct(firstItemPrice as Stripe.Price); // Cast to Stripe.Price
+
+      if (!planId) {
+        logStep("Critical: plan_id could not be determined for subscription. Defaulting to null. Review Stripe metadata.", { 
+          subId: subToProcess.id, 
+          subscriptionMetadata: subToProcess.metadata, 
+          itemPriceInfo: subToProcess.items?.data?.[0]?.price // Log price object for inspection
+        });
+        // planId remains null, which will result in 'free' or null tier in profiles table.
+      }
+      logStep("Determined plan_id", { planId: planId, subId: subToProcess.id });
+
 
       const subscriptionPayload = {
         email: user.email, stripe_customer_id: customer.id, stripe_subscription_id: subToProcess.id,
-        subscription_status: subToProcess.status, subscription_tier: planId,
+        subscription_status: subToProcess.status, subscription_tier: planId, // Use determined planId
         current_period_end: new Date(subToProcess.current_period_end * 1000).toISOString(),
       };
 
@@ -107,14 +123,16 @@ serve(async (req: Request) => {
       }
       
       const isEffectivelySubscribed = ['active', 'trialing', 'past_due'].includes(subToProcess.status) || (subToProcess.status === 'canceled' && subToProcess.current_period_end * 1000 > Date.now());
-      const profileTierToSet = isEffectivelySubscribed ? planId : 'free';
+      // If planId is null here, profileTierToSet will be null if subscribed, or 'free' if not.
+      // The AuthContext defaults null tier from DB to 'free' in the app state.
+      const profileTierToSet = isEffectivelySubscribed ? planId : 'free'; 
 
       logStep("Updating profiles table", { userId: user.id, tier: profileTierToSet });
       const { error: profileErr } = await serviceSupabaseClient.from("profiles").update({ subscription_tier: profileTierToSet }).eq('id', user.id);
       if (profileErr) logStep("Error updating profile (non-fatal)", { error: profileErr.message });
 
       return new Response(JSON.stringify({
-        subscribed: isEffectivelySubscribed, subscription_tier: planId,
+        subscribed: isEffectivelySubscribed, subscription_tier: planId, // Return determined planId
         current_period_end: new Date(subToProcess.current_period_end * 1000).toISOString(), status: subToProcess.status,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
 
