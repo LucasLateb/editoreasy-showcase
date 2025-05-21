@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -263,33 +262,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn("refreshCurrentUserSubscription called without a current user.");
       return;
     }
+    console.log("AuthContext: Starting refreshCurrentUserSubscription for user:", currentUser.id);
     setLoading(true);
     try {
       // Call check-subscription to ensure Stripe data is synced to our DB
-      const { error: functionError } = await supabase.functions.invoke('check-subscription');
+      console.log("AuthContext: Invoking 'check-subscription' Edge Function...");
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('check-subscription');
+      
       if (functionError) {
+        console.error("AuthContext: Error invoking 'check-subscription':", functionError);
         throw functionError;
       }
+      console.log("AuthContext: 'check-subscription' function data:", functionData);
 
       // Re-fetch the user profile from our database as check-subscription updates it
+      console.log("AuthContext: Re-fetching user profile after 'check-subscription'...");
       const updatedProfile = await fetchUserProfile(currentUser.id);
+      console.log("AuthContext: Fetched updatedProfile:", updatedProfile);
+      
       if (updatedProfile) {
         setCurrentUser(updatedProfile);
+        console.log("AuthContext: currentUser state updated with new profile.");
         toast({
           title: "Subscription Updated",
           description: "Your subscription details have been refreshed.",
         });
       } else {
-        console.error("Failed to fetch profile after subscription refresh.");
-        // This case means fetchUserProfile returned null, but check-subscription might have succeeded.
-        // We'll throw an error to trigger the more generic failure toast for now.
+        console.error("AuthContext: Failed to fetch profile after subscription refresh, updatedProfile is null.");
         throw new Error("Profile fetch failed after subscription check.");
       }
     } catch (error: any) {
-      console.error('Error refreshing user subscription:', error);
+      console.error('AuthContext: Error during refreshCurrentUserSubscription:', error);
       let errorMessage = "Could not update your subscription details. Please try refreshing the page.";
       if (error instanceof FunctionsHttpError) {
-        console.error('FunctionsHttpError context:', error.context);
+        console.error('AuthContext: FunctionsHttpError context:', error.context);
         const specificMessage = typeof error.context?.error === 'string' ? error.context.error : error.message;
         errorMessage = `Details: ${specificMessage}. Please try refreshing the page.`;
       } else if (error.message) {
@@ -302,6 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
     } finally {
+      console.log("AuthContext: Finished refreshCurrentUserSubscription.");
       setLoading(false);
     }
   };

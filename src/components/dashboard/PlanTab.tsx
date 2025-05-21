@@ -14,6 +14,11 @@ const PlanTab: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Log currentUser whenever it changes
+  useEffect(() => {
+    console.log("PlanTab: currentUser updated", currentUser);
+  }, [currentUser]);
+
   const getErrorMessage = async (error: any, defaultMessage: string): Promise<string> => {
     if (error instanceof FunctionsHttpError) {
       if (error.context && typeof error.context === 'object' && 'error' in error.context && typeof error.context.error === 'string') {
@@ -30,25 +35,25 @@ const PlanTab: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const checkoutStatus = params.get('checkout_status');
     const planId = params.get('plan_id');
+    console.log("PlanTab: useEffect for checkout_status triggered. Status:", checkoutStatus, "Plan ID:", planId);
 
     if (checkoutStatus === 'success' && planId) {
       const plan = subscriptionPlans.find(p => p.id === planId);
       const planName = plan ? plan.name : 'votre nouveau plan';
       
       toast.success(`Abonnement réussi ! Votre ${planName} est maintenant actif.`);
+      console.log("PlanTab: Checkout success detected, calling refreshCurrentUserSubscription.");
       
       refreshCurrentUserSubscription().catch(err => {
-        console.error("Error during post-checkout refresh:", err);
-        // Toast d'erreur déjà géré dans refreshCurrentUserSubscription
+        console.error("PlanTab: Error during post-checkout refreshCurrentUserSubscription:", err);
       });
 
-      // Nettoyer les paramètres de l'URL
       navigate(location.pathname, { replace: true });
     } else if (checkoutStatus === 'cancel') {
       toast.info('Le processus d\'abonnement a été annulé.');
       navigate(location.pathname, { replace: true });
     }
-  }, [location, navigate, refreshCurrentUserSubscription]);
+  }, [location, navigate, refreshCurrentUserSubscription]); // refreshCurrentUserSubscription is a dependency
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!currentUser) {
