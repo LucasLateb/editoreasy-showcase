@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast'; // shadcn toast for internal context messages
+import { FunctionsHttpError } from '@supabase/functions-js'; // Importer FunctionsHttpError
 
 interface AuthContextType {
   currentUser: User | null;
@@ -250,16 +252,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedProfile = await fetchUserProfile(currentUser.id);
       if (updatedProfile) {
         setCurrentUser(updatedProfile);
+        toast({
+          title: "Subscription Updated",
+          description: "Your subscription details have been refreshed.",
+        });
       } else {
-        // This case should ideally not happen if check-subscription and fetchUserProfile are robust
         console.error("Failed to fetch profile after subscription refresh.");
-        // Potentially revert to old user state or handle error more gracefully
+        // This case means fetchUserProfile returned null, but check-subscription might have succeeded.
+        // We'll throw an error to trigger the more generic failure toast for now.
+        throw new Error("Profile fetch failed after subscription check.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error refreshing user subscription:', error);
+      let errorMessage = "Could not update your subscription details. Please try refreshing the page.";
+      if (error instanceof FunctionsHttpError) {
+        console.error('FunctionsHttpError context:', error.context);
+        const specificMessage = typeof error.context?.error === 'string' ? error.context.error : error.message;
+        errorMessage = `Details: ${specificMessage}. Please try refreshing the page.`;
+      } else if (error.message) {
+        errorMessage = `${error.message} Please try refreshing the page.`;
+      }
+      
       toast({
         title: "Subscription Update Failed",
-        description: "Could not update your subscription details. Please try refreshing the page.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -280,3 +296,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
