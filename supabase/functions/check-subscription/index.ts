@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -14,8 +15,9 @@ const logStep = (step: string, details?: any) => {
 };
 
 const getPlanIdFromPriceProduct = (price: Stripe.Price): string | null => {
-  if (typeof price.product === 'string') return null; // Should be expanded
-  return price.product?.metadata?.plan_id || price.metadata?.plan_id || null;
+  // Après la modification de l'expansion, price.product sera une chaîne (ID du produit).
+  // Nous nous fions à ce que plan_id soit disponible dans les métadonnées du prix (price.metadata).
+  return price.metadata?.plan_id || null;
 };
 
 serve(async (req: Request) => {
@@ -63,7 +65,10 @@ serve(async (req: Request) => {
     logStep("Stripe customer found", { customerId: customer.id });
 
     const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id, status: "all", limit: 10, expand: ["data.items.data.price.product"],
+      customer: customer.id, 
+      status: "all", 
+      limit: 10, 
+      expand: ["data.items.price"], // Modification ici: réduit la profondeur de l'expansion
     });
 
     let subToProcess = subscriptions.data.find(s => s.status === 'active') || subscriptions.data.find(s => s.status === 'trialing');
@@ -77,7 +82,13 @@ serve(async (req: Request) => {
 
     if (subToProcess) {
       logStep("Processing subscription", { subId: subToProcess.id, status: subToProcess.status });
-      const planId = getPlanIdFromPriceProduct(subToProcess.items.data[0]?.price);
+      
+      // Assurez-vous que items, data et price existent avant d'y accéder.
+      const firstItemPrice = subToProcess.items?.data?.[0]?.price;
+      if (!firstItemPrice) {
+        throw new Error("Subscription item or price is missing.");
+      }
+      const planId = getPlanIdFromPriceProduct(firstItemPrice);
 
       const subscriptionPayload = {
         email: user.email, stripe_customer_id: customer.id, stripe_subscription_id: subToProcess.id,
