@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -73,7 +74,7 @@ serve(async (req: Request) => {
             currency: "eur",
             product_data: {
               name: planName,
-              metadata: { plan_id: planId } //  Stripe convention is often lowercase with underscores
+              metadata: { plan_id: planId } 
             },
             unit_amount: planPriceInCents,
             recurring: { interval: "month" },
@@ -81,9 +82,17 @@ serve(async (req: Request) => {
           quantity: 1,
         },
       ],
+      // C'est la modification cruciale: passer plan_id aux métadonnées de l'abonnement.
+      subscription_data: {
+        metadata: {
+          plan_id: planId,
+          user_id: user.id // Optionnel, mais peut être utile
+        }
+      },
+      // Gardons aussi les métadonnées de session si nécessaire pour d'autres usages.
       metadata: {
-        user_id: user.id, // Supabase user ID
-        plan_id: planId,   // Your app's plan ID
+        user_id: user.id, 
+        checkout_session_plan_id: planId, // Renommé pour clarté
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
@@ -102,3 +111,4 @@ serve(async (req: Request) => {
     });
   }
 });
+
