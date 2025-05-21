@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -15,7 +14,6 @@ const logStep = (step: string, details?: any) => {
 };
 
 const getPlanIdFromPriceProduct = (price: Stripe.Price): string | null => {
-  // Après la modification de l'expansion, price.product sera une chaîne (ID du produit).
   // Nous nous fions à ce que plan_id soit disponible dans les métadonnées du prix (price.metadata).
   return price.metadata?.plan_id || null;
 };
@@ -65,10 +63,10 @@ serve(async (req: Request) => {
     logStep("Stripe customer found", { customerId: customer.id });
 
     const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id, 
-      status: "all", 
-      limit: 10, 
-      expand: ["data.items.price"], // Modification ici: réduit la profondeur de l'expansion
+      customer: customer.id,
+      status: "all",
+      limit: 10,
+      expand: ["data.items.data.price"], // Modification ici pour suivre la suggestion de Stripe
     });
 
     let subToProcess = subscriptions.data.find(s => s.status === 'active') || subscriptions.data.find(s => s.status === 'trialing');
@@ -83,12 +81,11 @@ serve(async (req: Request) => {
     if (subToProcess) {
       logStep("Processing subscription", { subId: subToProcess.id, status: subToProcess.status });
       
-      // Assurez-vous que items, data et price existent avant d'y accéder.
       const firstItemPrice = subToProcess.items?.data?.[0]?.price;
-      if (!firstItemPrice) {
-        throw new Error("Subscription item or price is missing.");
+      if (!firstItemPrice || typeof firstItemPrice === 'string') { // Check if price is an object
+        throw new Error("Subscription item price is missing or not expanded correctly.");
       }
-      const planId = getPlanIdFromPriceProduct(firstItemPrice);
+      const planId = getPlanIdFromPriceProduct(firstItemPrice as Stripe.Price); // Cast to Stripe.Price
 
       const subscriptionPayload = {
         email: user.email, stripe_customer_id: customer.id, stripe_subscription_id: subToProcess.id,
