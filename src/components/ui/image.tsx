@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -10,87 +9,103 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
   ({ className, src, alt, fallbackSrc = '/placeholder.svg', ...props }, ref) => {
     const [error, setError] = useState(false);
     const [loaded, setLoaded] = useState(false);
-    const [imageSrc, setImageSrc] = useState<string | undefined>(src);
+    const [imageSrc, setImageSrc] = useState<string | undefined>(undefined); // Initialize as undefined
     const imgRef = useRef<HTMLImageElement>(null);
     const attemptedFallback = useRef(false);
     
-    // Reset states when src changes
     useEffect(() => {
       setError(false);
       setLoaded(false);
       attemptedFallback.current = false;
-      setImageSrc(src);
-    }, [src]);
+      if (src && typeof src === 'string' && src.trim() !== '') {
+        setImageSrc(src);
+      } else {
+        // If src is initially invalid or not provided, immediately use fallback
+        console.log('Initial src is invalid or missing, attempting fallback directly:', fallbackSrc);
+        setImageSrc(fallbackSrc);
+        attemptedFallback.current = true; // We've directly chosen the fallback
+      }
+    }, [src, fallbackSrc]); // Added fallbackSrc to dependencies
     
-    // Handle image loading error
     const handleError = () => {
-      console.log('Image error occurred for src:', src);
-      if (!attemptedFallback.current) {
+      console.log('Image error occurred for src:', imageSrc); // Log current imageSrc being tried
+      // Only try fallback if we haven't already and if current imageSrc is not already the fallback
+      if (!attemptedFallback.current && imageSrc !== fallbackSrc) {
         attemptedFallback.current = true;
         console.log('Attempting to use fallback image:', fallbackSrc);
-        // Only change the src if it's different from the fallback
-        if (imageSrc !== fallbackSrc) {
-          setImageSrc(fallbackSrc);
-        } else {
-          // If we're already using the fallback, just set loaded
-          setLoaded(true);
-          setError(true);
-          console.log('Already using fallback, marking as loaded with error');
-        }
+        setImageSrc(fallbackSrc);
+        // Important: Reset loaded state if we're changing src to fallback, so onLoad can trigger for fallback
+        setLoaded(false); 
       } else {
-        // If fallback also fails, just set loaded to true to remove loading state
-        setLoaded(true);
-        setError(true);
-        console.log('Fallback image also failed to load');
+        // This means either we already tried fallback, or current src IS the fallback and it failed
+        setLoaded(true); // Stop loading indicator
+        setError(true);  // Show error state
+        if (imageSrc === fallbackSrc) {
+          console.log('Fallback image also failed to load:', fallbackSrc);
+        } else {
+          console.log('Error after already attempting fallback, or unknown error for:', imageSrc);
+        }
       }
     };
 
-    // Handle successful image load
     const handleLoad = () => {
-      console.log('Image loaded successfully:', imageSrc);
-      setLoaded(true);
-      setError(false);
+      // Ensure this only triggers for the intended imageSrc
+      // It might fire for old src if component re-renders quickly
+      if (imgRef.current && imgRef.current.currentSrc === imageSrc) {
+        console.log('Image loaded successfully:', imageSrc);
+        setLoaded(true);
+        setError(false);
+      } else {
+        console.log('handleLoad called but currentSrc does not match imageSrc. Current src:', imgRef.current?.currentSrc, 'Expected src:', imageSrc);
+      }
     };
     
-    // Add a cleanup to abort image loading when component unmounts
     useEffect(() => {
+      const currentImgRef = imgRef.current;
       return () => {
-        if (imgRef.current) {
-          imgRef.current.src = '';
+        if (currentImgRef) {
+          currentImgRef.src = ''; // Clear src on unmount to stop loading
         }
       };
-    }, []);
+    }, []); // No dependencies, run once on mount for cleanup function
     
     return (
-      <div className={cn('relative w-full h-full overflow-hidden', className)}>
-        {!loaded && (
+      <div className={cn('relative w-full h-full overflow-hidden bg-muted/10', className)}>
+        {/* Keep loading indicator visible if imageSrc is defined but not loaded */}
+        {imageSrc && !loaded && !error && (
           <div className="absolute inset-0 bg-muted/50 animate-pulse" />
         )}
         
-        <img
-          className={cn(
-            'object-cover w-full h-full transition-opacity duration-300',
-            loaded ? 'opacity-100' : 'opacity-0'
-          )}
-          src={imageSrc}
-          alt={alt || "Image"}
-          ref={(node) => {
-            // This handles both the ref from forwardRef and our own ref
-            if (typeof ref === 'function') {
-              ref(node);
-            } else if (ref) {
-              ref.current = node;
-            }
-            imgRef.current = node;
-          }}
-          onError={handleError}
-          onLoad={handleLoad}
-          {...props}
-        />
+        {imageSrc && ( // Only render img tag if imageSrc is defined
+          <img
+            className={cn(
+              'object-cover w-full h-full transition-opacity duration-300',
+              loaded && !error ? 'opacity-100' : 'opacity-0'
+            )}
+            src={imageSrc}
+            alt={alt || "Image"}
+            ref={(node) => {
+              if (typeof ref === 'function') {
+                ref(node);
+              } else if (ref) {
+                ref.current = node;
+              }
+              imgRef.current = node;
+            }}
+            onError={handleError}
+            onLoad={handleLoad}
+            {...props}
+          />
+        )}
         
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground text-sm">
-            Image unavailable
+        {error && ( // Show error message if error state is true
+          <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground text-sm p-2 text-center">
+            Image indisponible
+          </div>
+        )}
+        {!imageSrc && !fallbackSrc && ( // Case where no src and no fallback provided
+           <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground text-sm p-2 text-center">
+            Aucune image
           </div>
         )}
       </div>

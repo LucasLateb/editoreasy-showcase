@@ -2,8 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast'; // shadcn toast for internal context messages
-import { FunctionsHttpError } from '@supabase/functions-js'; // Importer FunctionsHttpError
+import { useToast } from '@/hooks/use-toast';
+import { FunctionsHttpError } from '@supabase/functions-js';
+import type { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -29,7 +30,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast(); // shadcn toast
+  const { toast } = useToast();
 
   const fetchUserProfile = async (userId: string): Promise<User | null> => {
     const { data, error } = await supabase
@@ -59,52 +60,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check if we're on a password reset page with recovery token
-    const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
-                               window.location.hash.includes('type=recovery');
+    const handleAuthEvent = async (session: Session | null) => {
+      const currentPath = window.location.pathname;
+      const currentHash = window.location.hash;
+      // Check if we are in a password recovery flow.
+      // This usually means being on the /reset-password page with a #type=recovery in the URL.
+      const isPasswordResetFlow = currentPath === '/reset-password' && currentHash.includes('type=recovery');
 
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);
-      const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
-                                 window.location.hash.includes('type=recovery');
+      if (isPasswordResetFlow) {
+        // If we are in a password reset flow, we generally don't want to show an active user session.
+        // The user might be technically logged in, but the UI should reflect the reset process.
+        console.log("AuthContext: Password reset flow detected. Setting currentUser to null and loading to false.");
+        setCurrentUser(null);
+        setLoading(false);
+        return; // Explicitly stop further processing for this event in this specific case.
+      }
+
       if (session) {
-        if (isPasswordResetFlow) {
-          setCurrentUser(null);
-          setLoading(false);
-          return;
-        }
+        console.log("AuthContext: Session found, fetching user profile for", session.user.id);
         const userProfile = await fetchUserProfile(session.user.id);
+        if (userProfile) {
+          console.log("AuthContext: User profile fetched:", userProfile.name);
+        } else {
+          console.warn("AuthContext: User profile not found for session user:", session.user.id);
+        }
         setCurrentUser(userProfile);
       } else {
+        console.log("AuthContext: No session found, setting currentUser to null.");
         setCurrentUser(null);
       }
       setLoading(false);
+    };
+
+    // Listener for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("AuthContext: onAuthStateChange triggered. Event:", event, "Session:", !!session);
+      setLoading(true); // Set loading true immediately when an auth event occurs
+      // Defer handling the event slightly. This can help prevent race conditions
+      // during initial app load or fast redirects.
+      setTimeout(() => handleAuthEvent(session), 0);
     });
 
-    // Check current session on mount
-    const checkSession = async () => {
-      setLoading(true);
-      const isPasswordResetFlow = window.location.pathname === '/reset-password' && 
-                                 window.location.hash.includes('type=recovery');
-      if (isPasswordResetFlow) {
+    // Initial session check on application mount
+    const checkCurrentSession = async () => {
+      console.log("AuthContext: Performing initial session check (checkCurrentSession).");
+      setLoading(true); // Set loading true before checking session
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("AuthContext: Initial getSession result. Session:", !!session);
+        // Defer handling the session status slightly.
+        setTimeout(() => handleAuthEvent(session), 0);
+      } catch (error) {
+        console.error("AuthContext: Error during initial getSession:", error);
+        // Ensure state is cleaned up on error
+        setCurrentUser(null);
         setLoading(false);
-        return;
       }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const userProfile = await fetchUserProfile(session.user.id);
-        setCurrentUser(userProfile);
-      }
-      setLoading(false);
     };
 
-    checkSession();
+    checkCurrentSession();
 
+    // Cleanup function for the effect
     return () => {
-      authListener.subscription.unsubscribe();
+      if (authListener?.subscription) {
+        authListener.subscription.unsubscribe();
+        console.log("AuthContext: Unsubscribed from onAuthStateChange listener.");
+      }
     };
-  }, []);
+  }, []); // Empty dependency array ensures this effect runs only once on mount and cleans up on unmount
 
   const login = async (email: string, password: string): Promise<User> => {
     setLoading(true);
@@ -291,9 +314,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     isAuthenticated: !!currentUser,
     updateAvatar,
-    refreshCurrentUserSubscription, // Exposer la nouvelle fonction
+    refreshCurrentUserSubscription,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
