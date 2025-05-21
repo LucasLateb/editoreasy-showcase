@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -178,16 +179,35 @@ const PlanTab: React.FC = () => {
         {displayedPlans.map((plan) => {
           const isCurrentPlan = currentPlanId === plan.id;
           
+          let showPopularBadge = false;
+          let applyPopularStyling = false;
+
+          if (currentPlanId === 'premium' && plan.id === 'pro') {
+            showPopularBadge = true;
+            applyPopularStyling = true;
+          } else if (currentPlanId === 'free' && plan.popular && plan.id !== 'free') {
+            // If user is 'free', the default popular plan gets badge & styling if it's not 'free'
+            showPopularBadge = true;
+            applyPopularStyling = true;
+          }
+          
+          // If this plan is the current plan, it should not show "Most Popular" badge
+          // or have popular styling, the "Current Plan" styling takes precedence.
+          if (isCurrentPlan) {
+            showPopularBadge = false;
+            applyPopularStyling = false; 
+          }
+
           return (
             <div 
               key={plan.id}
               className={cn(
                 "rounded-2xl border p-8 flex flex-col h-full",
-                plan.popular && currentPlanId !== 'pro' ? "shadow-lg ring-2 ring-primary relative z-10 bg-background" : "bg-background/50",
+                applyPopularStyling ? "shadow-lg ring-2 ring-primary relative z-10 bg-background" : "bg-background/50",
                 isCurrentPlan && "border-primary/50 bg-primary/5"
               )}
             >
-              {plan.popular && currentPlanId !== 'pro' && plan.id !== currentPlanId && (
+              {showPopularBadge && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground rounded-full px-4 py-1 text-sm font-medium">
                   Most Popular
                 </div>
@@ -231,7 +251,7 @@ const PlanTab: React.FC = () => {
                     "w-full", 
                     isCurrentPlan 
                       ? "bg-green-600 hover:bg-green-700 text-white cursor-default"
-                      : plan.popular && currentPlanId !== 'pro'
+                      : applyPopularStyling // Use applyPopularStyling for button style as well
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                         : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   )}
