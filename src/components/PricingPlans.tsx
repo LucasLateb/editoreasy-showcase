@@ -39,7 +39,7 @@ const PricingPlans: React.FC = () => {
       return;
     }
 
-    const planPriceInCents = plan.price * 100;
+    const planPriceInCents = Math.round(plan.price * 100); // Modifié ici
     const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
     const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
 

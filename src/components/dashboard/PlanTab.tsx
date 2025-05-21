@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -68,7 +67,7 @@ const PlanTab: React.FC = () => {
         return;
     }
 
-    const planPriceInCents = plan.price * 100;
+    const planPriceInCents = Math.round(plan.price * 100);
     const successUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=success&plan_id=${plan.id}`;
     const cancelUrl = `${window.location.origin}/dashboard?tab=plan&checkout_status=cancel`;
 
@@ -182,17 +181,14 @@ const PlanTab: React.FC = () => {
           let showPopularBadge = false;
           let applyPopularStyling = false;
 
-          if (currentPlanId === 'premium' && plan.id === 'pro') {
+          if (currentPlanId === 'free' && plan.popular && plan.id !== 'free') {
             showPopularBadge = true;
             applyPopularStyling = true;
-          } else if (currentPlanId === 'free' && plan.popular && plan.id !== 'free') {
-            // If user is 'free', the default popular plan gets badge & styling if it's not 'free'
-            showPopularBadge = true;
+          } else if (currentPlanId === 'premium' && plan.id === 'pro') { // Highlight Pro if user is Premium
+            showPopularBadge = true; 
             applyPopularStyling = true;
           }
           
-          // If this plan is the current plan, it should not show "Most Popular" badge
-          // or have popular styling, the "Current Plan" styling takes precedence.
           if (isCurrentPlan) {
             showPopularBadge = false;
             applyPopularStyling = false; 
@@ -251,7 +247,7 @@ const PlanTab: React.FC = () => {
                     "w-full", 
                     isCurrentPlan 
                       ? "bg-green-600 hover:bg-green-700 text-white cursor-default"
-                      : applyPopularStyling // Use applyPopularStyling for button style as well
+                      : applyPopularStyling 
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                         : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   )}
