@@ -26,7 +26,7 @@ import {
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Updated import path
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -88,14 +88,19 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Thumbnail image must be less than 5MB');
+      if (file.size > 1 * 1024 * 1024) { // 1MB limit
+        toast({
+          title: 'Fichier trop volumineux',
+          description: 'La miniature doit faire moins de 1Mo.',
+          variant: 'destructive',
+        });
+        e.target.value = ''; // Reset file input
         return;
       }
       setThumbnailFile(file);
       const objectUrl = URL.createObjectURL(file);
       setThumbnailPreview(objectUrl);
-      setUploadData({ ...uploadData, thumbnailUrl: '' });
+      setUploadData({ ...uploadData, thumbnailUrl: '' }); // Clear pre-selected thumbnail
     }
   };
 

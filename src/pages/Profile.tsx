@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, CheckCircle2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -87,17 +86,17 @@ const Profile: React.FC = () => {
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       toast({
-        title: "Invalid file type",
-        description: "Please upload a JPEG, PNG or GIF image.",
+        title: "Type de fichier invalide",
+        description: "Veuillez téléverser une image JPEG, PNG ou GIF.",
         variant: "destructive"
       });
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+    if (file.size > 1 * 1024 * 1024) { // 1MB limit
       toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 2MB.",
+        title: "Fichier trop volumineux",
+        description: "Veuillez téléverser une image de moins de 1Mo.",
         variant: "destructive"
       });
       return;
@@ -138,8 +137,8 @@ const Profile: React.FC = () => {
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast({
-        title: "Upload failed",
-        description: error.message || "There was an error uploading your avatar.",
+        title: "Échec du téléversement",
+        description: error.message || "Une erreur est survenue lors du téléversement de votre avatar.",
         variant: "destructive"
       });
     } finally {

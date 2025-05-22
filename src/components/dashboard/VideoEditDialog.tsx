@@ -11,6 +11,7 @@ import { Category } from '@/types';
 import { useForm } from 'react-hook-form';
 import { Loader2, ImageIcon } from 'lucide-react';
 import { Image } from '@/components/ui/image';
+import { useToast } from '@/hooks/use-toast'; // Added useToast import
 
 interface VideoEditDialogProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
       thumbnailUrl: video.thumbnailUrl
     }
   });
+  const { toast } = useToast(); // Initialize toast
 
   const selectedCategoryId = watch('categoryId');
   const thumbnailUrl = watch('thumbnailUrl');
@@ -61,8 +63,13 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image trop volumineuse. Maximum 5MB.');
+      if (file.size > 1 * 1024 * 1024) { // 1MB limit
+        toast({
+          title: 'Image trop volumineuse',
+          description: 'La miniature doit faire moins de 1Mo.',
+          variant: 'destructive',
+        });
+        e.target.value = ''; // Reset file input
         return;
       }
       
@@ -72,7 +79,11 @@ const VideoEditDialog: React.FC<VideoEditDialogProps> = ({
       };
       reader.onerror = () => {
         console.error("FileReader error:", reader.error);
-        alert('Erreur lors de la lecture du fichier');
+        toast({
+          title: 'Erreur de lecture',
+          description: 'Erreur lors de la lecture du fichier de la miniature.',
+          variant: 'destructive',
+        });
       };
       reader.readAsDataURL(file);
     }
