@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Video, categories } from '@/types';
+import { Video, categories, UserProfile } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
@@ -18,6 +18,7 @@ import MessagingTab from '@/components/dashboard/MessagingTab';
 import PlanTab from '@/components/dashboard/PlanTab';
 import FavoriteEditorsTab from '@/components/dashboard/FavoriteEditorsTab';
 import NotificationDot from '@/components/ui/NotificationDot';
+import LimitReachedDialog from '@/components/dashboard/LimitReachedDialog';
 
 interface ShowreelTabProps {
   videos: Video[];
@@ -243,6 +244,33 @@ const ShowreelTab: React.FC<ShowreelTabProps> = ({
   );
 };
 
+const VIDEO_LIMITS = {
+  free: 3,
+  basic: 15, // 'basic_tier_plan_id' sera mappé à 'premium' pour l'utilisateur
+  premium: 15, // Explicitement pour correspondre au discours utilisateur
+  pro: Infinity, // 'pro_tier_plan_id'
+};
+
+const TIER_NAMES_MAP: { [key: string]: string } = {
+  free: 'Gratuit',
+  basic_tier_plan_id: 'Premium', // Mapping technique vers nom utilisateur
+  premium: 'Premium',
+  pro_tier_plan_id: 'Pro',
+  pro: 'Pro',
+};
+
+// Helper pour obtenir le nom lisible du tier et sa limite
+const getTierDetails = (tierId?: string | null) => {
+  const normalizedTierId = tierId?.toLowerCase().includes('basic') ? 'premium' : 
+                           tierId?.toLowerCase().includes('pro') ? 'pro' : 
+                           (tierId === 'free' || !tierId) ? 'free' : 'free';
+  
+  const limit = VIDEO_LIMITS[normalizedTierId as keyof typeof VIDEO_LIMITS] || VIDEO_LIMITS.free;
+  const name = TIER_NAMES_MAP[tierId as keyof typeof TIER_NAMES_MAP] || TIER_NAMES_MAP[normalizedTierId] || 'Gratuit';
+  
+  return { limit, name, key: normalizedTierId };
+};
+
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -253,6 +281,10 @@ const Dashboard: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [limitReachedDialogOpen, setLimitReachedDialogOpen] = useState(false);
+  const [currentVideoLimit, setCurrentVideoLimit] = useState(VIDEO_LIMITS.free);
+  const [currentTierName, setCurrentTierName] = useState(TIER_NAMES_MAP.free);
+
   const [currentShowreelUrl, setCurrentShowreelUrl] = useState<string | null>(null);
   const [currentShowreelThumbnail, setCurrentShowreelThumbnail] = useState<string | null>(null);
   
@@ -268,15 +300,21 @@ const Dashboard: React.FC = () => {
   const defaultTab = activeTabFromUrl || (isClient ? 'messaging' : 'videos');
   
   useEffect(() => {
-    if (currentUser && !isClient) {
-      Promise.all([
-        fetchUserVideos(),
-        fetchPortfolioSettings()
-      ]);
-    } else if (currentUser) {
-      // For clients, or if not editor, just stop loading
-      fetchPortfolioSettings(); // Clients might still have portfolio settings if they were editors before
-      setIsLoading(false);
+    if (currentUser) {
+      // Mettre à jour les détails du plan lorsque currentUser change (notamment subscription_tier)
+      const tierDetails = getTierDetails(currentUser.subscription_tier);
+      setCurrentVideoLimit(tierDetails.limit);
+      setCurrentTierName(tierDetails.name);
+
+      if (!isClient) {
+        Promise.all([
+          fetchUserVideos(),
+          fetchPortfolioSettings()
+        ]);
+      } else {
+        fetchPortfolioSettings();
+        setIsLoading(false);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isClient]);
@@ -396,7 +434,22 @@ const Dashboard: React.FC = () => {
   };
   
   const handleUploadVideo = () => {
-    setUploadDialogOpen(true);
+    if (!currentUser) {
+        toast({ title: "Erreur d'authentification", description: "Vous devez être connecté.", variant: "destructive"});
+        return;
+    }
+
+    const userTierKey = getTierDetails(currentUser.subscription_tier).key;
+    const limit = VIDEO_LIMITS[userTierKey as keyof typeof VIDEO_LIMITS] || VIDEO_LIMITS.free;
+
+    if (videos.length >= limit) {
+      const tierDetails = getTierDetails(currentUser.subscription_tier);
+      setCurrentTierName(tierDetails.name); // Assure que le nom est à jour pour le dialogue
+      setCurrentVideoLimit(tierDetails.limit); // Assure que la limite est à jour
+      setLimitReachedDialogOpen(true);
+    } else {
+      setUploadDialogOpen(true);
+    }
   };
   
   const handleUploadSubmit = async (
@@ -561,9 +614,14 @@ const Dashboard: React.FC = () => {
     return null;
   }
 
+  const handleUpgradeRedirect = () => {
+    setLimitReachedDialogOpen(false);
+    navigate('/dashboard?tab=plan');
+  };
+
   return (
     <div className="min-h-screen bg-secondary">
-      <Navbar /> {/* Navbar cannot be modified to show notification dot here due to file permissions */}
+      <Navbar />
       
       <main className="pt-28 pb-16 px-4 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -605,6 +663,14 @@ const Dashboard: React.FC = () => {
               isUploading={isUploading}
             />
             
+            <LimitReachedDialog
+              isOpen={limitReachedDialogOpen}
+              onClose={() => setLimitReachedDialogOpen(false)}
+              onUpgrade={handleUpgradeRedirect}
+              currentTierName={currentTierName}
+              limit={currentVideoLimit}
+            />
+
             <ConfirmationDialog
               isOpen={deleteConfirmOpen}
               onClose={() => setDeleteConfirmOpen(false)}
@@ -685,7 +751,7 @@ const Dashboard: React.FC = () => {
           )}
           
           <TabsContent value="account">
-            <AccountTab currentUser={currentUser} />
+            <AccountTab currentUser={currentUser as UserProfile} />
           </TabsContent>
         </Tabs>
       </main>
