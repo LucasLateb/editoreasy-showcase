@@ -72,7 +72,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { currentUser, isAuthenticated } = useAuth();
   const userId = isViewOnly ? editorId : currentUser?.id;
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
-  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
+  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]); // Initial state
   const [videos, setVideos] = useState<Video[]>([]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
@@ -129,7 +129,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { recordPortfolioView } = useViewTracking();
 
   useEffect(() => {
-    const fetchPortfolioSettings = async () => {
+    const fetchData = async () => {
       if (!userId) {
         setIsLoading(false);
         if (isViewOnly) {
@@ -138,6 +138,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         return;
       }
       
+      setIsLoading(true);
+      let fetchedPortfolioSettingsData: any = null;
+      let fetchedVideosData: Video[] = [];
+
       try {
         const { data: portfolioSettings, error: portfolioError } = await supabase
           .from('portfolio_settings')
@@ -148,17 +152,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         if (portfolioError) {
           throw portfolioError;
         }
-        
+        fetchedPortfolioSettingsData = portfolioSettings; // Store for later use
+
         if (portfolioSettings) {
-          if (portfolioSettings.categories && Array.isArray(portfolioSettings.categories) && portfolioSettings.categories.length > 0) {
-            try {
-              const parsedCategories = (portfolioSettings.categories as any[]).map(category => parseJsonToCategory(category));
-              setUserCategories(parsedCategories);
-            } catch (e) {
-              console.error('Failed to parse categories:', e);
-            }
-          }
-          
+          // Update states that depend only on portfolioSettings (excluding userCategories for now)
           if (portfolioSettings.featured_video && typeof portfolioSettings.featured_video === 'object') {
             try {
               const parsedVideo = parseJsonToVideo(portfolioSettings.featured_video as any);
@@ -168,45 +165,23 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             }
           }
           
-          if (portfolioSettings.highlighted_videos && Array.isArray(portfolioSettings.highlighted_videos) && portfolioSettings.highlighted_videos.length > 0) {
-            try {
-              const parsedHighlightedVideos = (portfolioSettings.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
-              
-              const highlightedIds = parsedHighlightedVideos.map(vid => vid.id);
-              
-              setVideos(prevVideos => 
-                prevVideos.map(video => ({
-                  ...video,
-                  isHighlighted: highlightedIds.includes(video.id)
-                }))
-              );
-            } catch (e) {
-              console.error('Failed to parse highlighted videos:', e);
-            }
-          }
+          // Highlighted videos will be reconciled after all videos are fetched.
           
           if (portfolioSettings.portfolio_title) {
             setPortfolioTitle(portfolioSettings.portfolio_title);
           }
-          
           if (portfolioSettings.portfolio_description) {
             setPortfolioDescription(portfolioSettings.portfolio_description);
           }
-          
           if (portfolioSettings.showreel_url) {
             setShowreelUrl(portfolioSettings.showreel_url);
-            console.log('Portfolio: Setting showreel URL to:', portfolioSettings.showreel_url);
           }
-
           if (portfolioSettings.showreel_thumbnail) {
             setShowreelThumbnail(portfolioSettings.showreel_thumbnail);
-            console.log('Portfolio: Setting showreel thumbnail to:', portfolioSettings.showreel_thumbnail);
           }
-
           if (portfolioSettings.about) {
             setAbout(portfolioSettings.about);
           }
-
           if (portfolioSettings.specializations) {
             setSpecializations(portfolioSettings.specializations as string[]);
           }
@@ -219,10 +194,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             .eq('id', userId)
             .maybeSingle();
 
-          if (userError) {
-            throw userError;
-          }
-
+          if (userError) throw userError;
           if (!userData) {
             console.error('Could not find user profile');
             toast.error('Could not find editor profile');
@@ -236,18 +208,16 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       }
 
       try {
-        const { data: videos, error: videosError } = await supabase
+        const { data: videosFromDb, error: videosError } = await supabase
           .from('videos')
           .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
         
-        if (videosError) {
-          throw videosError;
-        }
+        if (videosError) throw videosError;
         
-        if (videos) {
-          const formattedVideos: Video[] = videos.map(video => ({
+        if (videosFromDb) {
+          const formattedVideos: Video[] = videosFromDb.map(video => ({
             id: video.id,
             title: video.title,
             description: video.description || '',
@@ -261,18 +231,62 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             isHighlighted: video.is_highlighted || false
           }));
           
-          setVideos(formattedVideos);
+          // Reconcile highlighted status from portfolioSettings if available
+          if (fetchedPortfolioSettingsData?.highlighted_videos && Array.isArray(fetchedPortfolioSettingsData.highlighted_videos)) {
+            try {
+              const parsedHighlightedVideos = (fetchedPortfolioSettingsData.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
+              const highlightedIds = new Set(parsedHighlightedVideos.map(vid => vid.id));
+              fetchedVideosData = formattedVideos.map(video => ({
+                ...video,
+                isHighlighted: highlightedIds.has(video.id) || video.isHighlighted, // Prioritize DB if explicitly set
+              }));
+            } catch (e) {
+              console.error('Failed to parse highlighted videos from settings:', e);
+              fetchedVideosData = formattedVideos; // Fallback
+            }
+          } else {
+            fetchedVideosData = formattedVideos;
+          }
+          setVideos(fetchedVideosData);
         }
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast.error('Failed to load videos');
-      } finally {
-        setIsLoading(false);
       }
+
+      // Derive userCategories based on fetched videos and portfolio settings
+      const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
+      let finalUserCategories: Category[] = [];
+
+      if (fetchedPortfolioSettingsData?.categories && Array.isArray(fetchedPortfolioSettingsData.categories) && fetchedPortfolioSettingsData.categories.length > 0) {
+        try {
+          const parsedSavedCategories = (fetchedPortfolioSettingsData.categories as any[]).map(c => parseJsonToCategory(c));
+          // Filter saved categories by actual video content
+          finalUserCategories = parsedSavedCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
+          
+          // Add any categories from videos that are in defaultCategories but not in the (filtered) saved list
+          // This ensures newly used categories appear, respecting their default definition.
+          defaultCategories.forEach(defaultCat => {
+            if (uniqueCategoryIdsFromVideos.has(defaultCat.id) && !finalUserCategories.some(fc => fc.id === defaultCat.id)) {
+              finalUserCategories.push(defaultCat); // Add to the end
+            }
+          });
+
+        } catch (e) {
+          console.error('Failed to parse saved categories from settings:', e);
+          // Fallback: use default categories filtered by videos
+          finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
+        }
+      } else {
+        // No categories in portfolioSettings, or they are empty. Use default categories filtered by videos.
+        finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
+      }
+      setUserCategories(finalUserCategories);
+      
+      setIsLoading(false);
     };
     
-    setIsLoading(true);
-    fetchPortfolioSettings();
+    fetchData();
   }, [userId, isViewOnly]);
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
@@ -521,7 +535,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                 <CopyPortfolioLink />
                 {editMode && (
                   <CategoryManager
-                    userCategories={userCategories}
+                    userCategories={userCategories} // This will now use the dynamically filtered categories
                     moveCategory={moveCategory}
                   />
                 )}
@@ -548,7 +562,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       <CategorySlider 
                         onSelectCategory={setSelectedCategory}
                         selectedCategoryId={selectedCategory?.id}
-                        categories={userCategories}
+                        categories={userCategories} // This will now use the dynamically filtered categories
                       />
                     </div>
                     
