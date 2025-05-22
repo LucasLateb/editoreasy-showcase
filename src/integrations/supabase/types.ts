@@ -397,6 +397,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_current_user_send_to_conversation: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
       check_profile_like: {
         Args: { profile_id_param: string; user_id_param: string }
         Returns: boolean

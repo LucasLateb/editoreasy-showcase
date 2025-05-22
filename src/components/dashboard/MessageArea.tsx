@@ -52,7 +52,7 @@ const fetchMessages = async (conversationId: string): Promise<Message[]> => {
 
 const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, otherParticipant }) => {
   const queryClient = useQueryClient();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<React.ElementRef<typeof ScrollArea>>(null);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', selectedConversationId],
@@ -67,16 +67,14 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
     if (!selectedConversationId) return;
 
     const channel = supabase
-      .channel(`messages:${selectedConversationId}`) // Unique channel per conversation
+      .channel(`messages:${selectedConversationId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedConversationId}` },
         (payload) => {
           console.log('New message received via realtime in MessageArea!', payload);
-          // Option 1: Optimistic update (more complex)
-          // Option 2: Invalidate and refetch (simpler)
           queryClient.invalidateQueries({ queryKey: ['messages', selectedConversationId] });
-          queryClient.invalidateQueries({ queryKey: ['conversations', undefined] }); // Also update last message preview in conv list
+          queryClient.invalidateQueries({ queryKey: ['conversations', undefined] });
         }
       )
       .subscribe();
@@ -87,15 +85,24 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
   }, [selectedConversationId, queryClient]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages arrive or conversation changes
-    if (scrollAreaRef.current) {
-        const scrollViewport = scrollAreaRef.current.querySelector('div[style*="overflow: scroll"]');
-        if (scrollViewport) {
-            scrollViewport.scrollTop = scrollViewport.scrollHeight;
-        }
-    }
-  }, [messages]);
+    const scrollContainer = scrollAreaRef.current;
 
+    if (scrollContainer && messages && messages.length > 0) {
+      const attemptScroll = () => {
+        const viewportElement = scrollContainer.querySelector<HTMLElement>('div[style*="overflow: scroll"]');
+        
+        if (viewportElement) {
+          viewportElement.scrollTop = viewportElement.scrollHeight;
+        }
+      };
+
+      const timerId = setTimeout(attemptScroll, 0);
+
+      return () => {
+        clearTimeout(timerId);
+      };
+    }
+  }, [messages, selectedConversationId]);
 
   if (!selectedConversationId) {
     return (
