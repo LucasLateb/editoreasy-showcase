@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Video, categories, UserProfile } from '@/types';
+import { Video, categories, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
@@ -261,14 +261,26 @@ const TIER_NAMES_MAP: { [key: string]: string } = {
 
 // Helper pour obtenir le nom lisible du tier et sa limite
 const getTierDetails = (tierId?: string | null) => {
-  const normalizedTierId = tierId?.toLowerCase().includes('basic') ? 'premium' : 
-                           tierId?.toLowerCase().includes('pro') ? 'pro' : 
-                           (tierId === 'free' || !tierId) ? 'free' : 'free';
+  // Ensure tierId is one of the expected values 'free', 'premium', 'pro'
+  // The currentUser.subscriptionTier will be one of these.
+  // The current logic handles if tierId might be a more complex string like 'basic_tier_plan_id'
+  // but for currentUser.subscriptionTier, it's simpler.
+  let normalizedTierKey: 'free' | 'premium' | 'pro' = 'free';
+  if (tierId === 'premium') {
+    normalizedTierKey = 'premium';
+  } else if (tierId === 'pro') {
+    normalizedTierKey = 'pro';
+  } else if (tierId === 'free') {
+    normalizedTierKey = 'free';
+  }
+  // Fallback for unexpected tierId values, though currentUser.subscriptionTier should be constrained
+  const validTierIdForMap = tierId && TIER_NAMES_MAP[tierId] ? tierId : normalizedTierKey;
+
+  const limit = VIDEO_LIMITS[normalizedTierKey as keyof typeof VIDEO_LIMITS] || VIDEO_LIMITS.free;
+  // Use normalizedTierKey for TIER_NAMES_MAP lookup if direct tierId isn't found or to ensure consistency
+  const name = TIER_NAMES_MAP[validTierIdForMap as keyof typeof TIER_NAMES_MAP] || TIER_NAMES_MAP[normalizedTierKey] || 'Gratuit';
   
-  const limit = VIDEO_LIMITS[normalizedTierId as keyof typeof VIDEO_LIMITS] || VIDEO_LIMITS.free;
-  const name = TIER_NAMES_MAP[tierId as keyof typeof TIER_NAMES_MAP] || TIER_NAMES_MAP[normalizedTierId] || 'Gratuit';
-  
-  return { limit, name, key: normalizedTierId };
+  return { limit, name, key: normalizedTierKey };
 };
 
 const Dashboard: React.FC = () => {
@@ -282,6 +294,8 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [limitReachedDialogOpen, setLimitReachedDialogOpen] = useState(false);
+  
+  // Initialize with default free tier details, will be updated in useEffect
   const [currentVideoLimit, setCurrentVideoLimit] = useState(VIDEO_LIMITS.free);
   const [currentTierName, setCurrentTierName] = useState(TIER_NAMES_MAP.free);
 
@@ -301,8 +315,8 @@ const Dashboard: React.FC = () => {
   
   useEffect(() => {
     if (currentUser) {
-      // Mettre à jour les détails du plan lorsque currentUser change (notamment subscription_tier)
-      const tierDetails = getTierDetails(currentUser.subscription_tier);
+      // Mettre à jour les détails du plan lorsque currentUser change
+      const tierDetails = getTierDetails(currentUser.subscriptionTier); // Changed to subscriptionTier
       setCurrentVideoLimit(tierDetails.limit);
       setCurrentTierName(tierDetails.name);
 
@@ -439,13 +453,14 @@ const Dashboard: React.FC = () => {
         return;
     }
 
-    const userTierKey = getTierDetails(currentUser.subscription_tier).key;
+    // Use currentUser.subscriptionTier which is of type 'free' | 'premium' | 'pro'
+    const userTierKey = getTierDetails(currentUser.subscriptionTier).key; // Changed to subscriptionTier
     const limit = VIDEO_LIMITS[userTierKey as keyof typeof VIDEO_LIMITS] || VIDEO_LIMITS.free;
 
-    if (videos.length >= limit) {
-      const tierDetails = getTierDetails(currentUser.subscription_tier);
-      setCurrentTierName(tierDetails.name); // Assure que le nom est à jour pour le dialogue
-      setCurrentVideoLimit(tierDetails.limit); // Assure que la limite est à jour
+    if (videos.length >= limit && limit !== Infinity) { // Add check for Infinity
+      const tierDetails = getTierDetails(currentUser.subscriptionTier); // Changed to subscriptionTier
+      setCurrentTierName(tierDetails.name); 
+      setCurrentVideoLimit(tierDetails.limit); 
       setLimitReachedDialogOpen(true);
     } else {
       setUploadDialogOpen(true);
@@ -751,7 +766,7 @@ const Dashboard: React.FC = () => {
           )}
           
           <TabsContent value="account">
-            <AccountTab currentUser={currentUser as UserProfile} />
+            <AccountTab currentUser={currentUser as User} /> {/* Changed UserProfile to User */}
           </TabsContent>
         </Tabs>
       </main>
