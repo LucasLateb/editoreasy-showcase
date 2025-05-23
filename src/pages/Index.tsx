@@ -6,7 +6,7 @@ import EditorCard from '@/components/EditorCard';
 import VideoCard from '@/components/VideoCard';
 import PricingPlans from '@/components/PricingPlans';
 import { Toaster } from '@/components/Toaster';
-import { Category, categories } from '@/types';
+import { Category, categories, User as AppUser } from '@/types'; // Renamed User to AppUser to avoid conflict
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/pagination';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import SpecializationFilter from '@/components/SpecializationFilter';
-import { Search, User } from 'lucide-react';
+import { Search, User as LucideUserIcon } from 'lucide-react'; // Renamed User to LucideUserIcon
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -31,11 +31,14 @@ import {
 } from "@/components/ui/command";
 import { useToast } from '@/hooks/use-toast';
 
+// Define a more specific type for editors, including totalVideoLikes
+type EditorProfile = AppUser & { totalVideoLikes: number };
+
 const Index: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
-  const [popularEditors, setPopularEditors] = useState<any[]>([]);
-  const [filteredEditors, setFilteredEditors] = useState<any[]>([]);
+  const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]); // Updated type
+  const [filteredEditors, setFilteredEditors] = useState<EditorProfile[]>([]); // Updated type
   const [availableSpecializations, setAvailableSpecializations] = useState<string[]>([]);
   const [showreelData, setShowreelData] = useState<{[key: string]: {
     url?: string, 
@@ -69,7 +72,7 @@ const Index: React.FC = () => {
   const filteredSearchEditors = allEditors.filter(editor => 
     editor.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   useEffect(() => {
     const fetchAllEditors = async () => {
       setIsLoadingAllEditors(true);
@@ -77,7 +80,7 @@ const Index: React.FC = () => {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, subscription_tier, role')
-          .eq('role', 'monteur') // Only fetch editors (monteurs), not clients
+          .eq('role', 'monteur') 
           .order('name');
         
         if (error) {
@@ -109,101 +112,125 @@ const Index: React.FC = () => {
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
+      setIsLoading(true);
       try {
-        const { data: editorsData, error: editorsError } = await supabase
+        // 1. Fetch 'pro' editors
+        const { data: proEditorsData, error: editorsError } = await supabase
           .from('profiles')
-          .select('*')
-          .eq('role', 'monteur') // Only fetch editors (monteurs), not clients
-          .order('likes', { ascending: false })
-          .limit(8);
+          .select('id, name, avatar_url, created_at, subscription_tier, likes, bio')
+          .eq('role', 'monteur')
+          .eq('subscription_tier', 'pro');
         
         if (editorsError) {
-          console.error('Error fetching popular editors:', editorsError);
+          console.error('Error fetching pro editors:', editorsError);
+          toast({ title: "Erreur", description: "Impossible de récupérer les éditeurs Pro.", variant: "destructive" });
+          setPopularEditors([]);
+          setIsLoading(false);
           return;
         }
-        
-        const editorIds = editorsData.map(editor => editor.id);
+
+        if (!proEditorsData || proEditorsData.length === 0) {
+          setPopularEditors([]);
+          setShowreelData({});
+          setAvailableSpecializations([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Fetch video likes for these 'pro' editors
+        const editorIds = proEditorsData.map(editor => editor.id);
         const { data: videoLikesData, error: videoLikesError } = await supabase
           .from('videos')
           .select('user_id, likes')
           .in('user_id', editorIds);
-          
+            
         if (videoLikesError) {
           console.error('Error fetching video likes:', videoLikesError);
+          // Optionally, inform user or proceed with 0 likes
         }
         
-        const totalLikesByEditor = videoLikesData?.reduce((acc: {[key: string]: number}, video) => {
+        const totalLikesByEditor: {[key: string]: number} = videoLikesData?.reduce((acc: {[key: string]: number}, video) => {
           acc[video.user_id] = (acc[video.user_id] || 0) + (video.likes || 0);
           return acc;
         }, {}) || {};
         
-        const editors = editorsData.map(editor => ({
-          ...editor,
-          createdAt: new Date(editor.created_at),
-          subscriptionTier: editor.subscription_tier || 'free',
+        // 3. Map and add totalVideoLikes
+        const editorsWithVideoLikes: EditorProfile[] = proEditorsData.map(editor => ({
+          id: editor.id,
+          name: editor.name || 'Éditeur inconnu',
+          email: editor.email, // email might be missing from select, ensure User type matches
           avatarUrl: editor.avatar_url,
-          totalVideoLikes: totalLikesByEditor[editor.id] || 0
+          bio: editor.bio,
+          subscriptionTier: editor.subscription_tier as 'pro', // We filtered for 'pro'
+          likes: editor.likes || 0, // Profile likes
+          createdAt: new Date(editor.created_at),
+          totalVideoLikes: totalLikesByEditor[editor.id] || 0,
+          // Ensure all other required fields for AppUser are present or handled
         }));
         
-        const sortedEditors = sortEditorsByTierAndLikes(editors);
+        // 4. Sort 'pro' editors by totalVideoLikes descending
+        const sortedProEditors = editorsWithVideoLikes.sort((a, b) => b.totalVideoLikes - a.totalVideoLikes);
         
-        setPopularEditors(sortedEditors);
+        // 5. Take the top 4
+        const top4ProEditors = sortedProEditors.slice(0, 4);
         
-        const { data: portfolioData, error: portfolioError } = await supabase
-          .from('portfolio_settings')
-          .select('user_id, showreel_url, showreel_thumbnail, about, specializations')
-          .in('user_id', editors.map(editor => editor.id));
+        // 6. Set these top 4 to popularEditors state
+        setPopularEditors(top4ProEditors);
         
-        if (portfolioError) {
-          console.error('Error fetching portfolio settings:', portfolioError);
-        } else if (portfolioData) {
-          const showreelMap: {[key: string]: {
-            url?: string, 
-            thumbnail?: string, 
-            about?: string,
-            specializations?: string[]
-          }} = {};
+        // 7. Fetch portfolio settings for these top 4 (if there are any)
+        if (top4ProEditors.length > 0) {
+          const top4EditorIds = top4ProEditors.map(editor => editor.id);
+          const { data: portfolioData, error: portfolioError } = await supabase
+            .from('portfolio_settings')
+            .select('user_id, showreel_url, showreel_thumbnail, about, specializations')
+            .in('user_id', top4EditorIds);
           
-          const allSpecializations = new Set<string>();
-          
-          portfolioData.forEach(item => {
-            let specializationsArray: string[] = [];
-            if (item.specializations) {
-              try {
-                if (typeof item.specializations === 'string') {
-                  specializationsArray = JSON.parse(item.specializations);
-                } else if (Array.isArray(item.specializations)) {
-                  specializationsArray = (item.specializations as any[]).map(spec => 
-                    typeof spec === 'string' ? spec : String(spec)
-                  );
-                }
-                
-                specializationsArray.forEach(spec => allSpecializations.add(spec));
-              } catch (e) {
-                console.error('Error parsing specializations:', e);
-              }
-            }
+          if (portfolioError) {
+            console.error('Error fetching portfolio settings:', portfolioError);
+          } else if (portfolioData) {
+            const showreelMap: {[key: string]: { url?: string, thumbnail?: string, about?: string, specializations?: string[] }} = {};
+            const allSpecializations = new Set<string>();
             
-            showreelMap[item.user_id] = {
-              url: item.showreel_url || undefined,
-              thumbnail: item.showreel_thumbnail || undefined,
-              about: item.about || undefined,
-              specializations: specializationsArray
-            };
-          });
-          
-          setShowreelData(showreelMap);
-          setAvailableSpecializations(Array.from(allSpecializations).sort());
+            portfolioData.forEach(item => {
+              let specializationsArray: string[] = [];
+              if (item.specializations) {
+                try {
+                  if (typeof item.specializations === 'string') {
+                    specializationsArray = JSON.parse(item.specializations);
+                  } else if (Array.isArray(item.specializations)) {
+                    specializationsArray = (item.specializations as any[]).map(spec => 
+                      typeof spec === 'string' ? spec : String(spec)
+                    );
+                  }
+                  specializationsArray.forEach(spec => allSpecializations.add(spec));
+                } catch (e) { console.error('Error parsing specializations for showreelMap:', e); }
+              }
+              showreelMap[item.user_id] = {
+                url: item.showreel_url || undefined,
+                thumbnail: item.showreel_thumbnail || undefined,
+                about: item.about || undefined,
+                specializations: specializationsArray
+              };
+            });
+            setShowreelData(showreelMap);
+            setAvailableSpecializations(Array.from(allSpecializations).sort());
+          }
+        } else {
+          setShowreelData({});
+          setAvailableSpecializations([]);
         }
+
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in fetchPopularEditors:', error);
+        toast({ title: "Erreur", description: "Une erreur inattendue est survenue.", variant: "destructive" });
+        setPopularEditors([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPopularEditors();
-  }, []);
+  }, [toast]); // toast is stable, so this effect runs once on mount
   
   useEffect(() => {
     if (selectedSpecialization) {
@@ -216,20 +243,6 @@ const Index: React.FC = () => {
       setFilteredEditors(popularEditors);
     }
   }, [popularEditors, selectedSpecialization, showreelData]);
-  
-  const sortEditorsByTierAndLikes = (editors: any[]) => {
-    return editors.sort((a, b) => {
-      const tierOrder = { pro: 1, premium: 2, free: 3 };
-      const aTierValue = tierOrder[a.subscriptionTier as keyof typeof tierOrder] || 3;
-      const bTierValue = tierOrder[b.subscriptionTier as keyof typeof tierOrder] || 3;
-      
-      if (aTierValue !== bTierValue) {
-        return aTierValue - bTierValue;
-      }
-      
-      return b.likes - a.likes;
-    });
-  };
   
   useEffect(() => {
     const fetchVideos = async () => {
@@ -313,7 +326,7 @@ const Index: React.FC = () => {
     
     fetchVideos();
   }, [selectedCategory]);
-  
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -326,11 +339,11 @@ const Index: React.FC = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover talented video editors with impressive portfolios
+              Découvrez les meilleurs éditeurs vidéo "Pro" et leurs portfolio impressionnants
             </p>
           </div>
           
-          {!isLoading && availableSpecializations.length > 0 && (
+          {!isLoading && availableSpecializations.length > 0 && popularEditors.length > 0 && (
             <SpecializationFilter
               availableSpecializations={availableSpecializations}
               selectedSpecialization={selectedSpecialization}
@@ -340,7 +353,7 @@ const Index: React.FC = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
             {isLoading ? (
-              Array.from({ length: 8 }).map((_, index) => (
+              Array.from({ length: 4 }).map((_, index) => ( // Changed length from 8 to 4
                 <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse min-h-[350px]">
                   <div className="flex items-center mb-4">
                     <div className="h-16 w-16 rounded-full bg-muted"></div>
@@ -364,10 +377,18 @@ const Index: React.FC = () => {
             ) : filteredEditors.length > 0 ? (
               filteredEditors.map((editor, index) => {
                 const showreelInfo = showreelData[editor.id] || {};
+                // Ensure editor object matches EditorCardProps, especially User part
+                const editorForCard: AppUser & { totalVideoLikes?: number } = {
+                  ...editor, // Contains id, name, avatarUrl, bio, subscriptionTier, likes, createdAt, totalVideoLikes
+                  // Ensure all fields of AppUser are here or correctly defaulted if optional
+                  email: editor.email || undefined, 
+                  role: editor.role || 'monteur', 
+                  favoritedAt: editor.favoritedAt || undefined,
+                };
                 return (
                   <EditorCard 
                     key={editor.id} 
-                    editor={editor} 
+                    editor={editorForCard} 
                     index={index}
                     showreelUrl={showreelInfo.url}
                     showreelThumbnail={showreelInfo.thumbnail}
@@ -378,9 +399,12 @@ const Index: React.FC = () => {
               })
             ) : (
               <div className="col-span-full py-8 text-center">
-                <h3 className="text-lg font-medium mb-2">No editors found with this specialization</h3>
+                <h3 className="text-lg font-medium mb-2">Aucun éditeur Pro trouvé</h3>
                 <p className="text-muted-foreground">
-                  Try selecting a different specialization or clear the filter
+                  {selectedSpecialization 
+                    ? "Essayez de sélectionner une autre spécialisation ou effacez le filtre."
+                    : "Revenez plus tard pour découvrir nos éditeurs Pro."
+                  }
                 </p>
               </div>
             )}
@@ -567,7 +591,7 @@ const Index: React.FC = () => {
                     onSelect={() => handleEditorSelect(editor.id)}
                     className="flex items-center"
                   >
-                    <User className="mr-2 h-4 w-4" />
+                    <LucideUserIcon className="mr-2 h-4 w-4" /> {/* Changed User to LucideUserIcon */}
                     <span>{editor.name}</span>
                     {editor.subscription_tier && editor.subscription_tier !== 'free' && (
                       <span className="ml-2 text-xs text-muted-foreground">
