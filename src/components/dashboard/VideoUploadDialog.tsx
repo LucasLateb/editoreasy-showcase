@@ -479,7 +479,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               <div className="grid gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Upload your own thumbnail:
+                    Upload your own thumbnail (max 1MB):
                   </p>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">

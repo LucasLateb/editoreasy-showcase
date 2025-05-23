@@ -144,7 +144,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     description: 'Perfect for beginners',
     price: 0,
     features: [
-      'Upload up to 5 videos',
+      'Upload up to 3 videos',
       'Basic portfolio page',
       'Community access'
     ]
@@ -156,11 +156,12 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     price: 9.99,
     popular: true,
     features: [
-      'Upload up to 30 videos',
+      'Upload up to 15 videos',
       'Custom portfolio page',
       'Category organization',
       'Analytics dashboard',
-      'Priority support'
+      'Priority support',
+      'Messaging with clients'
     ]
   },
   {
@@ -173,7 +174,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
       'Advanced customization',
       'Client collaboration tools',
       'Detailed analytics',
-      'Custom domain',
+      'Messaging with clients',
       'Premium support',
       'Featured on homepage'
     ]
