@@ -340,7 +340,7 @@ const Index: React.FC = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Découvrez les meilleurs éditeurs vidéo "Pro" et leurs portfolio impressionnants
+              Discover talented video editors with impressive portfolios
             </p>
           </div>
           
