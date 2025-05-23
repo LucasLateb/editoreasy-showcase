@@ -117,7 +117,7 @@ const Index: React.FC = () => {
         // 1. Fetch 'pro' editors
         const { data: proEditorsData, error: editorsError } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, created_at, subscription_tier, likes, bio')
+          .select('id, name, email, avatar_url, created_at, subscription_tier, likes, bio') // Added 'email' here
           .eq('role', 'monteur')
           .eq('subscription_tier', 'pro');
         
@@ -158,14 +158,14 @@ const Index: React.FC = () => {
         const editorsWithVideoLikes: EditorProfile[] = proEditorsData.map(editor => ({
           id: editor.id,
           name: editor.name || 'Éditeur inconnu',
-          email: editor.email, // email might be missing from select, ensure User type matches
+          email: editor.email || undefined, // email will now exist on editor object (can be null)
           avatarUrl: editor.avatar_url,
           bio: editor.bio,
           subscriptionTier: editor.subscription_tier as 'pro', // We filtered for 'pro'
           likes: editor.likes || 0, // Profile likes
           createdAt: new Date(editor.created_at),
           totalVideoLikes: totalLikesByEditor[editor.id] || 0,
-          // Ensure all other required fields for AppUser are present or handled
+          role: 'monteur', // Assuming all fetched profiles are 'monteur' as per query
         }));
         
         // 4. Sort 'pro' editors by totalVideoLikes descending
@@ -180,6 +180,7 @@ const Index: React.FC = () => {
         // 7. Fetch portfolio settings for these top 4 (if there are any)
         if (top4ProEditors.length > 0) {
           const top4EditorIds = top4ProEditors.map(editor => editor.id);
+          // ... keep existing code (fetching portfolio settings for top 4)
           const { data: portfolioData, error: portfolioError } = await supabase
             .from('portfolio_settings')
             .select('user_id, showreel_url, showreel_thumbnail, about, specializations')
