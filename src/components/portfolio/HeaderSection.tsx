@@ -90,7 +90,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                     </DialogHeader>
                     <div className="space-y-4 pt-4">
                       <div className="space-y-2">
-                        <Label htmlFor="thumbnail">Upload Image</Label>
+                        <Label htmlFor="thumbnail">Upload Image max 1mo</Label>
                         <Input
                           id="thumbnail"
                           type="file"
@@ -116,65 +116,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
                   </DialogContent>
                 </Dialog>
 
-                <Dialog open={titleDialogOpen} onOpenChange={setTitleDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-background/80 backdrop-blur-sm"
-                    >
-                      Edit Title
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Portfolio Header</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="portfolio-title"
-                          className="text-sm font-medium"
-                        >
-                          Portfolio Title
-                        </label>
-                        <Input
-                          id="portfolio-title"
-                          value={editedTitle}
-                          onChange={(e) => setEditedTitle(e.target.value)}
-                          placeholder="Enter your portfolio title"
-                          disabled={isSavingTitle}
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => setTitleDialogOpen(false)}
-                          disabled={isSavingTitle}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleSaveTitle}
-                          disabled={isSavingTitle || editedTitle.trim() === ''}
-                        >
-                          {isSavingTitle ? (
-                            <>
-                              <span className="mr-2">Saving...</span>
-                              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                              </svg>
-                            </>
-                          ) : (
-                            "Save Changes"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                
               </div>
             )}
           </div>
