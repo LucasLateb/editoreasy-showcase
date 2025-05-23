@@ -127,24 +127,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               {formatSubscriptionTier(displayUser?.subscriptionTier || displayUser?.subscription_tier)}
             </Badge>
             <div className="flex items-center">
-              <span 
-                className={cn(
-                  "text-sm flex items-center",
-                  isViewOnly && "cursor-pointer"
-                )}
-                onClick={() => isViewOnly && toggleLike()}
-              >
+              {/* Updated like counter: not clickable, shows profile likes */}
+              <span className="text-sm flex items-center text-muted-foreground">
                 <Heart 
                   className={cn(
                     "h-4 w-4 mr-1 transition-colors",
-                    isLiked ? "text-red-500" : "text-muted-foreground",
-                    !isLoading && "hover:text-red-400 cursor-pointer"
+                    isLiked ? "text-red-500" : "text-muted-foreground"
                   )} 
                   fill={isLiked ? "currentColor" : "none"} 
                 />
-                <span className="flex items-center gap-1">
-                  {totalVideoLikes}
-                </span>
+                {/* Display likesCount (profile likes) instead of totalVideoLikes */}
+                <span>{likesCount}</span>
               </span>
             </div>
             <span className="text-sm text-muted-foreground ml-2 pl-2 border-l border-border flex items-center">
@@ -250,15 +243,38 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           {specializations.map((spec, index) => (
             <Badge key={index} variant="secondary">{spec}</Badge>
           ))}
+          {(specializations.length === 0 && !editMode) && (
+            <p className="text-sm text-muted-foreground">No specializations listed.</p>
+          )}
         </div>
         
         <div className="flex flex-col gap-2">
-          <Button className="w-full" onClick={handleContactEditor}>
+          <Button className="w-full" onClick={handleContactEditor} disabled={displayUser?.id === authUser?.id}>
             <Mail className="mr-2 h-4 w-4" />
             Contact Me
           </Button>
+
+          {/* New "Like this Portfolio" button */}
+          {isViewOnly && (
+            <Button
+              variant={isLiked ? "outline" : "default"}
+              className="w-full"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleLike();
+              }}
+              disabled={isLoading}
+            >
+              <Heart
+                className={cn("mr-2 h-4 w-4", isLiked && "text-red-500")}
+                fill={isLiked ? "currentColor" : "none"}
+              />
+              {isLiked ? "Unlike Portfolio" : "Like this Portfolio"}
+            </Button>
+          )}
           
-          {/* Add the favorite button only for clients viewing an editor's portfolio */}
+          {/* Favorite button (existing) */}
           {isViewOnly && isClient && (
             <Button 
               variant={isFavorited ? "outline" : "secondary"} 
