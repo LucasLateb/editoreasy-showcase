@@ -26,10 +26,10 @@ export const useViewTracking = () => {
       });
       
       if (error) {
-        console.error('Error in record_video_view RPC:', error);
-      } else {
-        console.log('Video view recorded successfully');
+        throw error;
       }
+      
+      console.log('Video view recorded successfully');
     } catch (error) {
       console.error('Error recording video view:', error);
     }
@@ -38,29 +38,33 @@ export const useViewTracking = () => {
   const recordPortfolioView = useCallback(async (portfolioUserId: string) => {
     try {
       if (!portfolioUserId) {
+        console.error('Missing portfolioUserId for tracking');
         return;
       }
-      
-      const viewerId = currentUser?.id || null;
       
       // Ne pas enregistrer si l'utilisateur consulte son propre portfolio
-      if (viewerId && viewerId === portfolioUserId) {
+      if (currentUser?.id === portfolioUserId) {
+        console.log('Skipping view recording for own portfolio');
         return;
       }
       
+      // Récupération des informations du navigateur et appareil de façon sécurisée
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
       
+      // Utilisation du RPC avec paramètres explicites pour éviter les problèmes de search_path
       const { error } = await supabase.rpc('record_portfolio_view', {
         portfolio_user_id_param: portfolioUserId,
-        viewer_id_param: viewerId,
+        viewer_id_param: currentUser?.id || null,
         device_type_param: deviceType,
         browser_param: browser
       });
       
       if (error) {
-        console.error('Error in record_portfolio_view RPC:', error);
+        throw error;
       }
+      
+      console.log('Portfolio view recorded successfully');
     } catch (error) {
       console.error('Error recording portfolio view:', error);
     }
