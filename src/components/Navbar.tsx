@@ -122,6 +122,11 @@ const Navbar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center space-x-2">
+          <img
+            src="/favicon.png"
+            alt="VideoCut logo"
+            className="h-6 w-6 sm:h-8 sm:w-8 object-contain"
+          />
           <span className="text-2xl font-semibold bg-clip-text text-foreground">VideoCut</span>
         </Link>
 
