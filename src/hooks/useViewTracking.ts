@@ -26,10 +26,10 @@ export const useViewTracking = () => {
       });
       
       if (error) {
-        throw error;
+        console.error('Error in record_video_view RPC:', error);
+      } else {
+        console.log('Video view recorded successfully');
       }
-      
-      console.log('Video view recorded successfully');
     } catch (error) {
       console.error('Error recording video view:', error);
     }
@@ -38,16 +38,13 @@ export const useViewTracking = () => {
   const recordPortfolioView = useCallback(async (portfolioUserId: string) => {
     try {
       if (!portfolioUserId) {
-        console.error('useViewTracking: Missing portfolioUserId for tracking');
         return;
       }
       
       const viewerId = currentUser?.id || null;
-      console.log(`useViewTracking: Attempting to record portfolio view. Portfolio User ID: ${portfolioUserId}, Viewer ID: ${viewerId}`);
       
       // Ne pas enregistrer si l'utilisateur consulte son propre portfolio
       if (viewerId && viewerId === portfolioUserId) {
-        console.log('useViewTracking: Skipping view recording for own portfolio.');
         return;
       }
       
@@ -62,12 +59,10 @@ export const useViewTracking = () => {
       });
       
       if (error) {
-        throw error;
+        console.error('Error in record_portfolio_view RPC:', error);
       }
-      
-      console.log(`useViewTracking: Portfolio view recorded successfully for ${portfolioUserId}.`);
     } catch (error) {
-      console.error('useViewTracking: Error recording portfolio view:', error);
+      console.error('Error recording portfolio view:', error);
     }
   }, [currentUser]);
 
