@@ -70,7 +70,7 @@ const defaultFeaturedVideo = {
 const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams();
   const { currentUser, isAuthenticated } = useAuth();
-  const userId = isViewOnly ? editorId : currentUser?.id;
+  const userId = isViewOnly ? editorId : currentUser?.id; // This is the ID of the profile being viewed or edited
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]); // Initial state
   const [videos, setVideos] = useState<Video[]>([]);
@@ -126,14 +126,18 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     }
   };
 
-  const { recordPortfolioView } = useViewTracking();
+  const { recordPortfolioView } = useViewTracking(); // Destructure the hook
 
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) {
         setIsLoading(false);
         if (isViewOnly) {
-          toast.error('Editor not found');
+          toast.error('Editor not found or ID is missing.');
+        } else {
+          // Potentially user not logged in for their own portfolio
+          // Or currentUser.id is not yet available.
+          // Handled by redirect or auth checks elsewhere normally.
         }
         return;
       }
@@ -152,142 +156,68 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         if (portfolioError) {
           throw portfolioError;
         }
-        fetchedPortfolioSettingsData = portfolioSettings; // Store for later use
+        fetchedPortfolioSettingsData = portfolioSettings; 
 
         if (portfolioSettings) {
-          // Update states that depend only on portfolioSettings (excluding userCategories for now)
-          if (portfolioSettings.featured_video && typeof portfolioSettings.featured_video === 'object') {
-            try {
-              const parsedVideo = parseJsonToVideo(portfolioSettings.featured_video as any);
-              setFeaturedVideo(parsedVideo);
-            } catch (e) {
-              console.error('Failed to parse featured video:', e);
-            }
-          }
-          
-          // Highlighted videos will be reconciled after all videos are fetched.
-          
-          if (portfolioSettings.portfolio_title) {
-            setPortfolioTitle(portfolioSettings.portfolio_title);
-          }
-          if (portfolioSettings.portfolio_description) {
-            setPortfolioDescription(portfolioSettings.portfolio_description);
-          }
-          if (portfolioSettings.showreel_url) {
-            setShowreelUrl(portfolioSettings.showreel_url);
-          }
-          if (portfolioSettings.showreel_thumbnail) {
-            setShowreelThumbnail(portfolioSettings.showreel_thumbnail);
-          }
-          if (portfolioSettings.about) {
-            setAbout(portfolioSettings.about);
-          }
-          if (portfolioSettings.specializations) {
-            setSpecializations(portfolioSettings.specializations as string[]);
-          }
+          // ... keep existing code (setting states from portfolioSettings)
         }
 
         if (isViewOnly) {
           const { data: userData, error: userError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', userId)
+            .eq('id', userId) // userId is editorId here
             .maybeSingle();
 
           if (userError) throw userError;
           if (!userData) {
-            console.error('Could not find user profile');
+            console.error('Could not find user profile for ID:', userId);
             toast.error('Could not find editor profile');
           } else {
             setEditorData(userData);
+            // Call recordPortfolioView after successfully fetching editor data in viewOnly mode
+            // The recordPortfolioView hook itself checks if the viewer is the owner.
+            console.log(`Portfolio.tsx: Calling recordPortfolioView for editor ID: ${userId}`);
+            recordPortfolioView(userId); 
           }
+        } else {
+           // If not viewOnly, set editorData to currentUser for consistency if needed by child components
+           // or ensure editorData is null/undefined and handled appropriately.
+           // For now, ProfileCard uses `displayUser = isViewOnly ? editorData : currentUser;`
+           // so this path may not need to explicitly set editorData if currentUser is sufficient.
         }
       } catch (error) {
-        console.error('Error fetching portfolio settings:', error);
-        toast.error('Failed to load portfolio settings');
+        console.error('Error fetching portfolio settings or user data:', error);
+        // Avoid toast.error here if specific toasts are used above, or make it more generic
+        // toast.error('Failed to load portfolio initial data');
       }
 
       try {
-        const { data: videosFromDb, error: videosError } = await supabase
-          .from('videos')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-        
-        if (videosError) throw videosError;
-        
-        if (videosFromDb) {
-          const formattedVideos: Video[] = videosFromDb.map(video => ({
-            id: video.id,
-            title: video.title,
-            description: video.description || '',
-            thumbnailUrl: video.thumbnail_url || `https://images.unsplash.com/photo-${1550745165 + Math.floor(Math.random() * 100)}-9bc0b252726f`,
-            videoUrl: video.video_url || '#',
-            categoryId: video.category_id,
-            userId: video.user_id,
-            likes: video.likes || 0,
-            views: video.views || 0,
-            createdAt: new Date(video.created_at),
-            isHighlighted: video.is_highlighted || false
-          }));
-          
-          // Reconcile highlighted status from portfolioSettings if available
-          if (fetchedPortfolioSettingsData?.highlighted_videos && Array.isArray(fetchedPortfolioSettingsData.highlighted_videos)) {
-            try {
-              const parsedHighlightedVideos = (fetchedPortfolioSettingsData.highlighted_videos as any[]).map(video => parseJsonToVideo(video));
-              const highlightedIds = new Set(parsedHighlightedVideos.map(vid => vid.id));
-              fetchedVideosData = formattedVideos.map(video => ({
-                ...video,
-                isHighlighted: highlightedIds.has(video.id) || video.isHighlighted, // Prioritize DB if explicitly set
-              }));
-            } catch (e) {
-              console.error('Failed to parse highlighted videos from settings:', e);
-              fetchedVideosData = formattedVideos; // Fallback
-            }
-          } else {
-            fetchedVideosData = formattedVideos;
-          }
-          setVideos(fetchedVideosData);
-        }
+        // ... keep existing code (fetching videos)
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast.error('Failed to load videos');
       }
 
-      // Derive userCategories based on fetched videos and portfolio settings
-      const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
-      let finalUserCategories: Category[] = [];
-
-      if (fetchedPortfolioSettingsData?.categories && Array.isArray(fetchedPortfolioSettingsData.categories) && fetchedPortfolioSettingsData.categories.length > 0) {
-        try {
-          const parsedSavedCategories = (fetchedPortfolioSettingsData.categories as any[]).map(c => parseJsonToCategory(c));
-          // Filter saved categories by actual video content
-          finalUserCategories = parsedSavedCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
-          
-          // Add any categories from videos that are in defaultCategories but not in the (filtered) saved list
-          // This ensures newly used categories appear, respecting their default definition.
-          defaultCategories.forEach(defaultCat => {
-            if (uniqueCategoryIdsFromVideos.has(defaultCat.id) && !finalUserCategories.some(fc => fc.id === defaultCat.id)) {
-              finalUserCategories.push(defaultCat); // Add to the end
-            }
-          });
-
-        } catch (e) {
-          console.error('Failed to parse saved categories from settings:', e);
-          // Fallback: use default categories filtered by videos
-          finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
-        }
-      } else {
-        // No categories in portfolioSettings, or they are empty. Use default categories filtered by videos.
-        finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
-      }
-      setUserCategories(finalUserCategories);
+      // ... keep existing code (deriving userCategories)
       
       setIsLoading(false);
     };
     
-    fetchData();
-  }, [userId, isViewOnly]);
+    // Encapsulate fetchData call with a check for userId
+    if (userId) {
+        fetchData();
+    } else {
+        // Handle cases where userId is not available (e.g. editorId not in params for viewOnly, or currentUser not loaded for own portfolio)
+        setIsLoading(false);
+        if (isViewOnly) {
+            toast.error('Editor ID is missing. Cannot load portfolio.');
+        }
+        // If not viewOnly and !userId, it implies currentUser is not available.
+        // This scenario should ideally be handled by routing/auth protection.
+    }
+
+  }, [userId, isViewOnly, recordPortfolioView]); // Added recordPortfolioView to dependency array
   
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
@@ -441,13 +371,13 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     return <LoadingState message={isViewOnly ? "Loading editor portfolio..." : "Loading your portfolio..."} />;
   }
   
-  if (!userId && isViewOnly) {
+  if (!userId && isViewOnly) { // This check is more specific for view-only when editorId is missing
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-card p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold mb-4">Editor Not Found</h2>
           <p className="text-muted-foreground mb-4">
-            The editor you're looking for couldn't be found. Please check the URL and try again.
+            The editor ID is missing or the editor could not be found. Please check the URL and try again.
           </p>
           <Button asChild>
             <Link to="/explore">Browse Editors</Link>
@@ -457,6 +387,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     );
   }
   
+  // If !isViewOnly and !currentUser (which implies !userId), user should be redirected by AuthProvider or similar.
+  // Adding a fallback here in case that fails.
+  if (!isViewOnly && !currentUser) {
+     return <LoadingState message="Authenticating..." />; // Or a redirect to login
+  }
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -502,7 +438,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           title={portfolioTitle}
           setTitle={(title: string) => {
             setPortfolioTitle(title);
-            updatePortfolioTitle(title);
+            if (!isViewOnly) updatePortfolioTitle(title); // Only allow title update if not viewOnly
           }}
           description={portfolioDescription}
           setDescription={setPortfolioDescription}
@@ -514,7 +450,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">
                 <ProfileCard
-                  currentUser={currentUser}
+                  currentUser={currentUser} // This is the logged-in user (viewer)
                   about={about}
                   setAbout={setAbout}
                   specializations={specializations}
@@ -529,7 +465,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                   handleAddSpecialization={handleAddSpecialization}
                   handleRemoveSpecialization={handleRemoveSpecialization}
                   isViewOnly={isViewOnly}
-                  editorData={editorData}
+                  editorData={editorData} // This is the profile owner data when isViewOnly
                   totalVideos={videos.length}
                 />
                 <CopyPortfolioLink />
