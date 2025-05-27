@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Video } from '@/types';
 import VideoCard from '@/components/VideoCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, X, Star, Upload, Plus } from 'lucide-react';
+import { Edit, X, Star, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +17,7 @@ interface VideoGridProps {
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   toggleHighlight: (videoId: string) => void;
   setAsFeatured: (video: Video) => void;
+  isViewOnly?: boolean; // Added isViewOnly prop
 }
 
 const VideoGrid: React.FC<VideoGridProps> = ({
@@ -26,7 +26,8 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   thumbnailOptions,
   updateVideoThumbnail,
   toggleHighlight,
-  setAsFeatured
+  setAsFeatured,
+  isViewOnly = false, // Added isViewOnly prop with default value
 }) => {
   const navigate = useNavigate();
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
@@ -87,10 +88,12 @@ const VideoGrid: React.FC<VideoGridProps> = ({
           <p className="text-muted-foreground mb-6">
             Upload videos from your dashboard to showcase your work in your portfolio.
           </p>
-          <Button onClick={handleUploadClick} className="mx-auto">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Videos
-          </Button>
+          {!isViewOnly && ( // Conditionally render upload button
+            <Button onClick={handleUploadClick} className="mx-auto">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Videos
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -107,7 +110,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
           >
             <VideoCard video={video} />
             
-            {editMode && (
+            {editMode && !isViewOnly && ( // Added !isViewOnly condition
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1" onClick={(e) => e.stopPropagation()}>
                 <Dialog>
                   <DialogTrigger asChild>

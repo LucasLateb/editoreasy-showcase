@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ interface HeaderSectionProps {
   setDescription: (description: string) => void;
   totalVideos?: number;
   isSavingTitle?: boolean;
+  isViewOnly?: boolean; // Added isViewOnly prop
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({
@@ -26,8 +26,11 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   updateVideoThumbnail,
   title,
   setTitle,
+  description,
+  setDescription,
   totalVideos = 0,
   isSavingTitle = false,
+  isViewOnly = false, // Added isViewOnly prop with default value
 }) => {
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
@@ -69,7 +72,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
       <div className="absolute inset-0 flex flex-col justify-end pb-8">
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl -mt-20">
-            {editMode && (
+            {editMode && !isViewOnly && ( // Added !isViewOnly condition
               <div
                 className="mt-4 flex gap-3 animate-slide-in-down opacity-0"
                 style={{ animationDelay: '0.8s' }}
