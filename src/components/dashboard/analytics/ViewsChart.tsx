@@ -1,8 +1,8 @@
 
 import React from 'react';
 import {
-  BarChart,
-  Bar,
+  LineChart, // Changé de BarChart
+  Line,    // Changé de Bar
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ViewsData {
-  date: string;
+  date: string; // s'attendra à YYYY-MM-DD
   views: number;
 }
 
@@ -21,21 +21,31 @@ interface ViewsChartProps {
 }
 
 const ViewsChart: React.FC<ViewsChartProps> = ({ data }) => {
+  const formatXAxis = (tickItem: string) => {
+    // tickItem est la date string, ex: "2025-05-27"
+    const date = new Date(tickItem + 'T00:00:00'); // Assurer que la date est interprétée en local
+    const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+    return days[date.getDay()];
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Views Over Time</CardTitle>
+        <CardTitle>Vues au fil du temps</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis dataKey="date" tickFormatter={formatXAxis} />
               <YAxis />
-              <Tooltip />
-              <Bar dataKey="views" fill="#2563eb" />
-            </BarChart>
+              <Tooltip labelFormatter={(label) => {
+                const date = new Date(label + 'T00:00:00');
+                return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+              }}/>
+              <Line type="monotone" dataKey="views" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} name="Vues" />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,9 +6,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ViewsChart from './analytics/ViewsChart';
-import VideoAnalytics from './analytics/BrowserStats';
+import VideoAnalytics from './analytics/BrowserStats'; // Ce fichier exporte VideoAnalytics
 import { Loader2, Users, Play, Globe, ThumbsUp, TrendingUp, TrendingDown } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // CardContent n'est pas utilisé directement ici, mais gardons pour cohérence si jamais.
 import { Video } from '@/types';
 import {
   Select,
@@ -36,7 +35,7 @@ const AnalyticsTab: React.FC = () => {
   });
 
   const { data: analyticsData, isLoading: loadingAnalytics } = useQuery({
-    queryKey: ['analytics', currentUser?.id, timePeriod],
+    queryKey: ['analytics', currentUser?.id, timePeriod, 'v2'], // Ajout de 'v2' pour refléter les changements
     queryFn: async () => {
       if (!currentUser?.id || !hasPremiumAccess) return null;
 
@@ -45,10 +44,21 @@ const AnalyticsTab: React.FC = () => {
       comparisonDate.setDate(comparisonDate.getDate() - daysAgo);
       const comparisonDateString = comparisonDate.toISOString();
       
-      // For previous period comparison
       const previousPeriodStart = new Date();
       previousPeriodStart.setDate(previousPeriodStart.getDate() - (daysAgo * 2));
       const previousPeriodStartString = previousPeriodStart.toISOString();
+
+      // Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories') // Supposition: une table 'categories' existe avec 'id' et 'name'
+        .select('id, name'); 
+      
+      if (categoriesError) {
+        console.warn('AnalyticsTab: Error fetching categories, category names might not be displayed.', categoriesError);
+        // Ne pas throw, pour que le reste des analytics puisse se charger
+      }
+      const categoryMap = new Map((categoriesData || []).map((cat: {id: string, name: string}) => [cat.id, cat.name]));
+
 
       // Fetch profile views data
       const { data: profileData, error: profileError } = await supabase
@@ -82,10 +92,11 @@ const AnalyticsTab: React.FC = () => {
       const { data: portfolioViewsData, error: portfolioViewsError } = await supabase
         .from('portfolio_views')
         .select('viewed_at, browser')
-        .eq('portfolio_user_id', currentUser.id);
+        .eq('portfolio_user_id', currentUser.id)
+        .gte('viewed_at', comparisonDateString); // Filtrer par la période de temps sélectionnée
 
       if (portfolioViewsError) throw portfolioViewsError;
-
+      
       // Fetch videos data with views and likes
       const { data: videosData, error: videosError } = await supabase
         .from('videos')
@@ -94,7 +105,7 @@ const AnalyticsTab: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (videosError) throw videosError;
-
+      
       // Get total video likes
       let totalVideoLikes = videosData.reduce((total, video) => total + (video.likes || 0), 0);
 
@@ -160,17 +171,16 @@ const AnalyticsTab: React.FC = () => {
         previousLikesCount || 0
       );
 
-      // Fetch video views data
-      const { data: viewsData, error: viewsError } = await supabase
+      // Fetch video views data for chart
+      const { data: viewsDataForChart, error: viewsErrorForChart } = await supabase
         .from('video_views')
         .select('video_id, viewed_at')
-        .in('video_id', 
-          videosData.map(video => video.id)
-        );
+        .in('video_id', videoIds)
+        .gte('viewed_at', comparisonDateString); // Filtrer par la période de temps sélectionnée
 
-      if (viewsError) throw viewsError;
+      if (viewsErrorForChart) throw viewsErrorForChart;
 
-      // Transformons les vidéos pour inclure la catégorie et formater les dates
+
       const formattedVideos: Video[] = videosData.map(video => ({
         id: video.id,
         title: video.title,
@@ -178,52 +188,50 @@ const AnalyticsTab: React.FC = () => {
         thumbnailUrl: video.thumbnail_url,
         videoUrl: video.video_url,
         categoryId: video.category_id,
-        categoryName: video.category_id, // Nous allons utiliser l'ID comme nom par simplicité
+        categoryName: categoryMap.get(video.category_id) || 'Non classé', // Utilisation de la map pour le nom de catégorie
         userId: video.user_id,
         likes: video.likes || 0,
-        views: video.views || 0,
+        views: video.views || 0, // Ce 'views' est le total historique, pas celui de la période
         createdAt: new Date(video.created_at),
         isHighlighted: video.is_highlighted
       }));
 
-      // Process video views data
-      const viewsByDate = new Map();
-      let totalVideoViews = 0;
-
-      viewsData?.forEach(view => {
-        const date = new Date(view.viewed_at).toLocaleDateString();
+      const formatDateForChart = (dateStr: string): string => {
+        return new Date(dateStr).toISOString().split('T')[0]; // Format YYYY-MM-DD
+      };
+      
+      // Process video views data for chart
+      const viewsByDate = new Map<string, number>();
+      (viewsDataForChart || []).forEach(view => {
+        const date = formatDateForChart(view.viewed_at);
         viewsByDate.set(date, (viewsByDate.get(date) || 0) + 1);
-        totalVideoViews++;
       });
 
-      // Process portfolio views data
-      const portfolioViewsByDate = new Map();
-      let totalPortfolioViews = profileData?.portfolio_views || 0;
-
-      portfolioViewsData?.forEach(view => {
-        const date = new Date(view.viewed_at).toLocaleDateString();
+      // Process portfolio views data for chart
+      const portfolioViewsByDate = new Map<string, number>();
+      (portfolioViewsData || []).forEach(view => { // portfolioViewsData déjà filtré par date
+        const date = formatDateForChart(view.viewed_at);
         portfolioViewsByDate.set(date, (portfolioViewsByDate.get(date) || 0) + 1);
       });
 
-      // Format data for charts
       const viewsChartData = Array.from(viewsByDate.entries())
         .map(([date, views]) => ({ date, views }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort((a, b) => a.date.localeCompare(b.date)); // Tri par date YYYY-MM-DD
 
       const portfolioViewsChartData = Array.from(portfolioViewsByDate.entries())
         .map(([date, views]) => ({ date, views }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort((a, b) => a.date.localeCompare(b.date)); // Tri par date YYYY-MM-DD
 
       return {
-        totalLikes: totalVideoLikes,
+        totalLikes: totalVideoLikes, // Ceci est le total des likes sur les vidéos, pas la variation
         likesPercentChange,
         videoViews: {
-          total: totalVideoViews,
+          total: currentVideoViewsCount || 0, // Vues vidéo sur la période
           percentChange: videoViewsPercentChange,
           chartData: viewsChartData,
         },
         portfolioViews: {
-          total: totalPortfolioViews,
+          total: currentPortfolioViewsCount || 0, // Vues portfolio sur la période
           percentChange: portfolioViewsPercentChange,
           chartData: portfolioViewsChartData,
         },
@@ -244,16 +252,16 @@ const AnalyticsTab: React.FC = () => {
   if (!hasPremiumAccess) {
     return (
       <Alert variant="default" className="mb-4">
-        <AlertTitle>Premium Feature</AlertTitle>
+        <AlertTitle>Fonctionnalité Premium</AlertTitle>
         <AlertDescription>
-          Analytics are available only on <span className="font-semibold">Premium</span> and <span className="font-semibold">Pro</span> plans.
+          Les statistiques sont disponibles uniquement avec les plans <span className="font-semibold">Premium</span> et <span className="font-semibold">Pro</span>.
         </AlertDescription>
         <Button
           variant="default"
           className="mt-4"
           onClick={() => navigate('/pricing')}
         >
-          Upgrade Plan
+          Mettre à niveau
         </Button>
       </Alert>
     );
@@ -270,9 +278,9 @@ const AnalyticsTab: React.FC = () => {
   if (!analyticsData) {
     return (
       <Alert>
-        <AlertTitle>No data available</AlertTitle>
+        <AlertTitle>Aucune donnée disponible</AlertTitle>
         <AlertDescription>
-          Start sharing your videos and portfolio to see analytics data.
+          Commencez à partager vos vidéos et votre portfolio pour voir les données analytiques.
         </AlertDescription>
       </Alert>
     );
@@ -309,12 +317,12 @@ const AnalyticsTab: React.FC = () => {
       <div className="flex justify-end mb-4">
         <Select value={timePeriod} onValueChange={setTimePeriod}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select time period" />
+            <SelectValue placeholder="Sélectionner la période" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
+            <SelectItem value="7">7 derniers jours</SelectItem>
+            <SelectItem value="30">30 derniers jours</SelectItem>
+            <SelectItem value="90">90 derniers jours</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -323,7 +331,7 @@ const AnalyticsTab: React.FC = () => {
           <div className="flex items-center gap-3">
             <Play className="h-5 w-5 text-muted-foreground" />
             <div>
-              <div className="text-muted-foreground text-sm mb-1">Video Views</div>
+              <div className="text-muted-foreground text-sm mb-1">Vues des Vidéos</div>
               <div className="text-3xl font-bold">{analyticsData.videoViews.total}</div>
               {renderPercentageChange(analyticsData.videoViews.percentChange)}
             </div>
@@ -334,7 +342,7 @@ const AnalyticsTab: React.FC = () => {
           <div className="flex items-center gap-3">
             <Globe className="h-5 w-5 text-muted-foreground" />
             <div>
-              <div className="text-muted-foreground text-sm mb-1">Portfolio Views</div>
+              <div className="text-muted-foreground text-sm mb-1">Vues du Portfolio</div>
               <div className="text-3xl font-bold">{analyticsData.portfolioViews.total}</div>
               {renderPercentageChange(analyticsData.portfolioViews.percentChange)}
             </div>
@@ -345,7 +353,7 @@ const AnalyticsTab: React.FC = () => {
           <div className="flex items-center gap-3">
             <ThumbsUp className="h-5 w-5 text-muted-foreground" />
             <div>
-              <div className="text-muted-foreground text-sm mb-1">Total Likes</div>
+              <div className="text-muted-foreground text-sm mb-1">Likes Totaux (Vidéos)</div>
               <div className="text-3xl font-bold">{analyticsData.totalLikes}</div>
               {renderPercentageChange(analyticsData.likesPercentChange)}
             </div>
@@ -355,7 +363,7 @@ const AnalyticsTab: React.FC = () => {
       
       <div className="space-y-8">
         <div>
-          <h3 className="text-lg font-semibold mb-4">Video Analytics</h3>
+          <h3 className="text-lg font-semibold mb-4">Statistiques Vidéos</h3>
           <ViewsChart data={analyticsData.videoViews.chartData} />
           <div className="mt-4">
             <VideoAnalytics videos={analyticsData.videos} />
@@ -363,7 +371,7 @@ const AnalyticsTab: React.FC = () => {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Portfolio Analytics</h3>
+          <h3 className="text-lg font-semibold mb-4">Statistiques Portfolio</h3>
           <ViewsChart data={analyticsData.portfolioViews.chartData} />
         </div>
       </div>

@@ -6,21 +6,20 @@ import { Video } from '@/types';
 import { Heart, Eye } from 'lucide-react';
 
 interface VideoAnalyticsProps {
-  videos: Video[];
+  videos: Video[]; // Video type should include 'categoryName?: string'
 }
 
 const VideoAnalytics: React.FC<VideoAnalyticsProps> = ({ videos }) => {
-  // Helper function to get category name from categoryId
-  const getCategoryName = (categoryId: string) => {
-    // Find category by id from the categories array in types.ts
-    const category = videos.find(video => video.categoryId === categoryId);
-    return category ? categoryId : 'Non classé';
-  };
+  // La fonction getCategoryName n'est plus nécessaire ici si categoryName est correctement populé dans l'objet video
+  // const getCategoryName = (categoryId: string) => {
+  //   const videoWithCategory = videos.find(video => video.categoryId === categoryId);
+  //   return videoWithCategory?.categoryName || 'Non classé'; 
+  // };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Vidéos Performance</CardTitle>
+        <CardTitle>Performances des Vidéos</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -54,7 +53,7 @@ const VideoAnalytics: React.FC<VideoAnalyticsProps> = ({ videos }) => {
               videos.map((video) => (
                 <TableRow key={video.id}>
                   <TableCell className="font-medium truncate max-w-[200px]">{video.title}</TableCell>
-                  <TableCell>{getCategoryName(video.categoryId)}</TableCell>
+                  <TableCell>{video.categoryName || 'Non classé'}</TableCell> 
                   <TableCell className="text-right">{video.views}</TableCell>
                   <TableCell className="text-right">{video.likes}</TableCell>
                   <TableCell className="text-right">
