@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ViewsChart from './analytics/ViewsChart';
 import VideoAnalytics from './analytics/BrowserStats'; // Ce fichier exporte VideoAnalytics
-import { Loader2, Users, Play, Globe, ThumbsUp, TrendingUp, TrendingDown } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card'; // CardContent n'est pas utilisé directement ici, mais gardons pour cohérence si jamais.
+import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Card } from '@/components/ui/card'; // CardContent n'est pas utilisé directement ici, mais gardons pour cohérence si jamais.
 import { Video } from '@/types'; // Video type now includes categoryName
 import {
   Select,
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Play, Globe, ThumbsUp } from 'lucide-react'; // Added missing icons
 
 const AnalyticsTab: React.FC = () => {
   const { currentUser } = useAuth();
@@ -35,221 +36,143 @@ const AnalyticsTab: React.FC = () => {
   });
 
   const { data: analyticsData, isLoading: loadingAnalytics } = useQuery({
-    queryKey: ['analytics', currentUser?.id, timePeriod, 'v3_with_categories_table'], // Updated queryKey to reflect new fetch
+    queryKey: ['analytics', currentUser?.id, timePeriod, 'v4_consolidated_fetch'],
     queryFn: async () => {
       if (!currentUser?.id || !hasPremiumAccess) return null;
 
       const daysAgo = parseInt(timePeriod);
-      const comparisonDate = new Date();
-      comparisonDate.setDate(comparisonDate.getDate() - daysAgo);
-      const comparisonDateString = comparisonDate.toISOString();
+      const currentDate = new Date();
       
-      const previousPeriodStart = new Date();
-      previousPeriodStart.setDate(previousPeriodStart.getDate() - (daysAgo * 2));
-      const previousPeriodStartString = previousPeriodStart.toISOString();
+      const currentPeriodStart = new Date(currentDate);
+      currentPeriodStart.setDate(currentDate.getDate() - daysAgo);
+      const currentPeriodStartString = currentPeriodStart.toISOString();
 
+      const previousPeriodEnd = new Date(currentPeriodStart);
+      previousPeriodEnd.setDate(previousPeriodEnd.getDate() -1); // End of previous day
+
+      const previousPeriodStart = new Date(currentPeriodStart);
+      previousPeriodStart.setDate(currentPeriodStart.getDate() - daysAgo);
+      const previousPeriodStartString = previousPeriodStart.toISOString();
+      
       // Fetch categories
-      // This query should now work as the 'categories' table exists.
-      // Supabase types should ideally pick up the new table, making `categoriesData` correctly typed.
       const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories') 
-        .select('id, name'); 
+        .from('categories')
+        .select('id, name');
       
       if (categoriesError) {
-        console.error('AnalyticsTab: Error fetching categories. This should not happen if table exists and RLS is permissive.', categoriesError);
-        // We'll proceed but category names might be missing.
+        console.error('AnalyticsTab: Error fetching categories:', categoriesError);
+        // Proceed, category names might be missing
       }
-      // The type for items in categoriesData (if successful) will be { id: string (UUID), name: string }
-      // The map key is categoryId (which is string in Video type), value is category name.
       const categoryMap = new Map<string, string>();
       if (categoriesData) {
-        categoriesData.forEach((cat: { id: string; name: string | null }) => { // id is UUID from DB, name can be null if DB allows
-          if (cat.name) { // Ensure name is not null before adding to map
+        categoriesData.forEach((cat: { id: string; name: string | null }) => {
+          if (cat.name) {
             categoryMap.set(cat.id, cat.name);
           }
         });
       }
 
+      // Fetch videos data (needed for video IDs and total historical likes)
+      const { data: videosData, error: videosError } = await supabase
+        .from('videos')
+        .select('id, title, description, thumbnail_url, video_url, category_id, user_id, likes, views, created_at, is_highlighted') // Be explicit
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
-      // Fetch profile views data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('portfolio_views, likes')
-        .eq('id', currentUser.id)
-        .single();
+      if (videosError) throw videosError;
 
-      if (profileError) throw profileError;
+      const videoIds = (videosData || []).map(video => video.id);
+      const totalHistoricalVideoLikes = (videosData || []).reduce((total, video) => total + (video.likes || 0), 0);
 
-      // Get previous period portfolio views count
+      // Fetch current period counts
+      const { count: currentPortfolioViewsCount, error: currPortfolioViewsError } = await supabase
+        .from('portfolio_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('portfolio_user_id', currentUser.id)
+        .gte('viewed_at', currentPeriodStartString);
+      if (currPortfolioViewsError) throw currPortfolioViewsError;
+      
+      const { count: currentVideoViewsCount, error: currVideoViewsError } = await supabase
+        .from('video_views')
+        .select('*', { count: 'exact', head: true })
+        .in('video_id', videoIds)
+        .gte('viewed_at', currentPeriodStartString);
+      if (currVideoViewsError) throw currVideoViewsError;
+
+      const { count: currentLikesCount, error: currLikesError } = await supabase
+        .from('video_likes')
+        .select('*', { count: 'exact', head: true })
+        .in('video_id', videoIds)
+        .gte('created_at', currentPeriodStartString);
+      if (currLikesError) throw currLikesError;
+
+      // Fetch previous period counts for comparison
       const { count: previousPortfolioViewsCount, error: prevPortfolioViewsError } = await supabase
         .from('portfolio_views')
         .select('*', { count: 'exact', head: true })
         .eq('portfolio_user_id', currentUser.id)
         .gte('viewed_at', previousPeriodStartString)
-        .lt('viewed_at', comparisonDateString);
-
+        .lt('viewed_at', currentPeriodStartString); // Use lt currentPeriodStartString for previous period
       if (prevPortfolioViewsError) throw prevPortfolioViewsError;
 
-      // Get current period portfolio views count
-      const { count: currentPortfolioViewsCount, error: currPortfolioViewsError } = await supabase
-        .from('portfolio_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('portfolio_user_id', currentUser.id)
-        .gte('viewed_at', comparisonDateString);
-
-      if (currPortfolioViewsError) throw currPortfolioViewsError;
-
-      // Fetch portfolio views over time
-      const { data: portfolioViewsData, error: portfolioViewsError } = await supabase
-        .from('portfolio_views')
-        .select('viewed_at, browser')
-        .eq('portfolio_user_id', currentUser.id)
-        .gte('viewed_at', comparisonDateString); // Filtrer par la période de temps sélectionnée
-
-      if (portfolioViewsError) throw portfolioViewsError;
-      
-      // Fetch videos data with views and likes
-      const { data: videosData, error: videosError } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-      if (videosError) throw videosError;
-      
-      // Get total video likes
-      let totalVideoLikes = videosData.reduce((total, video) => total + (video.likes || 0), 0);
-
-      // Get video IDs for queries
-      const videoIds = videosData.map(video => video.id);
-
-      // Get previous period video views count
       const { count: previousVideoViewsCount, error: prevVideoViewsError } = await supabase
         .from('video_views')
         .select('*', { count: 'exact', head: true })
         .in('video_id', videoIds)
         .gte('viewed_at', previousPeriodStartString)
-        .lt('viewed_at', comparisonDateString);
-        
+        .lt('viewed_at', currentPeriodStartString);
       if (prevVideoViewsError) throw prevVideoViewsError;
 
-      // Get current period video views count
-      const { count: currentVideoViewsCount, error: currVideoViewsError } = await supabase
-        .from('video_views')
-        .select('*', { count: 'exact', head: true })
-        .in('video_id', videoIds)
-        .gte('viewed_at', comparisonDateString);
-        
-      if (currVideoViewsError) throw currVideoViewsError;
-
-      // Calculate previous period likes
       const { count: previousLikesCount, error: prevLikesError } = await supabase
         .from('video_likes')
         .select('*', { count: 'exact', head: true })
         .in('video_id', videoIds)
         .gte('created_at', previousPeriodStartString)
-        .lt('created_at', comparisonDateString);
-
+        .lt('created_at', currentPeriodStartString);
       if (prevLikesError) throw prevLikesError;
-
-      // Get current period likes count
-      const { count: currentLikesCount, error: currLikesError } = await supabase
-        .from('video_likes')
-        .select('*', { count: 'exact', head: true })
-        .in('video_id', videoIds)
-        .gte('created_at', comparisonDateString);
-
-      if (currLikesError) throw currLikesError;
-
+      
       // Calculate percentage changes
       const calculatePercentageChange = (current: number, previous: number) => {
         if (previous === 0) return current > 0 ? 100 : 0;
         return ((current - previous) / previous) * 100;
       };
 
-      const videoViewsPercentChange = calculatePercentageChange(
-        analyticsData?.videoViews?.total || 0, // Placeholder, will be replaced by actual counts
-        0 // Placeholder for previousVideoViewsCount
-      );
+      const videoViewsPercentChange = calculatePercentageChange(currentVideoViewsCount || 0, previousVideoViewsCount || 0);
+      const portfolioViewsPercentChange = calculatePercentageChange(currentPortfolioViewsCount || 0, previousPortfolioViewsCount || 0);
+      const likesPercentChange = calculatePercentageChange(currentLikesCount || 0, previousLikesCount || 0);
       
-      const portfolioViewsPercentChange = calculatePercentageChange(
-        analyticsData?.portfolioViews?.total || 0, // Placeholder
-        0 // Placeholder for previousPortfolioViewsCount
-      );
-      
-      const likesPercentChange = calculatePercentageChange(
-        analyticsData?.totalLikes || 0, // Placeholder for current likes count
-        0 // Placeholder for previousLikesCount
-      );
-      
-      // Fetch video views data for chart
-      // ... keep existing code (Fetch video views data for chart)
-      // Ensure videoIds is defined before this call if it depends on videosData
-      const videoIds = (videosData || []).map(video => video.id);
-
-      const { data: viewsDataForChart, error: viewsErrorForChart } = await supabase
+      // Fetch data for charts (current period)
+      const { data: videoViewsDataForChart, error: viewsErrorForChart } = await supabase
         .from('video_views')
-        .select('video_id, viewed_at')
+        .select('viewed_at') // Only need viewed_at for grouping
         .in('video_id', videoIds)
-        .gte('viewed_at', comparisonDateString);
-
+        .gte('viewed_at', currentPeriodStartString);
       if (viewsErrorForChart) throw viewsErrorForChart;
 
-
-      const formattedVideos: Video[] = (videosData || []).map(video => ({
-        id: video.id,
-        title: video.title,
-        description: video.description || '',
-        thumbnailUrl: video.thumbnail_url,
-        videoUrl: video.video_url,
-        categoryId: video.category_id, // This is the ID from the 'videos' table
-        categoryName: categoryMap.get(video.category_id) || 'Non classé', // Use the map
-        userId: video.user_id,
-        likes: video.likes || 0,
-        views: video.views || 0,
-        createdAt: new Date(video.created_at),
-        isHighlighted: video.is_highlighted
-      }));
-
-      // ... keep existing code (formatDateForChart, Process video views data for chart, Process portfolio views data for chart, viewsChartData, portfolioViewsChartData)
-      // These sections rely on `supabase` calls that should be updated to use the calculated counts
-      // For brevity, I'm keeping them as they are, but in a real scenario, ensure `previousVideoViewsCount`, etc., are fetched and used.
-      // For example:
-      const { count: currentVideoViewsCount } = await supabase.from('video_views').select('*', { count: 'exact', head: true }).in('video_id', videoIds).gte('viewed_at', comparisonDateString);
-      const { count: currentPortfolioViewsCount } = await supabase.from('portfolio_views').select('*', { count: 'exact', head: true }).eq('portfolio_user_id', currentUser.id).gte('viewed_at', comparisonDateString);
-      const { count: currentLikesCount } = await supabase.from('video_likes').select('*', { count: 'exact', head: true }).in('video_id', videoIds).gte('created_at', comparisonDateString);
-      let totalVideoLikes = (videosData || []).reduce((total, video) => total + (video.likes || 0), 0); // This remains total historical likes
-
-      // --- Re-fetch comparison data for accurate percentage changes ---
-      const { count: previousPortfolioViewsCount } = await supabase.from('portfolio_views').select('*', { count: 'exact', head: true }).eq('portfolio_user_id', currentUser.id).gte('viewed_at', previousPeriodStartString).lt('viewed_at', comparisonDateString);
-      const { count: previousVideoViewsCount } = await supabase.from('video_views').select('*', { count: 'exact', head: true }).in('video_id', videoIds).gte('viewed_at', previousPeriodStartString).lt('viewed_at', comparisonDateString);
-      const { count: previousLikesCount } = await supabase.from('video_likes').select('*', { count: 'exact', head: true }).in('video_id', videoIds).gte('created_at', previousPeriodStartString).lt('created_at', comparisonDateString);
-      // --- End re-fetch ---
-
-      // Corrected percentage calculations
-      const finalVideoViewsPercentChange = calculatePercentageChange(currentVideoViewsCount || 0, previousVideoViewsCount || 0);
-      const finalPortfolioViewsPercentChange = calculatePercentageChange(currentPortfolioViewsCount || 0, previousPortfolioViewsCount || 0);
-      const finalLikesPercentChange = calculatePercentageChange(currentLikesCount || 0, previousLikesCount || 0);
-
+      const { data: portfolioViewsDataForChart, error: portfolioViewsErrorForChart } = await supabase
+        .from('portfolio_views')
+        .select('viewed_at') // Only need viewed_at for grouping
+        .eq('portfolio_user_id', currentUser.id)
+        .gte('viewed_at', currentPeriodStartString);
+      if (portfolioViewsErrorForChart) throw portfolioViewsErrorForChart;
 
       const formatDateForChart = (dateStr: string): string => {
         return new Date(dateStr).toISOString().split('T')[0];
       };
       
-      const viewsByDate = new Map<string, number>();
-      (viewsDataForChart || []).forEach(view => {
+      const videoViewsByDate = new Map<string, number>();
+      (videoViewsDataForChart || []).forEach(view => {
         const date = formatDateForChart(view.viewed_at);
-        viewsByDate.set(date, (viewsByDate.get(date) || 0) + 1);
+        videoViewsByDate.set(date, (videoViewsByDate.get(date) || 0) + 1);
       });
 
-      const { data: portfolioViewsData } = await supabase.from('portfolio_views').select('viewed_at, browser').eq('portfolio_user_id', currentUser.id).gte('viewed_at', comparisonDateString);
       const portfolioViewsByDate = new Map<string, number>();
-      (portfolioViewsData || []).forEach(view => {
+      (portfolioViewsDataForChart || []).forEach(view => {
         const date = formatDateForChart(view.viewed_at);
         portfolioViewsByDate.set(date, (portfolioViewsByDate.get(date) || 0) + 1);
       });
 
-      const viewsChartData = Array.from(viewsByDate.entries())
+      const videoViewsChartData = Array.from(videoViewsByDate.entries())
         .map(([date, views]) => ({ date, views }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -257,17 +180,35 @@ const AnalyticsTab: React.FC = () => {
         .map(([date, views]) => ({ date, views }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
+      const formattedVideos: Video[] = (videosData || []).map(video => ({
+        id: video.id,
+        title: video.title,
+        description: video.description || '',
+        thumbnailUrl: video.thumbnail_url,
+        videoUrl: video.video_url,
+        categoryId: video.category_id,
+        categoryName: categoryMap.get(video.category_id) || 'Non classé',
+        userId: video.user_id,
+        likes: video.likes || 0,
+        views: video.views || 0,
+        createdAt: new Date(video.created_at),
+        isHighlighted: video.is_highlighted,
+        // editorName, editorAvatar, editorTier are not in the 'videos' table schema directly
+        // If these are needed, they would have to be joined from 'profiles' table based on user_id
+      }));
+
       return {
-        totalLikes: totalVideoLikes,
-        likesPercentChange: finalLikesPercentChange,
+        totalLikes: currentLikesCount || 0, // This card should show "Likes (Période)"
+        totalHistoricalVideoLikes: totalHistoricalVideoLikes, // For a potential "Total Likes All Time" card
+        likesPercentChange: likesPercentChange,
         videoViews: {
           total: currentVideoViewsCount || 0,
-          percentChange: finalVideoViewsPercentChange,
-          chartData: viewsChartData,
+          percentChange: videoViewsPercentChange,
+          chartData: videoViewsChartData,
         },
         portfolioViews: {
           total: currentPortfolioViewsCount || 0,
-          percentChange: finalPortfolioViewsPercentChange,
+          percentChange: portfolioViewsPercentChange,
           chartData: portfolioViewsChartData,
         },
         videos: formattedVideos
@@ -389,10 +330,7 @@ const AnalyticsTab: React.FC = () => {
             <ThumbsUp className="h-5 w-5 text-muted-foreground" />
             <div>
               <div className="text-muted-foreground text-sm mb-1">Likes (Période)</div>
-              <div className="text-3xl font-bold">{analyticsData.totalLikes}</div> {/* This should be currentLikesCount for period, not totalVideoLikes */}
-              {/* Corrected to show period likes change; totalLikes from query is historical total */}
-              {/* For the card title "Likes Totaux (Vidéos)", analyticsData.totalLikes is correct. */}
-              {/* If the card means "New Likes in Period", then it should be currentLikesCount. I'll keep it as total for now based on title. */}
+              <div className="text-3xl font-bold">{analyticsData.totalLikes}</div>
               {renderPercentageChange(analyticsData.likesPercentChange)}
             </div>
           </div>
