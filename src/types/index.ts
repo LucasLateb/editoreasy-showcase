@@ -18,6 +18,7 @@ export interface Video {
   thumbnailUrl: string;
   videoUrl: string;
   categoryId: string;
+  categoryName?: string;
   userId: string;
   likes: number;
   views: number;
@@ -87,6 +88,7 @@ export function parseJsonToVideo(json: any): Video {
     thumbnailUrl: String(json.thumbnailUrl || ''),
     videoUrl: String(json.videoUrl || ''),
     categoryId: String(json.categoryId || ''),
+    categoryName: String(json.categoryName || ''),
     userId: String(json.userId || ''),
     likes: Number(json.likes || 0),
     views: Number(json.views || 0),
