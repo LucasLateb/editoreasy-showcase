@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,15 +8,14 @@ export const useViewTracking = () => {
   const recordVideoView = useCallback(async (videoId: string) => {
     try {
       if (!videoId) {
-        console.error('Missing videoId for tracking');
+        console.error('useViewTracking: videoId manquant pour le suivi.');
         return;
       }
       
-      // Récupération des informations du navigateur et appareil de façon sécurisée
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
       
-      // Utilisation du RPC avec paramètres explicites pour éviter les problèmes de search_path
+      console.log(`useViewTracking: Enregistrement de la vue vidéo pour ${videoId}, spectateur: ${currentUser?.id || 'anonyme'}, navigateur: ${browser}, appareil: ${deviceType}`);
       const { error } = await supabase.rpc('record_video_view', {
         video_id_param: videoId,
         viewer_id_param: currentUser?.id || null,
@@ -26,33 +24,32 @@ export const useViewTracking = () => {
       });
       
       if (error) {
+        console.error('useViewTracking: Erreur lors de l\'appel RPC record_video_view:', error);
         throw error;
       }
       
-      console.log('Video view recorded successfully');
+      console.log(`useViewTracking: Vue vidéo (ID: ${videoId}) enregistrée avec succès via RPC.`);
     } catch (error) {
-      console.error('Error recording video view:', error);
+      console.error('useViewTracking: Erreur dans le hook recordVideoView:', error);
     }
   }, [currentUser]);
 
   const recordPortfolioView = useCallback(async (portfolioUserId: string) => {
     try {
       if (!portfolioUserId) {
-        console.error('Missing portfolioUserId for tracking');
+        console.error('useViewTracking: portfolioUserId manquant pour le suivi.');
         return;
       }
       
-      // Ne pas enregistrer si l'utilisateur consulte son propre portfolio
       if (currentUser?.id === portfolioUserId) {
-        console.log('Skipping view recording for own portfolio');
+        console.log(`useViewTracking: Visualisation du propre portfolio (ID: ${portfolioUserId}), enregistrement ignoré.`);
         return;
       }
       
-      // Récupération des informations du navigateur et appareil de façon sécurisée
       const browser = getBrowserInfo();
       const deviceType = getDeviceType();
       
-      // Utilisation du RPC avec paramètres explicites pour éviter les problèmes de search_path
+      console.log(`useViewTracking: Enregistrement de la vue portfolio pour ${portfolioUserId}, spectateur: ${currentUser?.id || 'anonyme'}, navigateur: ${browser}, appareil: ${deviceType}`);
       const { error } = await supabase.rpc('record_portfolio_view', {
         portfolio_user_id_param: portfolioUserId,
         viewer_id_param: currentUser?.id || null,
@@ -61,12 +58,13 @@ export const useViewTracking = () => {
       });
       
       if (error) {
+        console.error('useViewTracking: Erreur lors de l\'appel RPC record_portfolio_view:', error);
         throw error;
       }
       
-      console.log('Portfolio view recorded successfully');
+      console.log(`useViewTracking: Vue du portfolio (ID: ${portfolioUserId}) enregistrée avec succès via RPC.`);
     } catch (error) {
-      console.error('Error recording portfolio view:', error);
+      console.error('useViewTracking: Erreur dans le hook recordPortfolioView:', error);
     }
   }, [currentUser]);
 
@@ -84,7 +82,7 @@ const getBrowserInfo = () => {
     if (userAgent.includes('opera')) return 'Opera';
     return 'Other';
   } catch (error) {
-    console.error('Error detecting browser:', error);
+    console.error('Erreur lors de la détection du navigateur:', error);
     return 'Unknown';
   }
 };
@@ -100,7 +98,7 @@ const getDeviceType = () => {
     }
     return 'Desktop';
   } catch (error) {
-    console.error('Error detecting device type:', error);
+    console.error('Erreur lors de la détection du type d\'appareil:', error);
     return 'Unknown';
   }
 };

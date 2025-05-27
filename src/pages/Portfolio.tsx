@@ -72,7 +72,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { currentUser, isAuthenticated } = useAuth();
   const userId = isViewOnly ? editorId : currentUser?.id;
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
-  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]); // Initial state
+  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
@@ -535,7 +535,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                 <CopyPortfolioLink />
                 {editMode && (
                   <CategoryManager
-                    userCategories={userCategories} // This will now use the dynamically filtered categories
+                    userCategories={userCategories}
                     moveCategory={moveCategory}
                   />
                 )}
@@ -562,7 +562,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       <CategorySlider 
                         onSelectCategory={setSelectedCategory}
                         selectedCategoryId={selectedCategory?.id}
-                        categories={userCategories} // This will now use the dynamically filtered categories
+                        categories={userCategories}
                       />
                     </div>
                     
