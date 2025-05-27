@@ -1,7 +1,9 @@
 
+import React from 'react'; // Import React for Suspense
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './i18n'; // Initialise i18next
 
 // Find the root element
 const rootElement = document.getElementById("root");
@@ -37,7 +39,11 @@ if (rootElement) {
     });
 
     // Render the app
-    root.render(<App />);
+    root.render(
+      <React.Suspense fallback="Loading...">
+        <App />
+      </React.Suspense>
+    );
   } catch (error) {
     console.error("Error rendering application:", error);
     

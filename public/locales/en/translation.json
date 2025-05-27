@@ -1,0 +1,17 @@
+
+{
+  "VideoCut": "VideoCut",
+  "Home": "Home",
+  "Explore": "Explore",
+  "Dashboard": "Dashboard",
+  "MyPortfolio": "My Portfolio",
+  "MyAccount": "My Account",
+  "Account": "Account",
+  "Logout": "Log out",
+  "Login": "Login",
+  "SignUp": "Sign Up",
+  "DarkModeSwitch": {
+    "dark": "🌙",
+    "light": "☀️"
+  }
+}

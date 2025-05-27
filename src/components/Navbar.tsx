@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, Settings, Languages } from 'lucide-react'; // Added Languages icon
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import NotificationDot from '@/components/ui/NotificationDot';
 import { supabase } from '@/integrations/supabase/client';
 import { type PostgrestError } from '@supabase/supabase-js';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const Navbar: React.FC = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
@@ -23,17 +25,21 @@ const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-  
+  const { t, i18n } = useTranslation(); // Initialize useTranslation
+
   // Check if user is a client
   const isClient = currentUser?.role === 'client';
 
   // Gestion du dark mode
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark") {
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "dark") {
       setIsDark(true);
       document.documentElement.classList.add("dark");
     }
+    // Set initial language based on i18n's detected language
+    // This ensures UI consistency if language was set by detector
+    // No explicit setIsDark-like state needed for language as i18n handles it internally
   }, []);
 
   const toggleDark = () => {
@@ -41,6 +47,10 @@ const Navbar: React.FC = () => {
     setIsDark(newMode);
     document.documentElement.classList.toggle("dark", newMode);
     localStorage.setItem("theme", newMode ? "dark" : "light");
+  };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
   };
 
   // Scroll behavior
@@ -124,10 +134,10 @@ const Navbar: React.FC = () => {
         <Link to="/" className="flex items-center space-x-2">
           <img
             src="/favicon.png"
-            alt="VideoCut logo"
+            alt={t('VideoCut') + " logo"}
             className="h-6 w-6 sm:h-8 sm:w-8 object-contain"
           />
-          <span className="text-2xl font-semibold bg-clip-text text-foreground">VideoCut</span>
+          <span className="text-2xl font-semibold bg-clip-text text-foreground">{t('VideoCut')}</span>
         </Link>
 
         <div className={cn(
@@ -141,7 +151,7 @@ const Navbar: React.FC = () => {
               location.pathname === "/" ? "text-primary" : "text-foreground/80"
             )}
           >
-            Home
+            {t('Home')}
           </Link>
           <Link 
             to="/explore" 
@@ -150,7 +160,7 @@ const Navbar: React.FC = () => {
               location.pathname === "/explore" ? "text-primary" : "text-foreground/80"
             )}
           >
-            Explore
+            {t('Explore')}
           </Link>
           {isAuthenticated && (
             <>
@@ -161,7 +171,7 @@ const Navbar: React.FC = () => {
                   location.pathname === "/dashboard" ? "text-primary" : "text-foreground/80"
                 )}
               >
-                Dashboard
+                {t('Dashboard')}
                 {hasUnreadMessages && (
                   <NotificationDot className="absolute -right-3 -top-1" />
                 )}
@@ -174,25 +184,46 @@ const Navbar: React.FC = () => {
                     location.pathname === "/portfolio" ? "text-primary" : "text-foreground/80"
                   )}
                 >
-                  My Portfolio
+                  {t('MyPortfolio')}
                 </Link>
               )}
             </>
           )}
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-foreground/80 hover:text-primary">
+                <Languages className="h-5 w-5" />
+                <span className="sr-only">Change language</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => changeLanguage('en')} 
+                disabled={i18n.language === 'en'}
+                className={cn(i18n.language === 'en' && "bg-accent")}
+              >
+                English
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => changeLanguage('fr')} 
+                disabled={i18n.language === 'fr'}
+                className={cn(i18n.language === 'fr' && "bg-accent")}
+              >
+                Français
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           {/* Toggle Dark Mode */}
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only" checked={isDark} onChange={toggleDark} />
-            <div className="w-10 h-6 bg-gray-300 dark:bg-gray-600 rounded-full shadow-inner transition-colors duration-300"></div>
-            <div
-              className={`absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow transform transition-transform duration-300 ${
-                isDark ? "translate-x-4" : ""
-              }`}
-            ></div>
-            <span className="ml-2 text-sm">{isDark ? "🌙" : "☀️"}</span>
-          </label>
+          <Button variant="ghost" size="icon" onClick={toggleDark} className="text-foreground/80 hover:text-primary">
+             {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+
 
           {isAuthenticated ? (
             <DropdownMenu>
@@ -210,11 +241,11 @@ const Navbar: React.FC = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 mt-1 mr-1" align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('MyAccount')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard" className="w-full cursor-pointer relative flex items-center">
-                    Dashboard
+                    {t('Dashboard')}
                     {hasUnreadMessages && (
                       <NotificationDot className="ml-2" />
                     )}
@@ -222,32 +253,32 @@ const Navbar: React.FC = () => {
                 </DropdownMenuItem>
                 {!isClient && (
                   <DropdownMenuItem asChild>
-                    <Link to="/portfolio" className="w-full cursor-pointer">My Portfolio</Link>
+                    <Link to="/portfolio" className="w-full cursor-pointer">{t('MyPortfolio')}</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard?tab=account" className="w-full cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Account</span>
+                    <span>{t('Account')}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>{t('Logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <>
               <Link to="/login">
-                <Button variant="ghost" className="font-medium">
-                  Login
+                <Button variant="ghost" className="font-medium text-foreground/80 hover:text-primary">
+                  {t('Login')}
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="font-medium bg-primary text-white hover:bg-primary/90">
-                  Sign Up
+                <Button className="font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                  {t('SignUp')}
                 </Button>
               </Link>
             </>
@@ -257,5 +288,49 @@ const Navbar: React.FC = () => {
     </nav>
   );
 };
+
+// Helper components for Sun and Moon icons, if not already available globally
+// Or import them from lucide-react if that's preferred
+const SunIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" />
+    <path d="M12 20v2" />
+    <path d="m4.93 4.93 1.41 1.41" />
+    <path d="m17.66 17.66 1.41 1.41" />
+    <path d="M2 12h2" />
+    <path d="M20 12h2" />
+    <path d="m6.34 17.66-1.41 1.41" />
+    <path d="m19.07 4.93-1.41 1.41" />
+  </svg>
+);
+
+const MoonIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+  </svg>
+);
 
 export default Navbar;
