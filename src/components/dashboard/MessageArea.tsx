@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,7 @@ import { User as AuthUser } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from 'react-i18next';
 
 interface MessageAreaProps {
   selectedConversationId: string | null;
@@ -53,6 +55,7 @@ const fetchMessages = async (conversationId: string): Promise<Message[]> => {
 const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, otherParticipant }) => {
   const queryClient = useQueryClient();
   const scrollAreaRef = useRef<React.ElementRef<typeof ScrollArea>>(null);
+  const { t } = useTranslation();
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', selectedConversationId],
@@ -107,7 +110,7 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
   if (!selectedConversationId) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-muted/20 h-full">
-        <p>Select a conversation to start messaging.</p>
+        <p>{t('Messages.SelectConversation')}</p>
       </div>
     );
   }
@@ -141,7 +144,7 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
           <AvatarFallback>{FallbackName}</AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="font-semibold">{otherParticipant?.name || 'Select a conversation'}</h2>
+          <h2 className="font-semibold">{otherParticipant?.name || t('Messages.SelectConversation')}</h2>
           {/* Could add online status here later */}
         </div>
       </div>

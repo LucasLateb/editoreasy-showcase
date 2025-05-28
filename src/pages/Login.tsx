@@ -6,10 +6,12 @@ import AuthForm from '@/components/AuthForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   
   // Redirect if already logged in
   useEffect(() => {
@@ -27,7 +29,7 @@ const Login: React.FC = () => {
           <Alert className="mb-6">
             <InfoIcon className="h-4 w-4" />
             <AlertDescription>
-              Authentication is now live with Supabase! You can create a real account or log in.
+              {t('Login.AuthInfo')}
             </AlertDescription>
           </Alert>
           <AuthForm type="login" />

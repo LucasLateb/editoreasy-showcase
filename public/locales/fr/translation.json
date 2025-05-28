@@ -47,6 +47,99 @@
   "Loading": "Chargement...",
   "Messages": {
     "SendMessage": "Envoyer un message...",
-    "Send": "Envoyer"
+    "Send": "Envoyer",
+    "TypeMessage": "Tapez un message...",
+    "SearchContacts": "Rechercher des contacts...",
+    "NoConversations": "Aucune conversation pour le moment.",
+    "SelectConversation": "Sélectionnez une conversation pour commencer à envoyer des messages."
+  },
+  "NotFound": {
+    "Title": "404",
+    "Message": "Oups ! Page introuvable",
+    "ReturnHome": "Retour à l'accueil"
+  },
+  "CheckEmail": {
+    "Title": "Vérifiez votre email",
+    "Description": "Nous avons envoyé un email de confirmation dans votre boîte de réception. Veuillez cliquer sur le lien de vérification pour activer votre compte.\n\nUne fois votre email vérifié, vous pourrez vous connecter et accéder à votre compte.",
+    "BackToLogin": "Retour à la connexion"
+  },
+  "Register": {
+    "AccountTypeInfo": "Choisissez votre type de compte :",
+    "EditorDescription": "Pour les monteurs vidéo qui souhaitent présenter leur travail et attirer des clients.",
+    "ClientDescription": "Pour les utilisateurs qui souhaitent trouver et embaucher des monteurs vidéo pour leurs projets.",
+    "Editor": "Monteur",
+    "Client": "Client"
+  },
+  "Login": {
+    "AuthInfo": "L'authentification est maintenant en ligne avec Supabase ! Vous pouvez créer un vrai compte ou vous connecter."
+  },
+  "ForgotPassword": {
+    "Title": "Mot de passe oublié",
+    "Description": "Entrez votre adresse email et nous vous enverrons un lien de réinitialisation de mot de passe.",
+    "EnterEmail": "Entrez votre email",
+    "SendResetLink": "Envoyer le lien de réinitialisation",
+    "Sending": "Envoi en cours...",
+    "BackToLogin": "Retour à la connexion",
+    "CheckEmailTitle": "Vérifiez votre email",
+    "CheckEmailDescription": "Nous avons envoyé un lien de réinitialisation de mot de passe à {{email}}",
+    "CheckEmailInfo": "Si vous ne voyez pas l'email dans votre boîte de réception, veuillez vérifier votre dossier spam.",
+    "CheckEmailLinkInfo": "Le lien dans l'email devrait vous rediriger vers la page de réinitialisation de mot de passe. Si cliquer sur le lien ne fonctionne pas, vous pouvez copier et coller le lien entier dans la barre d'adresse de votre navigateur.",
+    "ReturnToLogin": "Retour à la connexion",
+    "CheckYourEmail": "Vérifiez votre email",
+    "PasswordResetSent": "Nous vous avons envoyé un lien de réinitialisation de mot de passe."
+  },
+  "ResetPassword": {
+    "Title": "Réinitialiser le mot de passe",
+    "Description": "Entrez votre nouveau mot de passe ci-dessous.",
+    "NewPassword": "Nouveau mot de passe",
+    "ConfirmPassword": "Confirmer le nouveau mot de passe",
+    "ResetPassword": "Réinitialiser le mot de passe",
+    "Resetting": "Réinitialisation...",
+    "PasswordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "PasswordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "PasswordResetSuccess": "Votre mot de passe a été réinitialisé avec succès.",
+    "ResetWarningTitle": "Cette page sert à réinitialiser votre mot de passe après avoir suivi un lien de réinitialisation de votre email.",
+    "ResetWarningDescription": "Si vous devez réinitialiser votre mot de passe, veuillez d'abord aller à la page",
+    "ForgotPasswordLink": "mot de passe oublié",
+    "PageFirst": "d'abord."
+  },
+  "LimitReached": {
+    "Title": "Limite d'upload atteinte",
+    "Description": "Vous avez atteint la limite de {{limit}} vidéos pour votre plan actuel \"{{tierName}}\". Pour uploader plus de vidéos, veuillez mettre à niveau votre plan.",
+    "Cancel": "Annuler",
+    "Upgrade": "Mettre à niveau le plan"
+  },
+  "VideoAnalytics": {
+    "Title": "Performances des Vidéos",
+    "TitleColumn": "Titre",
+    "CategoryColumn": "Catégorie",
+    "ViewsColumn": "Vues",
+    "LikesColumn": "Likes",
+    "CreatedColumn": "Créée le",
+    "NoVideos": "Aucune vidéo trouvée",
+    "Uncategorized": "Non classé"
+  },
+  "ViewsChart": {
+    "Title": "Vues au fil du temps",
+    "ViewsLabel": "Vues"
+  },
+  "VideosTab": {
+    "NoVideosTitle": "Aucune vidéo pour le moment",
+    "NoVideosDescription": "Téléchargez votre première vidéo pour commencer à construire votre portfolio",
+    "UploadVideo": "Télécharger une vidéo"
+  },
+  "VideoCard": {
+    "Edit": "Modifier",
+    "Delete": "Supprimer",
+    "Views": "vues",
+    "Likes": "likes"
+  },
+  "Common": {
+    "ChangeLanguage": "Changer la langue",
+    "ToggleTheme": "Basculer le thème",
+    "Error": "Erreur",
+    "Success": "Succès",
+    "VideoUpdatedSuccess": "Vidéo mise à jour avec succès",
+    "VideoUpdateFailed": "Échec de la mise à jour de la vidéo"
   }
 }

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface LimitReachedDialogProps {
   isOpen: boolean;
@@ -28,21 +29,22 @@ const LimitReachedDialog: React.FC<LimitReachedDialogProps> = ({
   currentTierName,
   limit,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Limite d'upload atteinte</AlertDialogTitle>
+          <AlertDialogTitle>{t('LimitReached.Title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Vous avez atteint la limite de {limit} vidéos pour votre plan actuel "{currentTierName}".
-            Pour uploader plus de vidéos, veuillez mettre à niveau votre plan.
+            {t('LimitReached.Description', { limit, tierName: currentTierName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Annuler</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose}>{t('LimitReached.Cancel')}</AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button onClick={onUpgrade}>
-              Mettre à niveau le plan
+              {t('LimitReached.Upgrade')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </AlertDialogAction>

@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Image } from '@/components/ui/image';
+import { useTranslation } from 'react-i18next';
 
 interface VideoCardDashboardProps {
   video: Video;
@@ -34,6 +35,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
+  const { t } = useTranslation();
 
   const handleVideoClick = () => {
     setIsVideoDialogOpen(true);
@@ -84,13 +86,13 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
 
       if (error) throw error;
 
-      toast.success('Video updated successfully');
+      toast.success(t('Common.VideoUpdatedSuccess'));
       setIsEditDialogOpen(false);
       // Force a page reload to update the video list
       window.location.reload();
     } catch (error) {
       console.error('Error updating video:', error);
-      toast.error('Failed to update video');
+      toast.error(t('Common.VideoUpdateFailed'));
     } finally {
       setIsEditing(false);
     }
@@ -125,7 +127,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
         
         <CardContent className="text-sm text-muted-foreground pb-0">
           <div className="flex space-x-4">
-            <div>{video.views} views</div>
+            <div>{video.views} {t('VideoCard.Views')}</div>
             <div 
               className="flex items-center cursor-pointer" 
               onClick={handleLikeClick}
@@ -137,7 +139,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
                 )} 
                 fill={isLiked ? "currentColor" : "none"} 
               />
-              <span>{likesCount} likes</span>
+              <span>{likesCount} {t('VideoCard.Likes')}</span>
             </div>
           </div>
         </CardContent>
@@ -149,7 +151,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
             onClick={handleEditClick}
           >
             <Pencil className="h-4 w-4 mr-1" />
-            Edit
+            {t('VideoCard.Edit')}
           </Button>
           <Button 
             size="sm" 
@@ -157,7 +159,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
             onClick={() => onDelete(video.id)}
           >
             <Trash2 className="h-4 w-4 mr-1" />
-            Delete
+            {t('VideoCard.Delete')}
           </Button>
         </CardFooter>
       </Card>
