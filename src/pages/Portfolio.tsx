@@ -31,7 +31,7 @@ interface PortfolioProps {
   isViewOnly?: boolean;
 }
 
-interface Link {
+interface LinkItem {
   id: string;
   title: string;
   url: string;
@@ -109,7 +109,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   
   const [isSavingTitle, setIsSavingTitle] = useState(false);
 
-  const [links, setLinks] = useState<Link[]>([]);
+  const [links, setLinks] = useState<LinkItem[]>([]);
 
   const updatePortfolioTitle = async (title: string) => {
     if (!currentUser?.id) {
@@ -194,8 +194,19 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           if (portfolioSettings.specializations) {
             setSpecializations(portfolioSettings.specializations as string[]);
           }
-          if (portfolioSettings.links) {
-            setLinks(portfolioSettings.links as Link[]);
+          if (portfolioSettings.links && Array.isArray(portfolioSettings.links)) {
+            try {
+              const parsedLinks = portfolioSettings.links.map((link: any) => ({
+                id: String(link.id || ''),
+                title: String(link.title || ''),
+                url: String(link.url || ''),
+                platform: link.platform as LinkItem['platform'] || 'other'
+              }));
+              setLinks(parsedLinks);
+            } catch (e) {
+              console.error('Failed to parse links:', e);
+              setLinks([]);
+            }
           }
         }
 
