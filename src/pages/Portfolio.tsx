@@ -75,7 +75,7 @@ const defaultFeaturedVideo = {
 };
 
 const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
-  const { id: editorId } = useParams<{ id: string }>(); // editorId can be undefined if route doesn't match
+  const { id: editorId } = useParams<{ id: string }>();
   const { currentUser, isAuthenticated } = useAuth();
   const userId = isViewOnly ? editorId : currentUser?.id;
   
@@ -173,7 +173,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
               setFeaturedVideo(parsedVideo);
             } catch (e) {
               console.error('Failed to parse featured video:', e);
-              // Conserver defaultFeaturedVideo ou gérer l'erreur
             }
           }
           
@@ -204,17 +203,16 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           const { data: userData, error: userError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', userId) // userId here is editorId in viewOnly mode
+            .eq('id', userId)
             .maybeSingle();
 
           if (userError) throw userError;
           if (!userData) {
             console.error('Could not find user profile for editorId:', userId);
             toast.error('Could not find editor profile');
-            setEditorData(null); // Ensure editorData is null if not found
+            setEditorData(null);
           } else {
             setEditorData(userData);
-             // Update portfolio title and description if viewing another editor's profile
             if (userData.name) {
                 setPortfolioTitle(`${userData.name}'s Portfolio`);
             }
@@ -223,7 +221,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             }
           }
         } else {
-           // For current user's portfolio, ensure title and description reflect currentUser
            if(currentUser?.name) setPortfolioTitle(`${currentUser.name}'s Portfolio`);
            if(currentUser?.bio) setPortfolioDescription(currentUser.bio);
         }
@@ -305,16 +302,14 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     };
     
     fetchData();
-  }, [userId, isViewOnly, currentUser]); // Added currentUser to re-fetch if it changes (e.g., login/logout affecting `userId`)
+  }, [userId, isViewOnly, currentUser]);
 
-  // useEffect for recording portfolio view
   useEffect(() => {
     if (isViewOnly && editorId) {
       console.log(`Portfolio.tsx: Attempting to record view for editor ID: ${editorId}. Current user: ${currentUser?.id}`);
-      // The useViewTracking hook internally checks if currentUser.id === editorId
       recordPortfolioView(editorId);
     }
-  }, [isViewOnly, editorId, recordPortfolioView, currentUser?.id]); // Added currentUser?.id to ensure hook has the latest user state
+  }, [isViewOnly, editorId, recordPortfolioView, currentUser?.id]);
 
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
@@ -370,9 +365,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         about: about,
         specializations: specializations,
         showreel_url: showreelUrl,
-        portfolio_title: portfolioTitle, // Save the current portfolioTitle
-        portfolio_description: portfolioDescription, // Save the current portfolioDescription
-        links: prepareForDatabase(links), // Add links to save
+        portfolio_title: portfolioTitle,
+        portfolio_description: portfolioDescription,
+        links: prepareForDatabase(links),
         updated_at: new Date().toISOString()
       };
       
@@ -469,7 +464,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     return <LoadingState message={isViewOnly && editorId ? `Loading ${editorData?.name || 'editor'}'s portfolio...` : "Loading your portfolio..."} />;
   }
   
-  if (isViewOnly && !editorId) { // Handles case where ID might be missing from URL for a view-only scenario
+  if (isViewOnly && !editorId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Navbar />
@@ -486,7 +481,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     );
   }
 
-  if (isViewOnly && editorId && !editorData && !isLoading) { // Handles case where editorId is present but no data found
+  if (isViewOnly && editorId && !editorData && !isLoading) {
      return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Navbar />
@@ -544,8 +539,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         
         <HeaderSection 
           featuredVideo={featuredVideo}
-          currentUser={displayUser} // Utiliser displayUser
-          editMode={editMode && !isViewOnly} // editMode seulement si ce n'est pas isViewOnly
+          currentUser={displayUser}
+          editMode={editMode && !isViewOnly}
           updateVideoThumbnail={updateVideoThumbnail}
           title={portfolioTitle}
           setTitle={(title: string) => {
@@ -555,7 +550,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           description={portfolioDescription}
           setDescription={setPortfolioDescription}
           isSavingTitle={isSavingTitle && !isViewOnly}
-          isViewOnly={isViewOnly} // Passer isViewOnly à HeaderSection
+          isViewOnly={isViewOnly}
         />
         
         <section className="py-12 bg-secondary">
@@ -563,8 +558,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">
                 <ProfileCard
-                  currentUser={currentUser} // Garder currentUser pour les actions potentielles
-                  editorData={displayUser} // editorData pour l'affichage
+                  currentUser={currentUser}
+                  editorData={displayUser}
                   about={about}
                   setAbout={setAbout}
                   specializations={specializations}
@@ -622,7 +617,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       updateVideoThumbnail={updateVideoThumbnail}
                       toggleHighlight={toggleHighlight}
                       setAsFeatured={setAsFeatured}
-                      isViewOnly={isViewOnly} // Passer isViewOnly
+                      isViewOnly={isViewOnly}
                     />
                   </TabsContent>
                   
@@ -634,7 +629,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       updateVideoThumbnail={updateVideoThumbnail}
                       toggleHighlight={toggleHighlight}
                       setAsFeatured={setAsFeatured}
-                      isViewOnly={isViewOnly} // Passer isViewOnly
+                      isViewOnly={isViewOnly}
                     />
                   </TabsContent>
                   
