@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import useViewTracking from '@/hooks/useViewTracking';
+import { useTranslation } from 'react-i18next';
 
 import ProfileCard from '@/components/portfolio/ProfileCard';
 import CategoryManager from '@/components/portfolio/CategoryManager';
@@ -77,6 +78,7 @@ const defaultFeaturedVideo = {
 const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams<{ id: string }>();
   const { currentUser, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const userId = isViewOnly ? editorId : currentUser?.id;
   
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
@@ -113,7 +115,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
 
   const updatePortfolioTitle = async (title: string) => {
     if (!currentUser?.id) {
-      toast.error('You must be logged in to update your portfolio title');
+      toast.error(t('Portfolio.SaveChanges'));
       return;
     }
     
@@ -129,7 +131,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         throw error;
       }
       
-      toast.success('Portfolio title updated successfully');
+      toast.success(t('Portfolio.SaveChanges'));
     } catch (error) {
       console.error('Error updating portfolio title:', error);
       toast.error('Failed to update portfolio title');
@@ -145,7 +147,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       if (!userId) {
         setIsLoading(false);
         if (isViewOnly) {
-          toast.error('Editor not found');
+          toast.error(t('Portfolio.EditorNotFound'));
         }
         return;
       }
@@ -350,7 +352,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   
   const saveChanges = async () => {
     if (!isAuthenticated || !currentUser) {
-      toast.error('You must be logged in to save changes');
+      toast.error(t('Portfolio.SaveChanges'));
       return;
     }
     
@@ -390,7 +392,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         throw error;
       }
       
-      toast.success('Portfolio settings saved successfully');
+      toast.success(t('Portfolio.SaveChanges'));
     } catch (error) {
       console.error('Error saving portfolio settings:', error);
       toast.error('Failed to save portfolio settings');
@@ -472,7 +474,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const highlightedVideos = videos.filter(video => video.isHighlighted);
   
   if (isLoading) {
-    return <LoadingState message={isViewOnly && editorId ? `Loading ${editorData?.name || 'editor'}'s portfolio...` : "Loading your portfolio..."} />;
+    const loadingMessage = isViewOnly && editorId 
+      ? t('Portfolio.LoadingPortfolio', { name: editorData?.name || 'editor' })
+      : t('Portfolio.LoadingYourPortfolio');
+    return <LoadingState message={loadingMessage} />;
   }
   
   if (isViewOnly && !editorId) {
@@ -480,12 +485,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Navbar />
         <div className="bg-card p-6 rounded-lg shadow-md mt-10">
-          <h2 className="text-2xl font-bold mb-4">Editor Not Found</h2>
+          <h2 className="text-2xl font-bold mb-4">{t('Portfolio.EditorNotFound')}</h2>
           <p className="text-muted-foreground mb-4">
-            No editor ID provided. Please check the URL and try again.
+            {t('Portfolio.EditorNotFoundDescription')}
           </p>
           <Button asChild>
-            <Link to="/explore">Browse Editors</Link>
+            <Link to="/explore">{t('Portfolio.BrowseEditors')}</Link>
           </Button>
         </div>
       </div>
@@ -497,12 +502,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Navbar />
         <div className="bg-card p-6 rounded-lg shadow-md mt-10">
-          <h2 className="text-2xl font-bold mb-4">Editor Not Found</h2>
+          <h2 className="text-2xl font-bold mb-4">{t('Portfolio.EditorNotFound')}</h2>
           <p className="text-muted-foreground mb-4">
-            The editor profile for ID {editorId} could not be loaded. They may not exist or an error occurred.
+            {t('Portfolio.EditorProfileNotFound', { editorId })}
           </p>
           <Button asChild>
-            <Link to="/explore">Browse Editors</Link>
+            <Link to="/explore">{t('Portfolio.BrowseEditors')}</Link>
           </Button>
         </div>
       </div>
@@ -530,17 +535,17 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                 isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t('Portfolio.Saving')}
                   </>
                 ) : (
                   <>
-                    Save Changes
+                    {t('Portfolio.SaveChanges')}
                     <Save className="ml-2 h-4 w-4" />
                   </>
                 )
               ) : (
                 <>
-                  Edit Portfolio
+                  {t('Portfolio.EditPortfolio')}
                   <Edit className="ml-2 h-4 w-4" />
                 </>
               )}
@@ -599,10 +604,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
               <div className="md:w-2/3">
                 <Tabs defaultValue="portfolio" className="w-full">
                   <TabsList className="mb-6">
-                    <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-                    <TabsTrigger value="links">Links</TabsTrigger>
+                    <TabsTrigger value="portfolio">{t('Portfolio.Portfolio')}</TabsTrigger>
+                    <TabsTrigger value="links">{t('Portfolio.Links')}</TabsTrigger>
                     {highlightedVideos.length > 0 && (
-                      <TabsTrigger value="highlights">Highlights</TabsTrigger>
+                      <TabsTrigger value="highlights">{t('Portfolio.Highlights')}</TabsTrigger>
                     )}
                   </TabsList>
                   

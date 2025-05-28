@@ -13,5 +13,40 @@
   "DarkModeSwitch": {
     "dark": "🌙",
     "light": "☀️"
+  },
+  "Portfolio": {
+    "EditPortfolio": "Edit Portfolio",
+    "SaveChanges": "Save Changes",
+    "Saving": "Saving...",
+    "Portfolio": "Portfolio",
+    "Links": "Links",
+    "Highlights": "Highlights",
+    "EditorNotFound": "Editor Not Found",
+    "EditorNotFoundDescription": "No editor ID provided. Please check the URL and try again.",
+    "EditorProfileNotFound": "The editor profile for ID {{editorId}} could not be loaded. They may not exist or an error occurred.",
+    "BrowseEditors": "Browse Editors",
+    "LoadingPortfolio": "Loading {{name}}'s portfolio...",
+    "LoadingYourPortfolio": "Loading your portfolio...",
+    "TotalVideos": "{{count}} videos",
+    "TotalVideos_plural": "{{count}} videos",
+    "About": "About",
+    "Specializations": "Specializations",
+    "EditAbout": "Edit About",
+    "EditSpecializations": "Edit Specializations",
+    "AddSpecialization": "Add Specialization",
+    "EnterSpecialization": "Enter specialization...",
+    "Add": "Add",
+    "Remove": "Remove",
+    "Save": "Save",
+    "Cancel": "Cancel"
+  },
+  "ConfirmationDialog": {
+    "Confirm": "Confirm",
+    "Cancel": "Cancel"
+  },
+  "Loading": "Loading...",
+  "Messages": {
+    "SendMessage": "Send message...",
+    "Send": "Send"
   }
 }

@@ -5,6 +5,7 @@ import { Message } from '@/types/messaging';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface MessageItemProps {
   message: Message;
@@ -12,6 +13,7 @@ interface MessageItemProps {
 
 const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   const { currentUser } = useAuth();
+  const { i18n } = useTranslation();
   const isSender = message.sender_id === currentUser?.id;
   const senderName = message.sender?.name || 'User';
   const senderAvatar = message.sender?.avatarUrl;
@@ -33,7 +35,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
         >
           <p className="text-sm">{message.content}</p>
           <p className={cn('text-xs mt-1', isSender ? 'text-blue-200 text-right' : 'text-muted-foreground text-left')}>
-            {format(new Date(message.created_at), 'p')}
+            {format(new Date(message.created_at), 'p', { locale: i18n.language === 'fr' ? undefined : undefined })}
           </p>
         </div>
       </div>

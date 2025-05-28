@@ -13,5 +13,40 @@
   "DarkModeSwitch": {
     "dark": "🌙",
     "light": "☀️"
+  },
+  "Portfolio": {
+    "EditPortfolio": "Modifier le Portfolio",
+    "SaveChanges": "Sauvegarder les modifications",
+    "Saving": "Sauvegarde...",
+    "Portfolio": "Portfolio",
+    "Links": "Liens",
+    "Highlights": "Points forts",
+    "EditorNotFound": "Éditeur introuvable",
+    "EditorNotFoundDescription": "Aucun ID d'éditeur fourni. Veuillez vérifier l'URL et réessayer.",
+    "EditorProfileNotFound": "Le profil de l'éditeur pour l'ID {{editorId}} n'a pas pu être chargé. Il se peut qu'il n'existe pas ou qu'une erreur se soit produite.",
+    "BrowseEditors": "Parcourir les éditeurs",
+    "LoadingPortfolio": "Chargement du portfolio de {{name}}...",
+    "LoadingYourPortfolio": "Chargement de votre portfolio...",
+    "TotalVideos": "{{count}} vidéo",
+    "TotalVideos_plural": "{{count}} vidéos",
+    "About": "À propos",
+    "Specializations": "Spécialisations",
+    "EditAbout": "Modifier À propos",
+    "EditSpecializations": "Modifier les spécialisations",
+    "AddSpecialization": "Ajouter une spécialisation",
+    "EnterSpecialization": "Entrez une spécialisation...",
+    "Add": "Ajouter",
+    "Remove": "Supprimer",
+    "Save": "Sauvegarder",
+    "Cancel": "Annuler"
+  },
+  "ConfirmationDialog": {
+    "Confirm": "Confirmer",
+    "Cancel": "Annuler"
+  },
+  "Loading": "Chargement...",
+  "Messages": {
+    "SendMessage": "Envoyer un message...",
+    "Send": "Envoyer"
   }
 }
