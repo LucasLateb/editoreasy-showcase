@@ -3,10 +3,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useTranslation } from 'react-i18next';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -14,7 +13,6 @@ export default function ForgotPassword() {
   const [showInfoDialog, setShowInfoDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,12 +34,12 @@ export default function ForgotPassword() {
       setShowInfoDialog(true);
       
       toast({
-        title: t('ForgotPassword.CheckYourEmail'),
-        description: t('ForgotPassword.PasswordResetSent'),
+        title: "Check your email",
+        description: "We've sent you a password reset link.",
       });
     } catch (error: any) {
       toast({
-        title: t('Common.Error'),
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -54,9 +52,9 @@ export default function ForgotPassword() {
     <div className="container max-w-md mx-auto mt-20 px-4">
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">{t('ForgotPassword.Title')}</h1>
+          <h1 className="text-2xl font-bold">Forgot Password</h1>
           <p className="text-gray-500">
-            {t('ForgotPassword.Description')}
+            Enter your email address and we'll send you a password reset link.
           </p>
         </div>
 
@@ -64,7 +62,7 @@ export default function ForgotPassword() {
           <div className="space-y-2">
             <Input
               type="email"
-              placeholder={t('ForgotPassword.EnterEmail')}
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -75,7 +73,7 @@ export default function ForgotPassword() {
             className="w-full"
             disabled={loading}
           >
-            {loading ? t('ForgotPassword.Sending') : t('ForgotPassword.SendResetLink')}
+            {loading ? "Sending..." : "Send Reset Link"}
           </Button>
         </form>
 
@@ -84,7 +82,7 @@ export default function ForgotPassword() {
             variant="link"
             onClick={() => navigate('/login')}
           >
-            {t('ForgotPassword.BackToLogin')}
+            Back to Login
           </Button>
         </div>
       </div>
@@ -93,17 +91,18 @@ export default function ForgotPassword() {
       <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('ForgotPassword.CheckEmailTitle')}</DialogTitle>
+            <DialogTitle>Check your email</DialogTitle>
             <DialogDescription>
-              {t('ForgotPassword.CheckEmailDescription', { email })}
+              We've sent a password reset link to {email}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              {t('ForgotPassword.CheckEmailInfo')}
+              If you don't see the email in your inbox, please check your spam folder.
             </p>
             <p className="text-sm text-muted-foreground">
-              {t('ForgotPassword.CheckEmailLinkInfo')}
+              The link in the email should redirect you to the reset password page. If clicking the 
+              link doesn't work, you can copy and paste the entire link into your browser's address bar.
             </p>
           </div>
           <div className="flex justify-end">
@@ -111,7 +110,7 @@ export default function ForgotPassword() {
               setShowInfoDialog(false);
               navigate('/login');
             }}>
-              {t('ForgotPassword.ReturnToLogin')}
+              Return to Login
             </Button>
           </div>
         </DialogContent>

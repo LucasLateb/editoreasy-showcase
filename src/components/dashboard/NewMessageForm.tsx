@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input'; // Corrected import
 import { Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useTranslation } from 'react-i18next';
+import { useToast } from '@/components/ui/use-toast';
 
 interface NewMessageFormProps {
   conversationId: string;
@@ -17,7 +16,6 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ conversationId }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
-  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +32,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ conversationId }) => {
     if (error) {
       console.error('Error sending message:', error);
       toast({
-        title: t('Common.Error'),
+        title: "Error",
         description: "Could not send message. " + error.message,
         variant: "destructive",
       });
@@ -49,7 +47,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ conversationId }) => {
         type="text"
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder={t('Messages.TypeMessage')}
+        placeholder="Type a message..."
         className="flex-1"
         disabled={isSending}
       />

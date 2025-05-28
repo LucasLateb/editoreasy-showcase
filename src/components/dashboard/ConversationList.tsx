@@ -6,7 +6,6 @@ import { User as AuthUser } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -24,7 +23,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
   selectedConversationId 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { t } = useTranslation();
 
   const filteredConversations = conversations.filter(conv => 
     conv.otherParticipant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,7 +52,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder={t('Messages.SearchContacts')}
+            placeholder="Search contacts..." 
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -63,7 +61,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
       </div>
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length === 0 && !isLoading ? (
-          <p className="p-4 text-center text-muted-foreground">{t('Messages.NoConversations')}</p>
+          <p className="p-4 text-center text-muted-foreground">No conversations yet.</p>
         ) : (
           filteredConversations.map((conversation) => (
             <ConversationListItem

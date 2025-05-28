@@ -1,8 +1,8 @@
 
 import React from 'react';
 import {
-  LineChart,
-  Line,
+  LineChart, // Changé de BarChart
+  Line,    // Changé de Bar
   XAxis,
   YAxis,
   CartesianGrid,
@@ -10,10 +10,9 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslation } from 'react-i18next';
 
 interface ViewsData {
-  date: string;
+  date: string; // s'attendra à YYYY-MM-DD
   views: number;
 }
 
@@ -22,10 +21,9 @@ interface ViewsChartProps {
 }
 
 const ViewsChart: React.FC<ViewsChartProps> = ({ data }) => {
-  const { t } = useTranslation();
-
   const formatXAxis = (tickItem: string) => {
-    const date = new Date(tickItem + 'T00:00:00');
+    // tickItem est la date string, ex: "2025-05-27"
+    const date = new Date(tickItem + 'T00:00:00'); // Assurer que la date est interprétée en local
     const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
     return days[date.getDay()];
   };
@@ -33,7 +31,7 @@ const ViewsChart: React.FC<ViewsChartProps> = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('ViewsChart.Title')}</CardTitle>
+        <CardTitle>Vues au fil du temps</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -46,7 +44,7 @@ const ViewsChart: React.FC<ViewsChartProps> = ({ data }) => {
                 const date = new Date(label + 'T00:00:00');
                 return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
               }}/>
-              <Line type="monotone" dataKey="views" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} name={t('ViewsChart.ViewsLabel')} />
+              <Line type="monotone" dataKey="views" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} name="Vues" />
             </LineChart>
           </ResponsiveContainer>
         </div>

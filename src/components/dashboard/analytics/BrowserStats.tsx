@@ -4,53 +4,56 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
 import { Video } from '@/types';
 import { Heart, Eye } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 interface VideoAnalyticsProps {
-  videos: Video[];
+  videos: Video[]; // Video type should include 'categoryName?: string'
 }
 
 const VideoAnalytics: React.FC<VideoAnalyticsProps> = ({ videos }) => {
-  const { t } = useTranslation();
+  // La fonction getCategoryName n'est plus nécessaire ici si categoryName est correctement populé dans l'objet video
+  // const getCategoryName = (categoryId: string) => {
+  //   const videoWithCategory = videos.find(video => video.categoryId === categoryId);
+  //   return videoWithCategory?.categoryName || 'Non classé'; 
+  // };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('VideoAnalytics.Title')}</CardTitle>
+        <CardTitle>Performances des Vidéos</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('VideoAnalytics.TitleColumn')}</TableHead>
-              <TableHead>{t('VideoAnalytics.CategoryColumn')}</TableHead>
+              <TableHead>Titre</TableHead>
+              <TableHead>Catégorie</TableHead>
               <TableHead className="text-right">
                 <div className="flex items-center justify-end">
                   <Eye size={16} className="mr-1" />
-                  {t('VideoAnalytics.ViewsColumn')}
+                  Vues
                 </div>
               </TableHead>
               <TableHead className="text-right">
                 <div className="flex items-center justify-end">
                   <Heart size={16} className="mr-1" fill="currentColor" />
-                  {t('VideoAnalytics.LikesColumn')}
+                  Likes
                 </div>
               </TableHead>
-              <TableHead className="text-right">{t('VideoAnalytics.CreatedColumn')}</TableHead>
+              <TableHead className="text-right">Créée le</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {videos.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  {t('VideoAnalytics.NoVideos')}
+                  Aucune vidéo trouvée
                 </TableCell>
               </TableRow>
             ) : (
               videos.map((video) => (
                 <TableRow key={video.id}>
                   <TableCell className="font-medium truncate max-w-[200px]">{video.title}</TableCell>
-                  <TableCell>{video.categoryName || t('VideoAnalytics.Uncategorized')}</TableCell> 
+                  <TableCell>{video.categoryName || 'Non classé'}</TableCell> 
                   <TableCell className="text-right">{video.views}</TableCell>
                   <TableCell className="text-right">{video.likes}</TableCell>
                   <TableCell className="text-right">
