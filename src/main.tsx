@@ -1,9 +1,9 @@
 
-import React from 'react'; // Import React for Suspense
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import './i18n'; // Initialise i18next
+import './i18n'; // Initialize i18next
 
 // Find the root element
 const rootElement = document.getElementById("root");
@@ -38,11 +38,13 @@ if (rootElement) {
       }, 0);
     });
 
-    // Render the app
+    // Render the app - ensuring proper React context
     root.render(
-      <React.Suspense fallback="Loading...">
-        <App />
-      </React.Suspense>
+      <React.StrictMode>
+        <React.Suspense fallback="Loading...">
+          <App />
+        </React.Suspense>
+      </React.StrictMode>
     );
   } catch (error) {
     console.error("Error rendering application:", error);

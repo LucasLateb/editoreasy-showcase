@@ -5,22 +5,22 @@ import HttpBackend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 i18n
-  .use(HttpBackend) // Charge les traductions depuis un serveur/fichiers (ex: public/locales)
-  .use(LanguageDetector) // Détecte la langue de l'utilisateur
-  .use(initReactI18next) // Passe i18n à react-i18next
+  .use(HttpBackend) // Load translations from server/files (e.g. public/locales)
+  .use(LanguageDetector) // Detect user language
+  .use(initReactI18next) // Pass i18n to react-i18next
   .init({
     supportedLngs: ['en', 'fr'],
-    fallbackLng: 'en', // Langue par défaut si la langue détectée n'est pas supportée
-    debug: import.meta.env.DEV, // Active les logs en mode développement
+    fallbackLng: 'en', // Default language if detected language is not supported
+    debug: import.meta.env.DEV, // Enable logs in development mode
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'], // Où sauvegarder la langue sélectionnée
+      caches: ['localStorage'], // Where to save the selected language
     },
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json', // Chemin vers les fichiers de traduction
+      loadPath: '/locales/{{lng}}/translation.json', // Path to translation files
     },
     interpolation: {
-      escapeValue: false, // React gère déjà l'échappement XSS
+      escapeValue: false, // React already handles XSS escaping
     },
   });
 

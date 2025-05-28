@@ -18,12 +18,13 @@ const Explore = lazy(() => import('@/pages/Explore'));
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1, // Reduce retry attempts to prevent excessive network requests
-      staleTime: 30000, // 30 seconds
-      refetchOnWindowFocus: false, // Disable refetching on window focus to reduce unnecessary requests
+      retry: 1, 
+      staleTime: 30000, 
+      refetchOnWindowFocus: false,
     },
   },
 });

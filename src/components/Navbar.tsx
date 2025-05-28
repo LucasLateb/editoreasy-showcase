@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { User, LogOut, Settings, Languages } from 'lucide-react'; // Added Languages icon
+import { User, LogOut, Settings, Languages, Sun, Moon } from 'lucide-react'; // Added Sun and Moon icons
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,16 +30,13 @@ const Navbar: React.FC = () => {
   // Check if user is a client
   const isClient = currentUser?.role === 'client';
 
-  // Gestion du dark mode
+  // Dark mode management
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme === "dark") {
       setIsDark(true);
       document.documentElement.classList.add("dark");
     }
-    // Set initial language based on i18n's detected language
-    // This ensures UI consistency if language was set by detector
-    // No explicit setIsDark-like state needed for language as i18n handles it internally
   }, []);
 
   const toggleDark = () => {
@@ -78,17 +75,15 @@ const Navbar: React.FC = () => {
       const { data, error } = await supabase
         .from('conversations')
         .select('unread_count')
-        .contains('participant_ids', [currentUser.id]) // currentUser.id is known to be non-null here
+        .contains('participant_ids', [currentUser.id]) 
         .neq('unread_count', 0);
 
       // Force cast through unknown, as TypeScript's inferred type for 'data' might be incorrect
-      // if the auto-generated Supabase types are not yet updated with the new column.
       const typedData = data as unknown as (ConversationUnreadInfo[] | null);
       const typedError = error as (PostgrestError | null);
 
       if (!typedError && typedData && typedData.length > 0) {
         // Ensure at least one conversation actually has a positive unread_count
-        // This is somewhat redundant given .neq('unread_count', 0) but adds robustness
         const anyUnread = typedData.some(conv => conv && conv.unread_count && conv.unread_count > 0);
         setHasUnreadMessages(anyUnread);
       } else {
@@ -220,10 +215,9 @@ const Navbar: React.FC = () => {
           
           {/* Toggle Dark Mode */}
           <Button variant="ghost" size="icon" onClick={toggleDark} className="text-foreground/80 hover:text-primary">
-             {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             <span className="sr-only">Toggle theme</span>
           </Button>
-
 
           {isAuthenticated ? (
             <DropdownMenu>
@@ -288,49 +282,5 @@ const Navbar: React.FC = () => {
     </nav>
   );
 };
-
-// Helper components for Sun and Moon icons, if not already available globally
-// Or import them from lucide-react if that's preferred
-const SunIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2" />
-    <path d="M12 20v2" />
-    <path d="m4.93 4.93 1.41 1.41" />
-    <path d="m17.66 17.66 1.41 1.41" />
-    <path d="M2 12h2" />
-    <path d="M20 12h2" />
-    <path d="m6.34 17.66-1.41 1.41" />
-    <path d="m19.07 4.93-1.41 1.41" />
-  </svg>
-);
-
-const MoonIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-  </svg>
-);
 
 export default Navbar;
