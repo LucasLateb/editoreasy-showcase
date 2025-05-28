@@ -23,12 +23,19 @@ import CategoryManager from '@/components/portfolio/CategoryManager';
 import HeaderSection from '@/components/portfolio/HeaderSection';
 import ShowreelSection from '@/components/portfolio/ShowreelSection';
 import VideoGrid from '@/components/portfolio/VideoGrid';
-import TestimonialsTab from '@/components/portfolio/TestimonialsTab';
+import LinksTab from '@/components/portfolio/LinksTab';
 import LoadingState from '@/components/portfolio/LoadingState';
 import CopyPortfolioLink from '@/components/CopyPortfolioLink';
 
 interface PortfolioProps {
   isViewOnly?: boolean;
+}
+
+interface Link {
+  id: string;
+  title: string;
+  url: string;
+  platform: 'instagram' | 'youtube' | 'linkedin' | 'website' | 'other';
 }
 
 const mockPortfolioVideos = Array(12).fill(null).map((_, i) => ({
@@ -101,6 +108,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [editorData, setEditorData] = useState<any>(null);
   
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+
+  const [links, setLinks] = useState<Link[]>([]);
 
   const updatePortfolioTitle = async (title: string) => {
     if (!currentUser?.id) {
@@ -185,6 +194,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           }
           if (portfolioSettings.specializations) {
             setSpecializations(portfolioSettings.specializations as string[]);
+          }
+          if (portfolioSettings.links) {
+            setLinks(portfolioSettings.links as Link[]);
           }
         }
 
@@ -360,6 +372,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         showreel_url: showreelUrl,
         portfolio_title: portfolioTitle, // Save the current portfolioTitle
         portfolio_description: portfolioDescription, // Save the current portfolioDescription
+        links: prepareForDatabase(links), // Add links to save
         updated_at: new Date().toISOString()
       };
       
@@ -581,7 +594,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                 <Tabs defaultValue="portfolio" className="w-full">
                   <TabsList className="mb-6">
                     <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-                    <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+                    <TabsTrigger value="links">Links</TabsTrigger>
                     {highlightedVideos.length > 0 && (
                       <TabsTrigger value="highlights">Highlights</TabsTrigger>
                     )}
@@ -625,8 +638,13 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="testimonials" className="animate-fade-in opacity-0">
-                    <TestimonialsTab editMode={editMode && !isViewOnly} isViewOnly={isViewOnly} />
+                  <TabsContent value="links" className="animate-fade-in opacity-0">
+                    <LinksTab 
+                      editMode={editMode && !isViewOnly} 
+                      isViewOnly={isViewOnly}
+                      links={links}
+                      setLinks={setLinks}
+                    />
                   </TabsContent>
                 </Tabs>
               </div>

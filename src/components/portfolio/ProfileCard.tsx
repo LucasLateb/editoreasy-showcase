@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,12 +31,12 @@ interface ProfileCardProps {
   handleAddSpecialization: () => void;
   handleRemoveSpecialization: (index: number) => void;
   isViewOnly?: boolean;
-  editorData?: any; // This will hold the data of the editor whose portfolio is being viewed
-  totalVideos?: number; // Add this prop for video count
+  editorData?: any;
+  totalVideos?: number;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
-  currentUser, // This is the profile owner
+  currentUser,
   about,
   setAbout,
   specializations,
@@ -50,41 +51,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   handleAddSpecialization,
   handleRemoveSpecialization,
   isViewOnly = false,
-  editorData, // This is the profile owner if isViewOnly
+  editorData,
   totalVideos = 0
 }) => {
   const displayUser = isViewOnly ? editorData : currentUser;
   const userId = displayUser?.id;
-  const { currentUser: authUser } = useAuth(); // This is the logged-in user
+  const { currentUser: authUser } = useAuth();
   const navigate = useNavigate();
   
-  // Use profile likes hook to get like functionality
   const { isLiked, likesCount, isLoading, toggleLike } = useProfileLikes(userId || '', displayUser?.likes || 0);
-
-  // Use editor favorites hook if in view only mode and the user is a client
   const { isFavorited, isLoading: isFavLoading, toggleFavorite } = useEditorFavorites(isViewOnly ? userId : undefined);
   
-  // Only use the total video likes, not including profile likes
   const totalVideoLikes = displayUser?.totalVideoLikes || 0;
-
-  // Check if the current user is a client
   const isClient = authUser?.role === 'client';
   
-  // Function to format the subscription tier for display
   const formatSubscriptionTier = (tier: string) => {
     if (!tier) return 'Free';
     
-    // Check for subscription_tier in database format
     if (tier === 'free' || tier === 'premium' || tier === 'pro') {
       return tier.charAt(0).toUpperCase() + tier.slice(1);
     }
     
-    // Handle possible database values that might be formatted differently
     if (tier.toLowerCase() === 'free') return 'Free';
     if (tier.toLowerCase() === 'premium') return 'Premium';
     if (tier.toLowerCase() === 'pro') return 'Pro';
     
-    // Default fallback
     return 'Free';
   };
   
@@ -105,17 +96,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     if (conversationId) {
       toast.success(`Conversation with ${displayUser.name} started! Redirecting...`);
       navigate('/dashboard?tab=messaging');
-    } else {
-      // Error handling is in getOrCreateConversation
     }
   };
   
   return (
     <div className="bg-background rounded-2xl shadow-sm p-6 border border-border">
-      {/* Profile information */}
+      {/* Profile information with consistent avatar display */}
       <div className="flex items-center mb-6">
         <Avatar className="h-16 w-16 mr-4 border-2 border-background shadow-sm">
-          <AvatarImage src={displayUser?.avatarUrl} alt={displayUser?.name} />
+          <AvatarImage 
+            src={displayUser?.avatar_url || displayUser?.avatarUrl} 
+            alt={displayUser?.name || 'Editor'} 
+          />
           <AvatarFallback className="text-lg">
             {displayUser?.name?.charAt(0) || 'E'}
           </AvatarFallback>
@@ -127,7 +119,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               {formatSubscriptionTier(displayUser?.subscriptionTier || displayUser?.subscription_tier)}
             </Badge>
             <div className="flex items-center">
-              {/* Updated like counter: not clickable, shows profile likes */}
               <span className="text-sm flex items-center text-muted-foreground">
                 <Heart 
                   className={cn(
@@ -136,7 +127,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   )} 
                   fill={isLiked ? "currentColor" : "none"} 
                 />
-                {/* Display likesCount (profile likes) instead of totalVideoLikes */}
                 <span>{likesCount}</span>
               </span>
             </div>
@@ -184,6 +174,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <p className="text-sm text-muted-foreground">{about || "No information provided."}</p>
         </div>
         
+        {/* Specializations section */}
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium flex items-center">
             <Briefcase className="h-4 w-4 mr-2" />
@@ -254,7 +245,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             Contact Me
           </Button>
 
-          {/* New "Like this Portfolio" button */}
           {isViewOnly && (
             <Button
               variant={isLiked ? "outline" : "default"}
@@ -274,7 +264,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             </Button>
           )}
           
-          {/* Favorite button (existing) */}
           {isViewOnly && isClient && (
             <Button 
               variant={isFavorited ? "outline" : "secondary"} 
