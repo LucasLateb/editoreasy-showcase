@@ -24,7 +24,14 @@ const ConversationList: React.FC<ConversationListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredConversations = conversations.filter(conv => 
+  // Tri des conversations par dernier message (plus récent en premier)
+  const sortedConversations = [...conversations].sort((a, b) => {
+    const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+    const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  const filteredConversations = sortedConversations.filter(conv => 
     conv.otherParticipant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.otherParticipant?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -52,7 +59,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Search contacts..." 
+            placeholder="Rechercher des contacts..." 
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -61,7 +68,12 @@ const ConversationList: React.FC<ConversationListProps> = ({
       </div>
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length === 0 && !isLoading ? (
-          <p className="p-4 text-center text-muted-foreground">No conversations yet.</p>
+          <div className="p-4 text-center space-y-3">
+            <p className="text-muted-foreground">Aucune conversation pour le moment.</p>
+            <p className="text-sm text-muted-foreground">
+              Commencez à échanger avec d'autres utilisateurs pour voir vos conversations ici.
+            </p>
+          </div>
         ) : (
           filteredConversations.map((conversation) => (
             <ConversationListItem

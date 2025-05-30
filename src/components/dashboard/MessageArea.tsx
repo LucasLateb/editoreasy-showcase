@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,7 @@ import { User as AuthUser } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MessageCircle } from 'lucide-react';
 
 interface MessageAreaProps {
   selectedConversationId: string | null;
@@ -106,8 +108,27 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
 
   if (!selectedConversationId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-muted/20 h-full">
-        <p>Select a conversation to start messaging.</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 h-full p-8">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-24 h-24 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+            <MessageCircle className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+          </div>
+          
+          <div className="space-y-3">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              Messages
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              Sélectionnez une conversation pour commencer à échanger avec vos contacts.
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              💡 Astuce : Vous pouvez rechercher une conversation spécifique en utilisant la barre de recherche en haut de la liste.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
