@@ -119,13 +119,13 @@ const MessageArea: React.FC<MessageAreaProps> = ({ selectedConversationId, other
               Messages
             </h2>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              Sélectionnez une conversation pour commencer à échanger avec vos contacts.
+              Select a conversation to start chatting with your contacts.
             </p>
           </div>
           
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              💡 Astuce : Vous pouvez rechercher une conversation spécifique en utilisant la barre de recherche en haut de la liste.
+              💡 Tip: You can search for a specific conversation using the search bar at the top of the list.
             </p>
           </div>
         </div>
