@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -5,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Video, categories, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
+import { PlusCircle, UploadCloud, Film, Play, MessageSquare, BarChart3, CreditCard, User as UserIcon, Heart, Video as VideoIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -702,25 +703,45 @@ const Dashboard: React.FC = () => {
           <TabsList className="mb-6 grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6">
             {!isClient && (
               <>
-                <TabsTrigger value="videos">My Videos</TabsTrigger>
-                <TabsTrigger value="showreel">My Showreel</TabsTrigger>
+                <TabsTrigger value="videos" className="flex items-center gap-2">
+                  <VideoIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">My Videos</span>
+                </TabsTrigger>
+                <TabsTrigger value="showreel" className="flex items-center gap-2">
+                  <Film className="h-4 w-4" />
+                  <span className="hidden sm:inline">My Showreel</span>
+                </TabsTrigger>
               </>
             )}
-            <TabsTrigger value="messaging" className="relative flex items-center space-x-2">
-              <MessageSquare className="h-4 w-4 sm:hidden" />
+            <TabsTrigger value="messaging" className="relative flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Messaging</span>
               {totalUnreadMessages > 0 && (
                 <NotificationDot />
               )}
             </TabsTrigger>
-            {isClient && <TabsTrigger value="favorite-editors">Favorite Editors</TabsTrigger>}
+            {isClient && (
+              <TabsTrigger value="favorite-editors" className="flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline">Favorite Editors</span>
+              </TabsTrigger>
+            )}
             {!isClient && (
               <>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="plan">Plan</TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+                <TabsTrigger value="plan" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="hidden sm:inline">Plan</span>
+                </TabsTrigger>
               </>
             )}
-            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2">
+              <UserIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Account</span>
+            </TabsTrigger>
           </TabsList>
           
           {!isClient && (
@@ -766,7 +787,7 @@ const Dashboard: React.FC = () => {
           )}
           
           <TabsContent value="account">
-            <AccountTab currentUser={currentUser as User} /> {/* Changed UserProfile to User */}
+            <AccountTab currentUser={currentUser as User} />
           </TabsContent>
         </Tabs>
       </main>
