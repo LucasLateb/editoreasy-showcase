@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Video, categories, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, UploadCloud, Film, Play, MessageSquare, BarChart3, CreditCard, User as UserIcon, Heart } from 'lucide-react';
+import { PlusCircle, UploadCloud, Film, Play, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -700,71 +699,28 @@ const Dashboard: React.FC = () => {
         )}
         
         <Tabs defaultValue={defaultTab} className="w-full" onValueChange={(value) => navigate(`/dashboard?tab=${value}`)}>
-          <TabsList className="mb-8 bg-transparent p-0 h-auto space-x-8 justify-start">
+          <TabsList className="mb-6 grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6">
             {!isClient && (
               <>
-                <TabsTrigger 
-                  value="videos" 
-                  className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-                >
-                  <Film className="h-4 w-4 mr-2" />
-                  Mes vidéos
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="showreel" 
-                  className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Mon Showreel
-                </TabsTrigger>
+                <TabsTrigger value="videos">My Videos</TabsTrigger>
+                <TabsTrigger value="showreel">My Showreel</TabsTrigger>
               </>
             )}
-            <TabsTrigger 
-              value="messaging" 
-              className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-            >
-              <div className="flex items-center relative">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Messages
-                {totalUnreadMessages > 0 && (
-                  <NotificationDot />
-                )}
-              </div>
+            <TabsTrigger value="messaging" className="relative flex items-center space-x-2">
+              <MessageSquare className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Messaging</span>
+              {totalUnreadMessages > 0 && (
+                <NotificationDot />
+              )}
             </TabsTrigger>
-            {isClient && (
-              <TabsTrigger 
-                value="favorite-editors" 
-                className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-              >
-                <Heart className="h-4 w-4 mr-2" />
-                Éditeurs Favoris
-              </TabsTrigger>
-            )}
+            {isClient && <TabsTrigger value="favorite-editors">Favorite Editors</TabsTrigger>}
             {!isClient && (
               <>
-                <TabsTrigger 
-                  value="analytics" 
-                  className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Analytics
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="plan" 
-                  className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Plan
-                </TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="plan">Plan</TabsTrigger>
               </>
             )}
-            <TabsTrigger 
-              value="account" 
-              className="bg-transparent border-0 shadow-none p-0 h-auto data-[state=active]:bg-transparent data-[state=active]:shadow-none relative pb-3 font-medium text-muted-foreground data-[state=active]:text-foreground hover:text-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform"
-            >
-              <UserIcon className="h-4 w-4 mr-2" />
-              Compte
-            </TabsTrigger>
+            <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
           
           {!isClient && (
@@ -810,7 +766,7 @@ const Dashboard: React.FC = () => {
           )}
           
           <TabsContent value="account">
-            <AccountTab currentUser={currentUser as User} />
+            <AccountTab currentUser={currentUser as User} /> {/* Changed UserProfile to User */}
           </TabsContent>
         </Tabs>
       </main>
