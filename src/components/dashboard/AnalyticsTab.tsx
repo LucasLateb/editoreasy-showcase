@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Play, Globe, ThumbsUp } from 'lucide-react'; // Added missing icons
+import { Play, Globe, ThumbsUp } from 'lucide-react';
 
 const AnalyticsTab: React.FC = () => {
   const { currentUser } = useAuth();
@@ -36,7 +36,7 @@ const AnalyticsTab: React.FC = () => {
   });
 
   const { data: analyticsData, isLoading: loadingAnalytics } = useQuery({
-    queryKey: ['analytics', currentUser?.id, timePeriod, 'v4_consolidated_fetch'],
+    queryKey: ['analytics', currentUser?.id, timePeriod, 'v5_with_categories'],
     queryFn: async () => {
       if (!currentUser?.id || !hasPremiumAccess) return null;
 
@@ -54,15 +54,16 @@ const AnalyticsTab: React.FC = () => {
       previousPeriodStart.setDate(currentPeriodStart.getDate() - daysAgo);
       const previousPeriodStartString = previousPeriodStart.toISOString();
       
-      // Fetch categories
+      // Fetch categories from database
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name');
       
       if (categoriesError) {
         console.error('AnalyticsTab: Error fetching categories:', categoriesError);
-        // Proceed, category names might be missing
       }
+      
+      // Create category map
       const categoryMap = new Map<string, string>();
       if (categoriesData) {
         categoriesData.forEach((cat: { id: string; name: string | null }) => {
@@ -72,10 +73,10 @@ const AnalyticsTab: React.FC = () => {
         });
       }
 
-      // Fetch videos data (needed for video IDs and total historical likes)
+      // Fetch videos data with category names
       const { data: videosData, error: videosError } = await supabase
         .from('videos')
-        .select('id, title, description, thumbnail_url, video_url, category_id, user_id, likes, views, created_at, is_highlighted') // Be explicit
+        .select('id, title, description, thumbnail_url, video_url, category_id, user_id, likes, views, created_at, is_highlighted')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
 
@@ -180,6 +181,7 @@ const AnalyticsTab: React.FC = () => {
         .map(([date, views]) => ({ date, views }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
+      // Format videos with category names
       const formattedVideos: Video[] = (videosData || []).map(video => ({
         id: video.id,
         title: video.title,
@@ -193,8 +195,6 @@ const AnalyticsTab: React.FC = () => {
         views: video.views || 0,
         createdAt: new Date(video.created_at),
         isHighlighted: video.is_highlighted,
-        // editorName, editorAvatar, editorTier are not in the 'videos' table schema directly
-        // If these are needed, they would have to be joined from 'profiles' table based on user_id
       }));
 
       return {
