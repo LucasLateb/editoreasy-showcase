@@ -36,7 +36,7 @@ const AnalyticsTab: React.FC = () => {
   });
 
   const { data: analyticsData, isLoading: loadingAnalytics } = useQuery({
-    queryKey: ['analytics', currentUser?.id, timePeriod, 'v5_with_categories'],
+    queryKey: ['analytics', currentUser?.id, timePeriod, 'v6_fixed_categories'],
     queryFn: async () => {
       if (!currentUser?.id || !hasPremiumAccess) return null;
 
@@ -63,12 +63,15 @@ const AnalyticsTab: React.FC = () => {
         console.error('AnalyticsTab: Error fetching categories:', categoriesError);
       }
       
+      console.log('AnalyticsTab: Categories fetched:', categoriesData);
+      
       // Create category map
       const categoryMap = new Map<string, string>();
       if (categoriesData) {
         categoriesData.forEach((cat: { id: string; name: string | null }) => {
           if (cat.name) {
             categoryMap.set(cat.id, cat.name);
+            console.log(`AnalyticsTab: Category mapping - ${cat.id} -> ${cat.name}`);
           }
         });
       }
@@ -81,6 +84,8 @@ const AnalyticsTab: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (videosError) throw videosError;
+
+      console.log('AnalyticsTab: Videos fetched:', videosData);
 
       const videoIds = (videosData || []).map(video => video.id);
       const totalHistoricalVideoLikes = (videosData || []).reduce((total, video) => total + (video.likes || 0), 0);
@@ -182,20 +187,27 @@ const AnalyticsTab: React.FC = () => {
         .sort((a, b) => a.date.localeCompare(b.date));
 
       // Format videos with category names
-      const formattedVideos: Video[] = (videosData || []).map(video => ({
-        id: video.id,
-        title: video.title,
-        description: video.description || '',
-        thumbnailUrl: video.thumbnail_url,
-        videoUrl: video.video_url,
-        categoryId: video.category_id,
-        categoryName: categoryMap.get(video.category_id) || 'Non classé',
-        userId: video.user_id,
-        likes: video.likes || 0,
-        views: video.views || 0,
-        createdAt: new Date(video.created_at),
-        isHighlighted: video.is_highlighted,
-      }));
+      const formattedVideos: Video[] = (videosData || []).map(video => {
+        const categoryName = categoryMap.get(video.category_id) || 'Non classé';
+        console.log(`AnalyticsTab: Video "${video.title}" category_id: ${video.category_id} -> categoryName: ${categoryName}`);
+        
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          thumbnailUrl: video.thumbnail_url,
+          videoUrl: video.video_url,
+          categoryId: video.category_id,
+          categoryName: categoryName,
+          userId: video.user_id,
+          likes: video.likes || 0,
+          views: video.views || 0,
+          createdAt: new Date(video.created_at),
+          isHighlighted: video.is_highlighted,
+        };
+      });
+
+      console.log('AnalyticsTab: Final formatted videos:', formattedVideos);
 
       return {
         totalLikes: currentLikesCount || 0, // This card should show "Likes (Période)"
