@@ -201,14 +201,14 @@ const Navbar: React.FC = () => {
                 disabled={i18n.language === 'en'}
                 className={cn(i18n.language === 'en' && "bg-accent")}
               >
-                English
+                EN
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => changeLanguage('fr')} 
                 disabled={i18n.language === 'fr'}
                 className={cn(i18n.language === 'fr' && "bg-accent")}
               >
-                Français
+                FR
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
