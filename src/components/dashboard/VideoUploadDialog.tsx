@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -17,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import CategorySearch from '@/components/CategorySearch';
 
-import { Category } from '@/types';
+import { useCategories } from '@/hooks/useCategories';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +25,6 @@ interface VideoUploadDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: UploadFormData, videoFile: File | null, thumbnailFile: File | null) => void;
-  categories: Category[];
   isUploading: boolean;
 }
 
@@ -44,18 +42,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  categories,
   isUploading
 }) => {
   const { toast } = useToast();
+  const { categories, isLoading: categoriesLoading } = useCategories();
 
-  // Les données de base pour l’upload
+  // Les données de base pour l'upload
   const [uploadData, setUploadData] = useState<UploadFormData>({
     title: '',
     description: '',
     videoUrl: '',
     // Initialisation de la catégorie
-    categoryId: categories.length > 0 ? categories[0].id : '',
+    categoryId: '',
     thumbnailUrl: '',
   });
 
@@ -124,7 +122,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
       title: '',
       description: '',
       videoUrl: '',
-      categoryId: categories.length > 0 ? categories[0].id : '',
+      categoryId: '',
       thumbnailUrl: '',
     });
     setVideoFile(null);
@@ -190,15 +188,22 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             {/* Category with search */}
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
-              <CategorySearch
-                categories={categories}
-                selectedCategoryId={uploadData.categoryId}
-                onCategorySelect={(categoryId) => 
-                  setUploadData((prev) => ({ ...prev, categoryId }))
-                }
-                placeholder="Search and select a category..."
-                disabled={isUploading}
-              />
+              {categoriesLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading categories...</span>
+                </div>
+              ) : (
+                <CategorySearch
+                  categories={categories}
+                  selectedCategoryId={uploadData.categoryId}
+                  onCategorySelect={(categoryId) => 
+                    setUploadData((prev) => ({ ...prev, categoryId }))
+                  }
+                  placeholder="Search and select a category..."
+                  disabled={isUploading}
+                />
+              )}
             </div>
 
             {/* Description */}
@@ -214,7 +219,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               />
             </div>
 
-            {/* Choix du type d’upload (lien ou fichier) */}
+            {/* Choix du type d'upload (lien ou fichier) */}
             <div className="grid gap-2">
               <Label>Video Source</Label>
               <div className="flex gap-4 mt-1">
@@ -314,8 +319,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">YouTube Video</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l’URL. Vous
-                          pouvez aussi récupérer le code d’intégration (embed).
+                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l'URL. Vous
+                          pouvez aussi récupérer le code d'intégration (embed).
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
                           https://youtu.be/XXXXXXXXXXX
@@ -344,11 +349,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">Vimeo Video</h3>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Cliquez sur le bouton "Share", allez dans l’onglet "Embed", et copiez tout
-                          le code d’intégration.
+                          Cliquez sur le bouton "Share", allez dans l'onglet "Embed", et copiez tout
+                          le code d'intégration.
                           <span className="block mt-1 text-muted-foreground font-medium">
-                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
-                            qu’elle soit visible.
+                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
+                            qu'elle soit visible.
                           </span>
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono overflow-hidden">
@@ -528,7 +533,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
           </div>
         </ScrollArea>
 
-        {/* Barre de progression si c’est en cours d’upload */}
+        {/* Barre de progression si c'est en cours d'upload */}
         {isUploading && (
           <div className="my-4 p-4 bg-secondary rounded-lg">
             <div className="flex items-center justify-between mb-2">
@@ -563,6 +568,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             disabled={
               isUploading ||
               !uploadData.title ||
+              !uploadData.categoryId ||
               (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) ||
               (uploadType === 'file' && !videoFile) ||
               !uploadType ||

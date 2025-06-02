@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { Video, Category } from '@/types';
+import { Video } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Film } from 'lucide-react';
 import VideoCardDashboard from './VideoCardDashboard';
+import { useCategories } from '@/hooks/useCategories';
 
 interface VideosTabProps {
   videos: Video[];
-  categories: Category[];
   isLoading: boolean;
   onUploadClick: () => void;
   onDeleteClick: (videoId: string) => void;
@@ -16,11 +16,12 @@ interface VideosTabProps {
 
 const VideosTab: React.FC<VideosTabProps> = ({
   videos,
-  categories,
   isLoading,
   onUploadClick,
   onDeleteClick
 }) => {
+  const { categories } = useCategories();
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
