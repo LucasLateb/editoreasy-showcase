@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User } from '@/types';
@@ -50,6 +51,9 @@ const EditorCard: React.FC<EditorCardProps> = ({
   const thumbnailUrl = showreelThumbnail || (showreelUrl ? getYouTubeThumbnail(showreelUrl) : null);
 
   const bioText = about || editor.bio || '';
+
+  // Use avatar as cover if no specific cover image
+  const coverImage = editor.avatarUrl || '/placeholder.svg';
 
   const formatSubscriptionTier = (tier: string) => {
     if (!tier) return 'Free';
@@ -130,40 +134,53 @@ const EditorCard: React.FC<EditorCardProps> = ({
     <>
       <Card 
         className={cn(
-          "relative group h-full opacity-0 hover:border-primary/50 transition-all duration-300 animate-fade-in hover-scale",
+          "relative group h-full opacity-0 hover:border-primary/50 transition-all duration-300 animate-fade-in hover-scale overflow-hidden border",
           specializations.length > 0 ? "min-h-[400px]" : "min-h-[350px]"
         )}
         style={{ animationDelay }}
       >
-        <div className="absolute -top-3 -right-1">
-          <Badge 
-            variant={editor.subscriptionTier === 'pro' ? 'default' : 'outline'} 
-            className="shadow-sm"
-          >
-            {formatSubscriptionTier(editor.subscriptionTier)}
-          </Badge>
-        </div>
-        
-        <CardContent className="p-5">
-          <div className="flex items-center mb-4">
-            <Avatar className="h-16 w-16 border-2 border-background shadow">
-              <AvatarImage src={editor.avatarUrl} alt={editor.name} />
-              <AvatarFallback>{editor.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="ml-3">
-              <h3 className="text-lg font-medium">{editor.name}</h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {editor.subscriptionTier === 'pro' && (
-                  <span className="inline-flex items-center">
-                    <Star className="h-3 w-3 text-yellow-500 mr-1" fill="currentColor" />
-                  </span>
-                )}
-                <span>Joined {editor.createdAt.toLocaleDateString()}</span>
-                
+        {/* Cover Section with Gradient Overlay */}
+        <div className="aspect-[3/1] relative overflow-hidden">
+          <img 
+            src={coverImage} 
+            alt={`Cover of ${editor.name}`} 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          
+          {/* Badge positioned on cover */}
+          <div className="absolute top-3 right-3">
+            <Badge 
+              variant={editor.subscriptionTier === 'pro' ? 'default' : 'outline'} 
+              className="shadow-sm bg-white/90 text-black"
+            >
+              {formatSubscriptionTier(editor.subscriptionTier)}
+            </Badge>
+          </div>
+          
+          {/* Avatar and Name over cover */}
+          <div className="absolute bottom-0 left-0 w-full p-4 flex justify-between items-end">
+            <div className="flex items-center">
+              <Avatar className="h-12 w-12 border-2 border-white shadow mr-3">
+                <AvatarImage src={editor.avatarUrl} alt={editor.name} />
+                <AvatarFallback>{editor.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="text-lg font-medium text-white">{editor.name}</h3>
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  {editor.subscriptionTier === 'pro' && (
+                    <span className="inline-flex items-center">
+                      <Star className="h-3 w-3 text-yellow-400 mr-1" fill="currentColor" />
+                    </span>
+                  )}
+                  <span>Joined {editor.createdAt.toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
           </div>
-          
+        </div>
+        
+        <CardContent className="p-4">
           {bioText && (
             <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{bioText}</p>
           )}
@@ -175,11 +192,16 @@ const EditorCard: React.FC<EditorCardProps> = ({
                 <span className="text-sm font-medium">Specializations</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {specializations.map((spec, idx) => (
+                {specializations.slice(0, 3).map((spec, idx) => (
                   <Badge key={idx} variant="secondary" className="text-xs">
                     {spec}
                   </Badge>
                 ))}
+                {specializations.length > 3 && (
+                  <Badge variant="secondary" className="text-xs">
+                    +{specializations.length - 3}
+                  </Badge>
+                )}
               </div>
             </div>
           )}
@@ -207,11 +229,9 @@ const EditorCard: React.FC<EditorCardProps> = ({
               </div>
             </div>
           )}
-        </CardContent>
-        
-        <CardFooter className="p-5 pt-0 justify-between items-center">
+          
           <div 
-            className="flex items-center text-sm text-muted-foreground"
+            className="flex items-center text-sm text-muted-foreground mb-4"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -227,33 +247,40 @@ const EditorCard: React.FC<EditorCardProps> = ({
               fill={isLiked ? "currentColor" : "none"} 
             />
             {editor.totalVideoLikes !== undefined && (
-                  <span className="flex items-center gap-1">
-                    {editor.totalVideoLikes}
-                  </span>
-                )}
-
-
-            
+              <span className="flex items-center gap-1">
+                {editor.totalVideoLikes}
+              </span>
+            )}
           </div>
-          
-          <div className="flex space-x-2">
+        </CardContent>
+        
+        <CardFooter className="p-4 pt-0 justify-between items-center">
+          <div className="flex space-x-2 w-full">
             <Button 
-              variant="outline" 
-              size="sm" 
-              className="px-2 py-1 h-8 relative z-20"
-              onClick={handleContact} // Updated handler
+              variant="default" 
+              className="bg-primary hover:bg-primary/90 flex-1" 
+              size="sm"
+              asChild
             >
-              <Mail className="h-4 w-4 mr-1" />
-              <span className="text-xs">Contact</span>
+              <Link to={`/editor/${editor.id}`}>
+                View Portfolio
+              </Link>
             </Button>
             <Button 
               variant="outline" 
-              size="sm" 
-              className="px-2 py-1 h-8 relative z-20"
+              size="icon" 
+              className="shrink-0 relative z-20"
+              onClick={handleContact}
+            >
+              <Mail className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0 relative z-20"
               onClick={handleShare}
             >
-              <Share2 className="h-4 w-4 mr-1" />
-              <span className="text-xs">Share</span>
+              <Share2 className="h-4 w-4" />
             </Button>
           </div>
         </CardFooter>
