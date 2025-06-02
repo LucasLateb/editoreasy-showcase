@@ -26,7 +26,7 @@ import {
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface VideoUploadDialogProps {
@@ -54,8 +54,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   categories,
   isUploading
 }) => {
-  const { toast } = useToast();
-
   // Les données de base pour l'upload
   const [uploadData, setUploadData] = useState<UploadFormData>({
     title: '',
@@ -95,11 +93,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1 * 1024 * 1024) { // 1MB limit
-        toast({
-          title: 'Fichier trop volumineux',
-          description: 'La miniature doit faire moins de 1Mo.',
-          variant: 'destructive',
-        });
+        toast.error('Fichier trop volumineux. La miniature doit faire moins de 1Mo.');
         e.target.value = ''; // Reset file input
         return;
       }
@@ -114,7 +108,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 500 * 1024 * 1024) {
-        alert('Video file must be less than 500MB');
+        toast.error('Le fichier vidéo doit faire moins de 500Mo');
         return;
       }
       setVideoFile(file);
@@ -124,40 +118,39 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
   const handleCreateCustomCategory = async () => {
     if (!customCategoryName.trim()) {
-      toast({
-        title: 'Nom requis',
-        description: 'Veuillez entrer un nom pour la catégorie.',
-        variant: 'destructive',
-      });
+      toast.error('Veuillez entrer un nom pour la catégorie.');
       return;
     }
 
     setIsCreatingCategory(true);
     try {
+      console.log('Creating new category:', customCategoryName.trim());
+      
       const { data, error } = await supabase
         .from('categories')
         .insert([{ name: customCategoryName.trim() }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating category:', error);
+        throw error;
+      }
+
+      console.log('Category created successfully:', data);
 
       // Mettre à jour la catégorie sélectionnée avec la nouvelle catégorie
       setUploadData({ ...uploadData, categoryId: data.id });
       setShowCustomCategory(false);
       setCustomCategoryName('');
       
-      toast({
-        title: 'Catégorie créée',
-        description: `La catégorie "${customCategoryName}" a été créée avec succès.`,
-      });
-    } catch (error) {
+      toast.success(`La catégorie "${customCategoryName}" a été créée avec succès.`);
+      
+      // Force a page reload to update the categories list
+      window.location.reload();
+    } catch (error: any) {
       console.error('Error creating category:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer la catégorie. Veuillez réessayer.',
-        variant: 'destructive',
-      });
+      toast.error(`Impossible de créer la catégorie: ${error.message || 'Erreur inconnue'}`);
     } finally {
       setIsCreatingCategory(false);
     }
@@ -192,25 +185,15 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
   const handleClose = () => {
     if (isUploading) {
-      toast({
-        title: 'Cancel upload?',
-        description: 'Are you sure you want to cancel this upload?',
-        action: (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => {
-              onClose();
-              resetForm();
-              toast({
-                title: 'Upload cancelled',
-                description: 'Your video upload has been cancelled.',
-              });
-            }}
-          >
-            Yes, cancel
-          </Button>
-        ),
+      toast.error('Annulation impossible pendant l\'upload', {
+        action: {
+          label: 'Forcer la fermeture',
+          onClick: () => {
+            onClose();
+            resetForm();
+            toast.success('Upload annulé');
+          },
+        },
       });
       return;
     }
@@ -294,6 +277,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       value={customCategoryName}
                       onChange={(e) => setCustomCategoryName(e.target.value)}
                       disabled={isCreatingCategory}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customCategoryName.trim()) {
+                          handleCreateCustomCategory();
+                        }
+                      }}
                     />
                     <Button
                       type="button"
