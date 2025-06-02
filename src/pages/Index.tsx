@@ -38,7 +38,6 @@ type EditorProfile = AppUser & { totalVideoLikes: number };
 
 const Index: React.FC = () => {
   const { t } = useTranslation();
-  const { categories, getCategoryById } = useCategoriesWithFallback();
   const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]);
@@ -62,6 +61,9 @@ const Index: React.FC = () => {
   const [isLoadingAllEditors, setIsLoadingAllEditors] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Utiliser le hook avec les vidéos pour le tri
+  const { categories, getCategoryById } = useCategoriesWithFallback(videos);
   
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category, categories as localCategories } from '@/types';
 
-export const useCategoriesWithFallback = () => {
+export const useCategoriesWithFallback = (videos?: any[]) => {
   const [categories, setCategories] = useState<Category[]>(localCategories);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +18,8 @@ export const useCategoriesWithFallback = () => {
           .order('name');
 
         if (error) throw error;
+
+        let finalCategories = [...localCategories];
 
         if (data && data.length > 0) {
           // Mapper les catégories de la base de données
@@ -38,11 +40,24 @@ export const useCategoriesWithFallback = () => {
             }
           });
 
-          setCategories(mergedCategories);
-        } else {
-          // Fallback vers les catégories locales si la DB est vide
-          setCategories(localCategories);
+          finalCategories = mergedCategories;
         }
+
+        // Si des vidéos sont fournies, trier les catégories par nombre de vidéos
+        if (videos && videos.length > 0) {
+          // Compter le nombre de vidéos par catégorie
+          const videosCountByCategory = videos.reduce((acc: {[key: string]: number}, video) => {
+            acc[video.categoryId] = (acc[video.categoryId] || 0) + 1;
+            return acc;
+          }, {});
+
+          // Filtrer les catégories qui ont des vidéos et les trier par nombre de vidéos
+          finalCategories = finalCategories
+            .filter(cat => videosCountByCategory[cat.id] > 0)
+            .sort((a, b) => (videosCountByCategory[b.id] || 0) - (videosCountByCategory[a.id] || 0));
+        }
+
+        setCategories(finalCategories);
       } catch (err) {
         console.error('Error fetching categories:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch categories');
@@ -54,7 +69,7 @@ export const useCategoriesWithFallback = () => {
     };
 
     fetchCategories();
-  }, []);
+  }, [videos]);
 
   const getCategoryById = (id: string) => {
     return categories.find(cat => cat.id === id);
