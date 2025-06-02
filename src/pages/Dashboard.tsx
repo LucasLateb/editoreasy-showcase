@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -291,6 +290,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   
   const [videos, setVideos] = useState<Video[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string; }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -324,15 +324,42 @@ const Dashboard: React.FC = () => {
       if (!isClient) {
         Promise.all([
           fetchUserVideos(),
-          fetchPortfolioSettings()
+          fetchPortfolioSettings(),
+          fetchCategories()
         ]);
       } else {
         fetchPortfolioSettings();
+        fetchCategories();
         setIsLoading(false);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isClient]);
+  
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Fallback to static categories if database fetch fails
+      setCategories([
+        { id: '1', name: 'Animation' },
+        { id: '2', name: 'Commercial' },
+        { id: '3', name: 'Documentary' },
+        { id: '4', name: 'Music Video' },
+        { id: '5', name: 'Short Film' },
+      ]);
+    }
+  };
   
   const fetchPortfolioSettings = async () => {
     if (!currentUser?.id) return;
@@ -572,6 +599,9 @@ const Dashboard: React.FC = () => {
       
       setVideos([newVideo, ...videos]);
       
+      // Refresh categories in case a new one was created
+      await fetchCategories();
+      
       toast({
         title: "Video uploaded successfully",
         description: "Your video is now available in your portfolio.",
@@ -675,7 +705,7 @@ const Dashboard: React.FC = () => {
               isOpen={uploadDialogOpen}
               onClose={() => setUploadDialogOpen(false)}
               onSubmit={handleUploadSubmit}
-              categories={categories}
+              categories={categories.map(cat => ({ ...cat, description: '', thumbnailUrl: '' }))}
               isUploading={isUploading}
             />
             

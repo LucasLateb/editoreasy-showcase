@@ -24,9 +24,10 @@ import {
 } from '@/components/ui/select';
 
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast'; // Updated import path
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 }) => {
   const { toast } = useToast();
 
-  // Les données de base pour l’upload
+  // Les données de base pour l'upload
   const [uploadData, setUploadData] = useState<UploadFormData>({
     title: '',
     description: '',
@@ -71,6 +72,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  
+  // États pour la gestion des catégories personnalisées
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   const predefinedThumbnails = [
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
@@ -116,6 +122,47 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     }
   };
 
+  const handleCreateCustomCategory = async () => {
+    if (!customCategoryName.trim()) {
+      toast({
+        title: 'Nom requis',
+        description: 'Veuillez entrer un nom pour la catégorie.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCreatingCategory(true);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([{ name: customCategoryName.trim() }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Mettre à jour la catégorie sélectionnée avec la nouvelle catégorie
+      setUploadData({ ...uploadData, categoryId: data.id });
+      setShowCustomCategory(false);
+      setCustomCategoryName('');
+      
+      toast({
+        title: 'Catégorie créée',
+        description: `La catégorie "${customCategoryName}" a été créée avec succès.`,
+      });
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer la catégorie. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
   const handleSubmit = () => {
     setUploadProgress(0);
     onSubmit({ ...uploadData, uploadType, videoSource }, videoFile, thumbnailFile);
@@ -139,6 +186,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     setUploadType(null);
     setVideoSource(null);
     setUploadProgress(0);
+    setShowCustomCategory(false);
+    setCustomCategoryName('');
   };
 
   const handleClose = () => {
@@ -195,38 +244,87 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
             {/* Catégorie */}
             <div className="grid gap-2">
-              <Label htmlFor="category" >
-                Category
-              </Label>
-              <Select
-                // onValueChange met à jour la clé categoryId de uploadData
-                onValueChange={(value) =>
-                  setUploadData((prev) => ({ ...prev, categoryId: value }))
-                }
-                // On utilise la valeur actuelle (uploadData.categoryId)
-                value={uploadData.categoryId}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.length > 0 ? (
-                    categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <>
-                      <SelectItem value="1">Animation</SelectItem>
-                      <SelectItem value="2">Commercial</SelectItem>
-                      <SelectItem value="3">Documentary</SelectItem>
-                      <SelectItem value="4">Music Video</SelectItem>
-                      <SelectItem value="5">Short Film</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="category">Category</Label>
+              {!showCustomCategory ? (
+                <div className="flex gap-2">
+                  <Select
+                    onValueChange={(value) =>
+                      setUploadData((prev) => ({ ...prev, categoryId: value }))
+                    }
+                    value={uploadData.categoryId}
+                    disabled={isUploading}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.length > 0 ? (
+                        categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="1">Animation</SelectItem>
+                          <SelectItem value="2">Commercial</SelectItem>
+                          <SelectItem value="3">Documentary</SelectItem>
+                          <SelectItem value="4">Music Video</SelectItem>
+                          <SelectItem value="5">Short Film</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowCustomCategory(true)}
+                    disabled={isUploading}
+                    title="Créer une nouvelle catégorie"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nom de la nouvelle catégorie"
+                      value={customCategoryName}
+                      onChange={(e) => setCustomCategoryName(e.target.value)}
+                      disabled={isCreatingCategory}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleCreateCustomCategory}
+                      disabled={isCreatingCategory || !customCategoryName.trim()}
+                      size="sm"
+                    >
+                      {isCreatingCategory ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Créer'
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCustomCategory(false);
+                        setCustomCategoryName('');
+                      }}
+                      disabled={isCreatingCategory}
+                      size="sm"
+                    >
+                      Annuler
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Créez une nouvelle catégorie personnalisée pour votre vidéo.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Description */}
@@ -242,7 +340,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               />
             </div>
 
-            {/* Choix du type d’upload (lien ou fichier) */}
+            {/* Choix du type d'upload (lien ou fichier) */}
             <div className="grid gap-2">
               <Label>Video Source</Label>
               <div className="flex gap-4 mt-1">
@@ -342,8 +440,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">YouTube Video</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l’URL. Vous
-                          pouvez aussi récupérer le code d’intégration (embed).
+                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l'URL. Vous
+                          pouvez aussi récupérer le code d'intégration (embed).
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
                           https://youtu.be/XXXXXXXXXXX
@@ -372,11 +470,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">Vimeo Video</h3>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Cliquez sur le bouton "Share", allez dans l’onglet "Embed", et copiez tout
-                          le code d’intégration.
+                          Cliquez sur le bouton "Share", allez dans l'onglet "Embed", et copiez tout
+                          le code d'intégration.
                           <span className="block mt-1 text-muted-foreground font-medium">
-                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
-                            qu’elle soit visible.
+                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
+                            qu'elle soit visible.
                           </span>
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono overflow-hidden">
@@ -556,7 +654,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
           </div>
         </ScrollArea>
 
-        {/* Barre de progression si c’est en cours d’upload */}
+        {/* Barre de progression si c'est en cours d'upload */}
         {isUploading && (
           <div className="my-4 p-4 bg-secondary rounded-lg">
             <div className="flex items-center justify-between mb-2">
