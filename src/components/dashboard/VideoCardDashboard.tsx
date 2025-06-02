@@ -98,55 +98,63 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
 
   return (
     <>
-      <Card className="overflow-hidden hover-scale">
+      <Card className="overflow-hidden transition-all duration-500 ease-out transform-gpu hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/10 hover:-translate-y-2 group">
         <div 
-          className="relative aspect-video cursor-pointer" 
+          className="relative aspect-video cursor-pointer overflow-hidden" 
           onClick={handleVideoClick}
         >
           <Image 
             src={video.thumbnailUrl} 
             alt={video.title} 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent transition-opacity duration-300 group-hover:opacity-80"></div>
           {category && (
-            <div className="absolute bottom-3 left-3 rounded-full px-2 py-1 bg-primary/90 text-xs text-white">
+            <div className="absolute bottom-3 left-3 rounded-full px-3 py-1 bg-primary/90 backdrop-blur-sm text-xs text-white font-medium shadow-lg transition-transform duration-300 group-hover:scale-105">
               {category.name}
             </div>
           )}
+          
+          {/* Play overlay on hover */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-2xl">
+              <div className="w-0 h-0 border-l-[8px] border-l-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent ml-1"></div>
+            </div>
+          </div>
         </div>
         
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">{video.title}</CardTitle>
-          <CardDescription className="line-clamp-2">
+        <CardHeader className="pb-2 transition-transform duration-300 group-hover:translate-y-0">
+          <CardTitle className="text-lg transition-colors duration-300 group-hover:text-primary">{video.title}</CardTitle>
+          <CardDescription className="line-clamp-2 transition-colors duration-300 group-hover:text-foreground/80">
             {video.description}
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="text-sm text-muted-foreground pb-0">
+        <CardContent className="text-sm text-muted-foreground pb-0 transition-transform duration-300 group-hover:translate-y-0">
           <div className="flex space-x-4">
-            <div>{video.views} views</div>
+            <div className="transition-colors duration-300 group-hover:text-foreground">{video.views} views</div>
             <div 
-              className="flex items-center cursor-pointer" 
+              className="flex items-center cursor-pointer transition-all duration-300 hover:scale-110" 
               onClick={handleLikeClick}
             >
               <Heart 
                 className={cn(
-                  "h-4 w-4 mr-1",
-                  isLiked ? "text-red-500" : "text-muted-foreground"
+                  "h-4 w-4 mr-1 transition-all duration-300",
+                  isLiked ? "text-red-500 scale-110" : "text-muted-foreground group-hover:text-foreground"
                 )} 
                 fill={isLiked ? "currentColor" : "none"} 
               />
-              <span>{likesCount} likes</span>
+              <span className="transition-colors duration-300 group-hover:text-foreground">{likesCount} likes</span>
             </div>
           </div>
         </CardContent>
         
-        <CardFooter className="flex justify-between pt-4">
+        <CardFooter className="flex justify-between pt-4 transition-transform duration-300 group-hover:translate-y-0">
           <Button 
             size="sm" 
             variant="outline" 
             onClick={handleEditClick}
+            className="transition-all duration-300 hover:scale-105 hover:shadow-md"
           >
             <Pencil className="h-4 w-4 mr-1" />
             Edit
@@ -155,6 +163,7 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
             size="sm" 
             variant="destructive" 
             onClick={() => onDelete(video.id)}
+            className="transition-all duration-300 hover:scale-105 hover:shadow-md"
           >
             <Trash2 className="h-4 w-4 mr-1" />
             Delete
