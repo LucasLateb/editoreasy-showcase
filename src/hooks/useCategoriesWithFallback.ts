@@ -43,8 +43,8 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
           finalCategories = mergedCategories;
         }
 
-        // Si des vidéos sont fournies et qu'on veut filtrer uniquement celles avec des vidéos
-        if (videos && onlyWithVideos) {
+        // Appliquer le filtre onlyWithVideos seulement si des vidéos sont fournies ET chargées
+        if (videos && onlyWithVideos && videos.length > 0) {
           // Créer un Set des catégories qui ont des vidéos pour une recherche plus rapide
           const categoriesWithVideos = new Set(videos.map(video => video.categoryId));
           finalCategories = finalCategories.filter(cat => categoriesWithVideos.has(cat.id));
@@ -75,13 +75,15 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
         setError(err instanceof Error ? err.message : 'Failed to fetch categories');
         
         // Fallback vers les catégories locales en cas d'erreur
+        let fallbackCategories = localCategories;
+        
         if (onlyWithVideos && videos && videos.length > 0) {
           // Filtrer les catégories locales qui ont des vidéos
           const categoriesWithVideos = new Set(videos.map(video => video.categoryId));
-          setCategories(localCategories.filter(cat => categoriesWithVideos.has(cat.id)));
-        } else {
-          setCategories(localCategories);
+          fallbackCategories = localCategories.filter(cat => categoriesWithVideos.has(cat.id));
         }
+        
+        setCategories(fallbackCategories);
       } finally {
         setIsLoading(false);
       }

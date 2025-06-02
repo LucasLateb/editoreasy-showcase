@@ -63,9 +63,12 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
-  // Filtrer pour afficher uniquement les catégories qui ont des vidéos
-  const { categories, getCategoryById } = useCategoriesWithFallback(allVideos, true);
+  // Utiliser le hook avec toutes les vidéos SEULEMENT quand elles sont chargées
+  // Ne filtrer pour afficher uniquement les catégories avec des vidéos que si les vidéos sont chargées
+  const { categories, getCategoryById } = useCategoriesWithFallback(
+    !isVideosLoading ? allVideos : undefined, 
+    !isVideosLoading && allVideos.length > 0
+  );
   
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);

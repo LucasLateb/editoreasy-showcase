@@ -101,8 +101,12 @@ const Explore: React.FC = () => {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("videos");
 
-  // Utiliser le hook avec toutes les vidéos pour les catégories, en filtrant pour afficher uniquement celles avec des vidéos
-  const { categories: availableCategories } = useCategoriesWithFallback(allVideos, true);
+  // Utiliser le hook avec toutes les vidéos pour les catégories, mais seulement quand elles sont chargées
+  // Filtrer pour afficher uniquement celles avec des vidéos seulement si les vidéos sont chargées
+  const { categories: availableCategories } = useCategoriesWithFallback(
+    !isLoadingVideos ? allVideos : undefined, 
+    !isLoadingVideos && allVideos.length > 0
+  );
 
   useEffect(() => {
     const fetchAllVideos = async () => {

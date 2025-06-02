@@ -114,7 +114,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
 
   // Utiliser le hook avec les vidéos du portfolio pour le tri des catégories
   // Filtrer pour afficher uniquement les catégories qui ont des vidéos pour cet éditeur
-  const { categories: allCategories, getCategoryById } = useCategoriesWithFallback(videos, true);
+  // Mais seulement si les vidéos sont chargées
+  const { categories: allCategories, getCategoryById } = useCategoriesWithFallback(
+    !isLoading ? videos : undefined, 
+    !isLoading && videos.length > 0
+  );
 
   const updatePortfolioTitle = async (title: string) => {
     if (!currentUser?.id) {
