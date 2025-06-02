@@ -44,9 +44,9 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     }
   }, [showreelUrl, autoPlayStarted]);
 
-  // Handle hover video playback for embed URLs
+  // Handle hover video playback for embed URLs (but not Vimeo)
   useEffect(() => {
-    if (isHovered && videoRef.current && isVideoUrl(showreelUrl)) {
+    if (isHovered && videoRef.current && isVideoUrl(showreelUrl) && !isVimeoUrl(showreelUrl)) {
       videoRef.current.play().then(() => {
         setIsPlaying(true);
       }).catch(console.error);
@@ -92,6 +92,11 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     if (!url) return false;
     // Check if it's a direct video URL (mp4, webm, etc.) and not an embed code
     return (url.includes('.mp4') || url.includes('.webm') || url.includes('.mov')) && !url.includes('<iframe');
+  };
+
+  const isVimeoUrl = (url: string) => {
+    if (!url) return false;
+    return url.includes('vimeo.com');
   };
 
   const getEmbedUrl = (url: string): string | null => {
@@ -152,7 +157,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
           onClick={handleVideoClick}
         >
           <div className="relative w-full h-full overflow-hidden">
-            {(isHovered && effectiveShowreelUrl) ? (
+            {(isHovered && effectiveShowreelUrl && !isVimeoUrl(showreelUrl)) ? (
               isDirectVideo ? (
                 <video
                   ref={videoRef}
@@ -183,7 +188,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
             )}
             
             {/* Play button overlay */}
-            {!isHovered && (
+            {(!isHovered || isVimeoUrl(showreelUrl)) && (
               <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
                 isHovered ? 'bg-black/30' : 'bg-black/0'
               }`}>
