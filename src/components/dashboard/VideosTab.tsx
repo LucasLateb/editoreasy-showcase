@@ -171,7 +171,7 @@ const VideosTab: React.FC<VideosTabProps> = ({
             <VideoCardDashboard
               key={video.id}
               video={video}
-              categoryName={categories.find(cat => cat.id === video.categoryId)?.name || 'Uncategorized'}
+              category={categories.find(cat => cat.id === video.categoryId)}
               onDelete={() => onDeleteClick(video.id)}
             />
           ))}

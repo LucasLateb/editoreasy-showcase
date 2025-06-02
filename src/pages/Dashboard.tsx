@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Video, categories, User } from '@/types';
+import { Video, categories, User, Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, UploadCloud, Film, Play, MessageSquare, BarChart3, CreditCard, User as UserIcon, Heart, Video as VideoIcon } from 'lucide-react';
@@ -290,7 +290,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   
   const [videos, setVideos] = useState<Video[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: string; }[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -346,17 +346,23 @@ const Dashboard: React.FC = () => {
       if (error) throw error;
       
       if (data) {
-        setCategories(data);
+        const formattedCategories: Category[] = data.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          description: '',
+          thumbnailUrl: ''
+        }));
+        setCategories(formattedCategories);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
       // Fallback to static categories if database fetch fails
       setCategories([
-        { id: '1', name: 'Animation' },
-        { id: '2', name: 'Commercial' },
-        { id: '3', name: 'Documentary' },
-        { id: '4', name: 'Music Video' },
-        { id: '5', name: 'Short Film' },
+        { id: '1', name: 'Animation', description: '', thumbnailUrl: '' },
+        { id: '2', name: 'Commercial', description: '', thumbnailUrl: '' },
+        { id: '3', name: 'Documentary', description: '', thumbnailUrl: '' },
+        { id: '4', name: 'Music Video', description: '', thumbnailUrl: '' },
+        { id: '5', name: 'Short Film', description: '', thumbnailUrl: '' },
       ]);
     }
   };
@@ -515,6 +521,26 @@ const Dashboard: React.FC = () => {
     try {
       let thumbnailUrl = uploadData.thumbnailUrl;
       let videoUrl = uploadData.videoUrl;
+      let finalCategoryId = uploadData.categoryId;
+      
+      // Handle custom category creation
+      if (uploadData.customCategory && uploadData.customCategory.trim()) {
+        console.log('Creating new category:', uploadData.customCategory);
+        
+        const { data: newCategory, error: categoryError } = await supabase
+          .from('categories')
+          .insert({ name: uploadData.customCategory.trim() })
+          .select('id')
+          .single();
+        
+        if (categoryError) {
+          console.error('Error creating category:', categoryError);
+          throw new Error(`Error creating category: ${categoryError.message}`);
+        }
+        
+        finalCategoryId = newCategory.id;
+        console.log('New category created with ID:', finalCategoryId);
+      }
       
       if (thumbnailFile) {
         const fileExt = thumbnailFile.name.split('.').pop();
@@ -569,7 +595,7 @@ const Dashboard: React.FC = () => {
         description: uploadData.description,
         thumbnail_url: thumbnailUrl,
         video_url: videoUrl,
-        category_id: uploadData.categoryId,
+        category_id: finalCategoryId,
         user_id: currentUser.id,
       };
       
@@ -705,7 +731,7 @@ const Dashboard: React.FC = () => {
               isOpen={uploadDialogOpen}
               onClose={() => setUploadDialogOpen(false)}
               onSubmit={handleUploadSubmit}
-              categories={categories.map(cat => ({ ...cat, description: '', thumbnailUrl: '' }))}
+              categories={categories}
               isUploading={isUploading}
             />
             
