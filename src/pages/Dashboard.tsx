@@ -521,26 +521,6 @@ const Dashboard: React.FC = () => {
     try {
       let thumbnailUrl = uploadData.thumbnailUrl;
       let videoUrl = uploadData.videoUrl;
-      let finalCategoryId = uploadData.categoryId;
-      
-      // Handle custom category creation
-      if (uploadData.customCategory && uploadData.customCategory.trim()) {
-        console.log('Creating new category:', uploadData.customCategory);
-        
-        const { data: newCategory, error: categoryError } = await supabase
-          .from('categories')
-          .insert({ name: uploadData.customCategory.trim() })
-          .select('id')
-          .single();
-        
-        if (categoryError) {
-          console.error('Error creating category:', categoryError);
-          throw new Error(`Error creating category: ${categoryError.message}`);
-        }
-        
-        finalCategoryId = newCategory.id;
-        console.log('New category created with ID:', finalCategoryId);
-      }
       
       if (thumbnailFile) {
         const fileExt = thumbnailFile.name.split('.').pop();
@@ -595,7 +575,7 @@ const Dashboard: React.FC = () => {
         description: uploadData.description,
         thumbnail_url: thumbnailUrl,
         video_url: videoUrl,
-        category_id: finalCategoryId,
+        category_id: uploadData.categoryId,
         user_id: currentUser.id,
       };
       
