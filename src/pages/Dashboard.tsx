@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -675,7 +674,6 @@ const Dashboard: React.FC = () => {
               isOpen={uploadDialogOpen}
               onClose={() => setUploadDialogOpen(false)}
               onSubmit={handleUploadSubmit}
-              categories={categories}
               isUploading={isUploading}
             />
             
@@ -749,7 +747,6 @@ const Dashboard: React.FC = () => {
               <TabsContent value="videos">
                 <VideosTab
                   videos={videos}
-                  categories={categories}
                   isLoading={isLoading}
                   onUploadClick={handleUploadVideo}
                   onDeleteClick={handleDeleteConfirm}
