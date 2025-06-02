@@ -336,7 +336,7 @@ const Index: React.FC = () => {
       <main>
         <Hero />
         
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section className="py-16 px-8 sm:px-10 lg:px-12 max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -345,14 +345,16 @@ const Index: React.FC = () => {
           </div>
           
           {!isLoading && availableSpecializations.length > 0 && popularEditors.length > 0 && (
-            <SpecializationFilter
-              availableSpecializations={availableSpecializations}
-              selectedSpecialization={selectedSpecialization}
-              onSelectSpecialization={setSelectedSpecialization}
-            />
+            <div className="px-4">
+              <SpecializationFilter
+                availableSpecializations={availableSpecializations}
+                selectedSpecialization={selectedSpecialization}
+                onSelectSpecialization={setSelectedSpecialization}
+              />
+            </div>
           )}
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 rounded-t-lg overflow-hidden pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 rounded-t-lg overflow-visible pt-4 px-4">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, index) => ( // Changed length from 8 to 4
                 <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse min-h-[350px]">
