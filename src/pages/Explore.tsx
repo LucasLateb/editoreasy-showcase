@@ -29,7 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Category, Video as VideoType, categories } from '@/types';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
-import { useCategoriesWithFallback } from '@/hooks/use-categories-with-fallback';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 const Footer = () => {
   return (
