@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
-// Import du composant Select
 import {
   Select,
   SelectContent,
@@ -26,7 +25,8 @@ import {
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast'; // Updated import path
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -124,16 +124,66 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const createNewCategory = async (categoryName: string): Promise<string | null> => {
+    try {
+      // Vérifier si la catégorie existe déjà
+      const { data: existingCategory, error: searchError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', categoryName)
+        .single();
+
+      if (!searchError && existingCategory) {
+        return existingCategory.id;
+      }
+
+      // Créer une nouvelle catégorie
+      const { data: newCategory, error: insertError } = await supabase
+        .from('categories')
+        .insert({
+          name: categoryName,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Error creating category:', insertError);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de créer la catégorie',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      return newCategory.id;
+    } catch (error) {
+      console.error('Error in createNewCategory:', error);
+      return null;
+    }
+  };
+
+  const handleSubmit = async () => {
     setUploadProgress(0);
     
-    // Préparer les données avec la catégorie personnalisée si "Autre" est sélectionné
+    let finalCategoryId = uploadData.categoryId;
+
+    // Si "Autre" est sélectionné et qu'une catégorie personnalisée est fournie
+    if (uploadData.categoryId === 'other' && customCategory.trim()) {
+      const newCategoryId = await createNewCategory(customCategory.trim());
+      if (newCategoryId) {
+        finalCategoryId = newCategoryId;
+      } else {
+        // Si la création échoue, on arrête le processus
+        return;
+      }
+    }
+    
     const submitData = { 
       ...uploadData, 
+      categoryId: finalCategoryId,
       uploadType, 
-      videoSource,
-      // Si "other" est sélectionné et qu'une catégorie personnalisée est fournie, l'utiliser
-      categoryId: uploadData.categoryId === 'other' ? customCategory : uploadData.categoryId
+      videoSource
     };
     
     onSubmit(submitData, videoFile, thumbnailFile);
