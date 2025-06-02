@@ -59,14 +59,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* Category badge */}
-        {category && (
-          <div className="absolute bottom-3 left-3 z-10">
-            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground backdrop-blur-sm text-xs shadow-lg">
-              {category.name}
-            </Badge>
-          </div>
-        )}
+        
         
         {/* Play button that appears on hover */}
         <div className={cn(
