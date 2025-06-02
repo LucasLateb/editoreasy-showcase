@@ -43,6 +43,13 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
           finalCategories = mergedCategories;
         }
 
+        // Si des vidéos sont fournies et qu'on veut filtrer uniquement celles avec des vidéos
+        if (videos && onlyWithVideos) {
+          // Créer un Set des catégories qui ont des vidéos pour une recherche plus rapide
+          const categoriesWithVideos = new Set(videos.map(video => video.categoryId));
+          finalCategories = finalCategories.filter(cat => categoriesWithVideos.has(cat.id));
+        }
+
         // Si des vidéos sont fournies, trier les catégories par nombre de vidéos
         if (videos && videos.length > 0) {
           // Compter le nombre de vidéos par catégorie
@@ -50,11 +57,6 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
             acc[video.categoryId] = (acc[video.categoryId] || 0) + 1;
             return acc;
           }, {});
-
-          if (onlyWithVideos) {
-            // Filtrer uniquement les catégories qui ont des vidéos
-            finalCategories = finalCategories.filter(cat => videosCountByCategory[cat.id] > 0);
-          }
           
           // Séparer les catégories avec et sans vidéos
           const categoriesWithVideos = finalCategories.filter(cat => videosCountByCategory[cat.id] > 0);
@@ -71,14 +73,12 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
       } catch (err) {
         console.error('Error fetching categories:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch categories');
+        
         // Fallback vers les catégories locales en cas d'erreur
         if (onlyWithVideos && videos && videos.length > 0) {
           // Filtrer les catégories locales qui ont des vidéos
-          const videosCountByCategory = videos.reduce((acc: {[key: string]: number}, video) => {
-            acc[video.categoryId] = (acc[video.categoryId] || 0) + 1;
-            return acc;
-          }, {});
-          setCategories(localCategories.filter(cat => videosCountByCategory[cat.id] > 0));
+          const categoriesWithVideos = new Set(videos.map(video => video.categoryId));
+          setCategories(localCategories.filter(cat => categoriesWithVideos.has(cat.id)));
         } else {
           setCategories(localCategories);
         }

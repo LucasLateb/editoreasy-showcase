@@ -94,20 +94,21 @@ const Explore: React.FC = () => {
   const [isLoadingEditors, setIsLoadingEditors] = useState(false);
   
   const [videos, setVideos] = useState<VideoType[]>([]);
+  const [allVideos, setAllVideos] = useState<VideoType[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoType | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("videos");
 
-  // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
-  const { categories } = useCategoriesWithFallback(videos);
+  // Utiliser le hook avec toutes les vidéos pour les catégories, en filtrant pour afficher uniquement celles avec des vidéos
+  const { categories: availableCategories } = useCategoriesWithFallback(allVideos, true);
 
   useEffect(() => {
-    const fetchVideos = async () => {
+    const fetchAllVideos = async () => {
       setIsLoadingVideos(true);
       try {
-        let query = supabase
+        const { data: videoData, error: videoError } = await supabase
           .from('videos')
           .select(`
             id, 
@@ -121,19 +122,15 @@ const Explore: React.FC = () => {
             user_id, 
             created_at,
             is_highlighted
-          `);
-        
-        if (selectedCategory) {
-          query = query.eq('category_id', selectedCategory.id);
-        }
-        
-        const { data: videoData, error: videoError } = await query.order('created_at', { ascending: false });
+          `)
+          .order('created_at', { ascending: false });
         
         if (videoError) {
           throw videoError;
         }
 
         if (!videoData || videoData.length === 0) {
+          setAllVideos([]);
           setVideos([]);
           setIsLoadingVideos(false);
           return;
@@ -150,7 +147,6 @@ const Explore: React.FC = () => {
             
           if (profilesError) {
             console.error('Error fetching profiles for videos:', profilesError);
-            // Continue without profile data if it fails, or handle differently
           } else if (profilesData) {
             profilesMap = profilesData.reduce((acc, profile) => {
               acc[profile.id] = profile;
@@ -185,7 +181,16 @@ const Explore: React.FC = () => {
           } as VideoType;
         });
         
-        setVideos(formattedVideos);
+        setAllVideos(formattedVideos);
+        
+        // Filtrer selon la catégorie sélectionnée
+        if (selectedCategory) {
+          const filteredVideos = formattedVideos.filter(video => video.categoryId === selectedCategory.id);
+          setVideos(filteredVideos);
+        } else {
+          setVideos(formattedVideos);
+        }
+        
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast({
@@ -193,14 +198,25 @@ const Explore: React.FC = () => {
           description: 'Could not retrieve videos from the database.',
           variant: 'destructive',
         });
+        setAllVideos([]);
         setVideos([]);
       } finally {
         setIsLoadingVideos(false);
       }
     };
 
-    fetchVideos();
-  }, [toast, selectedCategory]);
+    fetchAllVideos();
+  }, [toast]);
+
+  // Effet séparé pour filtrer les vidéos quand la catégorie change
+  useEffect(() => {
+    if (selectedCategory) {
+      const filteredVideos = allVideos.filter(video => video.categoryId === selectedCategory.id);
+      setVideos(filteredVideos);
+    } else {
+      setVideos(allVideos);
+    }
+  }, [selectedCategory, allVideos]);
 
   useEffect(() => {
     const fetchEditorProfiles = async () => {
@@ -249,7 +265,7 @@ const Explore: React.FC = () => {
             specializations: settings.specializations || [],
             showreel_url: settings.showreel_url,
             showreel_thumbnail: settings.showreel_thumbnail,
-            about: settings.about, // about is already fetched
+            about: settings.about || null, // S'assurer que about est transmis
           };
         });
         
@@ -321,7 +337,7 @@ const Explore: React.FC = () => {
                 <CategorySlider 
                   onSelectCategory={handleCategorySelect}
                   selectedCategoryId={activeTab === 'videos' ? selectedCategory?.id : undefined}
-                  categories={categories}
+                  categories={availableCategories}
                 />
                 <Button 
                   variant="outline" 

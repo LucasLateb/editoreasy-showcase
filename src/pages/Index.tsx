@@ -51,6 +51,7 @@ const Index: React.FC = () => {
   }}>({}); 
   const [isLoading, setIsLoading] = useState(true);
   const [videos, setVideos] = useState<any[]>([]);
+  const [allVideos, setAllVideos] = useState<any[]>([]);
   const [isVideosLoading, setIsVideosLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
@@ -63,11 +64,8 @@ const Index: React.FC = () => {
   const { toast } = useToast();
 
   // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
-  // Passer les vidéos seulement si elles sont chargées et filtrer pour afficher uniquement les catégories qui ont des vidéos
-  const { categories, getCategoryById } = useCategoriesWithFallback(
-    isVideosLoading ? undefined : videos, 
-    true // Toujours filtrer pour n'afficher que les catégories avec des vidéos
-  );
+  // Filtrer pour afficher uniquement les catégories qui ont des vidéos
+  const { categories, getCategoryById } = useCategoriesWithFallback(allVideos, true);
   
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);
@@ -266,15 +264,9 @@ const Index: React.FC = () => {
           });
         });
         
-        let query = supabase
+        const { data: videosData, error: videosError } = await supabase
           .from('videos')
           .select('*');
-          
-        if (selectedCategory) {
-          query = query.eq('category_id', selectedCategory.id);
-        }
-        
-        const { data: videosData, error: videosError } = await query;
         
         if (videosError) {
           console.error('Error fetching videos:', videosError);
@@ -315,7 +307,15 @@ const Index: React.FC = () => {
             return b.createdAt.getTime() - a.createdAt.getTime();
           }).slice(0, 30);
           
-          setVideos(sortedVideos);
+          setAllVideos(sortedVideos);
+          
+          // Filtrer selon la catégorie sélectionnée
+          if (selectedCategory) {
+            const filteredVideos = sortedVideos.filter(video => video.categoryId === selectedCategory.id);
+            setVideos(filteredVideos);
+          } else {
+            setVideos(sortedVideos);
+          }
         }
       } catch (error) {
         console.error('Error fetching videos:', error);
@@ -325,7 +325,17 @@ const Index: React.FC = () => {
     };
     
     fetchVideos();
-  }, [selectedCategory]);
+  }, []);
+
+  // Effet séparé pour filtrer les vidéos quand la catégorie change
+  useEffect(() => {
+    if (selectedCategory) {
+      const filteredVideos = allVideos.filter(video => video.categoryId === selectedCategory.id);
+      setVideos(filteredVideos);
+    } else {
+      setVideos(allVideos);
+    }
+  }, [selectedCategory, allVideos]);
 
   return (
     <div className="min-h-screen">
