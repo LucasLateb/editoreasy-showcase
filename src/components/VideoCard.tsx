@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Video, Category, categories } from '@/types';
-import { Eye, Heart, Play, Star } from 'lucide-react';
+import { Eye, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
@@ -27,7 +27,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="video-card relative">
+      <div className="video-card relative aspect-video">
         {/* Video Thumbnail */}
         <Image
           src={video.thumbnailUrl}
