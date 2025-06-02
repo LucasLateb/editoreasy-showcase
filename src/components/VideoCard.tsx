@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 interface VideoCardProps {
   video: Video;
@@ -15,8 +15,8 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const { categories } = useCategories();
-  const category = categories.find(cat => cat.id === video.categoryId);
+  const { getCategoryById } = useCategoriesWithFallback();
+  const category = getCategoryById(video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
   return (
