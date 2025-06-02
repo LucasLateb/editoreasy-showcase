@@ -14,19 +14,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
-// Import du composant Select
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import CategorySearch from '@/components/CategorySearch';
 
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast'; // Updated import path
+import { useToast } from '@/hooks/use-toast';
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -193,40 +186,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               />
             </div>
 
-            {/* Catégorie */}
+            {/* Catégorie avec recherche */}
             <div className="grid gap-2">
-              <Label htmlFor="category" >
-                Category
-              </Label>
-              <Select
-                // onValueChange met à jour la clé categoryId de uploadData
-                onValueChange={(value) =>
-                  setUploadData((prev) => ({ ...prev, categoryId: value }))
+              <Label htmlFor="category">Category</Label>
+              <CategorySearch
+                categories={categories}
+                selectedCategoryId={uploadData.categoryId}
+                onCategorySelect={(categoryId) => 
+                  setUploadData((prev) => ({ ...prev, categoryId }))
                 }
-                // On utilise la valeur actuelle (uploadData.categoryId)
-                value={uploadData.categoryId}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.length > 0 ? (
-                    categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <>
-                      <SelectItem value="1">Animation</SelectItem>
-                      <SelectItem value="2">Commercial</SelectItem>
-                      <SelectItem value="3">Documentary</SelectItem>
-                      <SelectItem value="4">Music Video</SelectItem>
-                      <SelectItem value="5">Short Film</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
+                placeholder="Search and select a category..."
+                disabled={isUploading}
+              />
             </div>
 
             {/* Description */}
