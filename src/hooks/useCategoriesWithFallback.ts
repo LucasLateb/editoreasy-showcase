@@ -43,6 +43,8 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
           finalCategories = mergedCategories;
         }
 
+        console.log('useCategoriesWithFallback - finalCategories:', finalCategories);
+
         // Appliquer le filtre onlyWithVideos seulement si des vidéos sont fournies ET chargées
         if (videos && onlyWithVideos && videos.length > 0) {
           // Créer un Set des catégories qui ont des vidéos pour une recherche plus rapide
@@ -93,7 +95,13 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
   }, [videos, onlyWithVideos]);
 
   const getCategoryById = (id: string) => {
-    return categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
+    console.log('getCategoryById - looking for id:', id);
+    console.log('getCategoryById - available categories:', categories);
+    
+    const found = categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
+    console.log('getCategoryById - found category:', found);
+    
+    return found;
   };
 
   const getCategoryByName = (name: string) => {

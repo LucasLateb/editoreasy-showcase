@@ -19,6 +19,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const category = getCategoryById(video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
+  console.log('VideoCard - video.categoryId:', video.categoryId);
+  console.log('VideoCard - found category:', category);
+  
   return (
     <Card 
       className={cn(
