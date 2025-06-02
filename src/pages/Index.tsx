@@ -10,6 +10,7 @@ import { Toaster } from '@/components/Toaster';
 import { Category, categories, User as AppUser } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
+import { useCategories } from '@/hooks/useCategories';
 import { 
   Pagination, 
   PaginationContent, 
@@ -60,6 +61,9 @@ const Index: React.FC = () => {
   const [isLoadingAllEditors, setIsLoadingAllEditors] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Utiliser le hook pour récupérer les catégories depuis la base de données
+  const { categories: dbCategories } = useCategories();
   
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);
@@ -274,12 +278,18 @@ const Index: React.FC = () => {
         }
         
         if (videosData) {
+          // Combiner les catégories par défaut avec celles de la base de données
+          const allCategories = [...categories, ...dbCategories];
+          
           const processedVideos = videosData.map(video => {
             const profileInfo = profileMap.get(video.user_id) || { 
               tier: 'free', 
               name: 'Unknown Editor',
               avatar: null
             };
+            
+            // Trouver la catégorie correspondante
+            const videoCategory = allCategories.find(cat => cat.id === video.category_id);
             
             return {
               id: video.id,
@@ -288,6 +298,7 @@ const Index: React.FC = () => {
               thumbnailUrl: video.thumbnail_url || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
               videoUrl: video.video_url || '#',
               categoryId: video.category_id,
+              categoryName: videoCategory?.name || 'Unknown Category',
               userId: video.user_id,
               editorName: profileInfo.name,
               editorAvatar: profileInfo.avatar,
@@ -317,7 +328,10 @@ const Index: React.FC = () => {
     };
     
     fetchVideos();
-  }, [selectedCategory]);
+  }, [selectedCategory, dbCategories]);
+
+  // Combiner les catégories par défaut avec celles de la base de données pour le CategorySlider
+  const allCategories = [...categories, ...dbCategories];
 
   return (
     <div className="min-h-screen">
@@ -444,6 +458,7 @@ const Index: React.FC = () => {
             <CategorySlider 
               onSelectCategory={setSelectedCategory}
               selectedCategoryId={selectedCategory?.id}
+              categories={allCategories}
             />
           </div>
           
