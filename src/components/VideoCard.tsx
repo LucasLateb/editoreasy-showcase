@@ -68,15 +68,23 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         </div>
       </div>
       
-      {/* Video info */}
+      {/* Video info overlay on hover - title and category */}
+      <div className={cn(
+        "absolute top-0 left-0 right-0 p-4 transition-all duration-300",
+        isHovering ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+      )}>
+        <div className="bg-black/60 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+          <h3 className="font-semibold text-white mb-1 line-clamp-1 text-lg drop-shadow-lg">{video.title}</h3>
+          {category && (
+            <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/90 text-primary-foreground shadow-lg">
+              {category.name}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      {/* Always visible info - editor and stats */}
       <div className="absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 group-hover:translate-y-0">
-        {category && (
-          <span className="inline-block px-3 py-1 mb-3 text-xs font-medium rounded-full bg-primary/90 backdrop-blur-sm text-primary-foreground shadow-lg transition-transform duration-300 group-hover:scale-105">
-            {category.name}
-          </span>
-        )}
-        <h3 className="font-semibold text-white mb-2 line-clamp-1 text-lg transition-all duration-300 group-hover:text-primary-foreground drop-shadow-lg">{video.title}</h3>
-        
         {/* Editor info if available */}
         {video.editorName && (
           <div className="flex items-center mb-3 transition-transform duration-300 group-hover:translate-x-1">
@@ -89,7 +97,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
                 </div>
               )}
             </div>
-            <span className="text-sm text-white/90 font-medium drop-shadow-md">{video.editorName}</span>
+            <span className="text-sm text-white font-medium drop-shadow-md">{video.editorName}</span>
           </div>
         )}
         
