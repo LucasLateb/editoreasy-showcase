@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category, categories as localCategories } from '@/types';
 
-export const useCategoriesWithFallback = () => {
+export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolean = false) => {
   const [categories, setCategories] = useState<Category[]>(localCategories);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +18,8 @@ export const useCategoriesWithFallback = () => {
           .order('name');
 
         if (error) throw error;
+
+        let finalCategories = [...localCategories];
 
         if (data && data.length > 0) {
           // Mapper les catégories de la base de données
@@ -38,30 +40,63 @@ export const useCategoriesWithFallback = () => {
             }
           });
 
-          setCategories(mergedCategories);
-        } else {
-          // Fallback vers les catégories locales si la DB est vide
-          setCategories(localCategories);
+          finalCategories = mergedCategories;
         }
+
+        // Si des vidéos sont fournies, trier les catégories par nombre de vidéos
+        if (videos && videos.length > 0) {
+          // Compter le nombre de vidéos par catégorie
+          const videosCountByCategory = videos.reduce((acc: {[key: string]: number}, video) => {
+            acc[video.categoryId] = (acc[video.categoryId] || 0) + 1;
+            return acc;
+          }, {});
+
+          if (onlyWithVideos) {
+            // Filtrer uniquement les catégories qui ont des vidéos
+            finalCategories = finalCategories.filter(cat => videosCountByCategory[cat.id] > 0);
+          }
+          
+          // Séparer les catégories avec et sans vidéos
+          const categoriesWithVideos = finalCategories.filter(cat => videosCountByCategory[cat.id] > 0);
+          const categoriesWithoutVideos = finalCategories.filter(cat => !videosCountByCategory[cat.id]);
+          
+          // Trier les catégories avec vidéos par nombre décroissant
+          categoriesWithVideos.sort((a, b) => (videosCountByCategory[b.id] || 0) - (videosCountByCategory[a.id] || 0));
+          
+          // Combiner : catégories avec vidéos d'abord, puis les autres (seulement si onlyWithVideos est false)
+          finalCategories = onlyWithVideos ? categoriesWithVideos : [...categoriesWithVideos, ...categoriesWithoutVideos];
+        }
+
+        setCategories(finalCategories);
       } catch (err) {
         console.error('Error fetching categories:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch categories');
         // Fallback vers les catégories locales en cas d'erreur
-        setCategories(localCategories);
+        if (onlyWithVideos && videos && videos.length > 0) {
+          // Filtrer les catégories locales qui ont des vidéos
+          const videosCountByCategory = videos.reduce((acc: {[key: string]: number}, video) => {
+            acc[video.categoryId] = (acc[video.categoryId] || 0) + 1;
+            return acc;
+          }, {});
+          setCategories(localCategories.filter(cat => videosCountByCategory[cat.id] > 0));
+        } else {
+          setCategories(localCategories);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [videos, onlyWithVideos]);
 
   const getCategoryById = (id: string) => {
-    return categories.find(cat => cat.id === id);
+    return categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
   };
 
   const getCategoryByName = (name: string) => {
-    return categories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
+    return categories.find(cat => cat.name.toLowerCase() === name.toLowerCase()) || 
+           localCategories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
   };
 
   return { categories, isLoading, error, getCategoryById, getCategoryByName };

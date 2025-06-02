@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Category, Video as VideoType, categories } from '@/types';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 const Footer = () => {
   return (
@@ -98,6 +99,9 @@ const Explore: React.FC = () => {
   const [selectedVideo, setSelectedVideo] = useState<VideoType | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("videos");
+
+  // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
+  const { categories } = useCategoriesWithFallback(videos);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -317,6 +321,7 @@ const Explore: React.FC = () => {
                 <CategorySlider 
                   onSelectCategory={handleCategorySelect}
                   selectedCategoryId={activeTab === 'videos' ? selectedCategory?.id : undefined}
+                  categories={categories}
                 />
                 <Button 
                   variant="outline" 
