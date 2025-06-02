@@ -38,7 +38,7 @@ type EditorProfile = AppUser & { totalVideoLikes: number };
 
 const Index: React.FC = () => {
   const { t } = useTranslation();
-  const { categories, getCategoryById, getCategoriesSortedByVideoCount } = useCategoriesWithFallback();
+  const { categories, getCategoryById } = useCategoriesWithFallback();
   const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]);
@@ -55,7 +55,6 @@ const Index: React.FC = () => {
   const [isVideosLoading, setIsVideosLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
-  const [sortedCategories, setSortedCategories] = useState<any[]>([]);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -238,15 +237,6 @@ const Index: React.FC = () => {
       setFilteredEditors(popularEditors);
     }
   }, [popularEditors, selectedSpecialization, showreelData]);
-  
-  useEffect(() => {
-    const loadSortedCategories = async () => {
-      const sorted = await getCategoriesSortedByVideoCount();
-      setSortedCategories(sorted);
-    };
-    
-    loadSortedCategories();
-  }, [getCategoriesSortedByVideoCount]);
   
   useEffect(() => {
     const fetchVideos = async () => {
@@ -456,7 +446,7 @@ const Index: React.FC = () => {
             <CategorySlider 
               onSelectCategory={setSelectedCategory}
               selectedCategoryId={selectedCategory?.id}
-              categories={sortedCategories}
+              categories={categories}
             />
           </div>
           

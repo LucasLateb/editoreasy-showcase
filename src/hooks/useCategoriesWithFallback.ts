@@ -64,49 +64,5 @@ export const useCategoriesWithFallback = () => {
     return categories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
   };
 
-  const getCategoriesSortedByVideoCount = async (userId?: string) => {
-    try {
-      // Récupérer le nombre de vidéos par catégorie
-      let query = supabase
-        .from('videos')
-        .select('category_id');
-      
-      if (userId) {
-        query = query.eq('user_id', userId);
-      }
-      
-      const { data: videos, error } = await query;
-      
-      if (error) throw error;
-      
-      // Compter les vidéos par catégorie
-      const categoryCounts = videos?.reduce((acc: { [key: string]: number }, video) => {
-        acc[video.category_id] = (acc[video.category_id] || 0) + 1;
-        return acc;
-      }, {}) || {};
-      
-      // Trier les catégories par nombre de vidéos (ordre décroissant)
-      const sortedCategories = categories
-        .filter(cat => userId ? categoryCounts[cat.id] > 0 : true)
-        .sort((a, b) => {
-          const countA = categoryCounts[a.id] || 0;
-          const countB = categoryCounts[b.id] || 0;
-          return countB - countA;
-        });
-      
-      return sortedCategories;
-    } catch (error) {
-      console.error('Error sorting categories by video count:', error);
-      return categories;
-    }
-  };
-
-  return { 
-    categories, 
-    isLoading, 
-    error, 
-    getCategoryById, 
-    getCategoryByName,
-    getCategoriesSortedByVideoCount 
-  };
+  return { categories, isLoading, error, getCategoryById, getCategoryByName };
 };
