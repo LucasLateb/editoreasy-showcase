@@ -20,6 +20,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [autoPlayStarted, setAutoPlayStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   
   // Simplified approach - we'll trust the Image component to handle loading
@@ -28,6 +29,20 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       setThumbnailLoaded(true);
     }
   }, [showreelThumbnail]);
+
+  // Auto-play video when component mounts (like YouTube)
+  useEffect(() => {
+    if (videoRef.current && isVideoUrl(showreelUrl) && !autoPlayStarted) {
+      const timer = setTimeout(() => {
+        videoRef.current?.play().then(() => {
+          setIsPlaying(true);
+          setAutoPlayStarted(true);
+        }).catch(console.error);
+      }, 500); // Small delay to ensure video is loaded
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showreelUrl, autoPlayStarted]);
   
   // If there's no showreel URL and we're not in edit mode, don't render anything
   if (!showreelUrl && !editMode) {
@@ -41,17 +56,23 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (videoRef.current && isVideoUrl(showreelUrl)) {
-      videoRef.current.play().catch(console.error);
-      setIsPlaying(true);
-    }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+  };
+
+  const handleVideoClick = () => {
     if (videoRef.current && isVideoUrl(showreelUrl)) {
-      videoRef.current.pause();
-      setIsPlaying(false);
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play().catch(console.error);
+        setIsPlaying(true);
+      }
+    } else {
+      handlePlayClick();
     }
   };
 
@@ -73,7 +94,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
           className="aspect-video relative group cursor-pointer"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          onClick={handlePlayClick}
+          onClick={handleVideoClick}
         >
           <div className="relative w-full h-full overflow-hidden">
             {isVideoUrl(showreelUrl) ? (
@@ -81,9 +102,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
                 {/* Video element for direct video URLs */}
                 <video
                   ref={videoRef}
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${
-                    isHovered && isPlaying ? 'opacity-100' : 'opacity-0'
-                  }`}
+                  className="w-full h-full object-cover"
                   muted
                   loop
                   playsInline
@@ -92,17 +111,17 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
                   <source src={showreelUrl} type="video/mp4" />
                 </video>
                 
-                {/* Thumbnail overlay */}
-                <div className={`absolute inset-0 transition-opacity duration-300 ${
-                  isHovered && isPlaying ? 'opacity-0' : 'opacity-100'
-                }`}>
-                  <CustomImage 
-                    src={showreelThumbnail || defaultThumbnail} 
-                    alt="Showreel thumbnail" 
-                    className="w-full h-full"
-                    fallbackSrc={defaultThumbnail}
-                  />
-                </div>
+                {/* Thumbnail overlay - only show when video is not playing */}
+                {!isPlaying && (
+                  <div className="absolute inset-0">
+                    <CustomImage 
+                      src={showreelThumbnail || defaultThumbnail} 
+                      alt="Showreel thumbnail" 
+                      className="w-full h-full"
+                      fallbackSrc={defaultThumbnail}
+                    />
+                  </div>
+                )}
               </>
             ) : (
               /* Static thumbnail for embed URLs */
@@ -114,25 +133,27 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               />
             )}
             
-            {/* Play button overlay */}
+            {/* Play/Pause button overlay */}
             <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-              isHovered ? 'bg-black/30' : 'bg-black/20'
+              isHovered ? 'bg-black/30' : 'bg-black/0'
             }`}>
-              <div className={`rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 ${
-                isHovered ? 'w-24 h-24 bg-primary' : 'w-20 h-20'
-              }`}>
-                {isHovered && isPlaying && isVideoUrl(showreelUrl) ? (
-                  <Pause className="h-10 w-10 text-white" fill="white" />
-                ) : (
-                  <Play className="h-10 w-10 text-white" fill="white" />
-                )}
-              </div>
+              {(isHovered || !isPlaying) && (
+                <div className={`rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 ${
+                  isHovered ? 'w-24 h-24 bg-primary' : 'w-20 h-20'
+                }`}>
+                  {isPlaying && isVideoUrl(showreelUrl) ? (
+                    <Pause className="h-10 w-10 text-white" fill="white" />
+                  ) : (
+                    <Play className="h-10 w-10 text-white" fill="white" />
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Hover effects */}
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1 text-white text-sm">
-                {isVideoUrl(showreelUrl) ? 'Hover to preview • Click to watch full' : 'Click to watch'}
+                {isVideoUrl(showreelUrl) ? 'Click to play/pause • Click play button for full screen' : 'Click to watch'}
               </div>
             </div>
           </div>
