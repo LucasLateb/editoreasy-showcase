@@ -186,6 +186,15 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               />
             )}
 
+            {/* Play button overlay for Vimeo videos on hover */}
+            {isHovered && isVimeoUrl(showreelUrl) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-all duration-300">
+                <div className="rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center w-20 h-20">
+                  <Play className="h-10 w-10 text-white" fill="white" />
+                </div>
+              </div>
+            )}
+
             {/* Hover effects */}
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1 text-white text-sm">
