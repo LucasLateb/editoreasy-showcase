@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause } from 'lucide-react';
@@ -185,17 +184,6 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
                 className="w-full h-full"
                 fallbackSrc={defaultThumbnail}
               />
-            )}
-            
-            {/* Play button overlay */}
-            {(!isHovered || isVimeoUrl(showreelUrl)) && (
-              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-                isHovered ? 'bg-black/30' : 'bg-black/0'
-              }`}>
-                <div className={`rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 w-20 h-20`}>
-                  <Play className="h-10 w-10 text-white" fill="white" />
-                </div>
-              </div>
             )}
 
             {/* Hover effects */}
