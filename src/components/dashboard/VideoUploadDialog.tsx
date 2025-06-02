@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -174,7 +175,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
         <ScrollArea className="max-h-[calc(90vh-10rem)] px-6">
           <div className="grid gap-4 py-4">
-            {/* Titre */}
+            {/* Title */}
             <div className="grid gap-2">
               <Label htmlFor="title">Video Title</Label>
               <Input
@@ -186,7 +187,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               />
             </div>
 
-            {/* Catégorie avec recherche */}
+            {/* Category with search */}
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
               <CategorySearch
