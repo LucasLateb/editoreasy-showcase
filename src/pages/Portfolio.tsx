@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,7 +7,8 @@ import CategorySlider from '@/components/CategorySlider';
 import { 
   Video, 
   parseJsonToCategory, 
-  parseJsonToVideo
+  parseJsonToVideo,
+  categories as defaultCategories
 } from '@/types';
 import { Save, Edit, Loader2, ClipboardCopy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
