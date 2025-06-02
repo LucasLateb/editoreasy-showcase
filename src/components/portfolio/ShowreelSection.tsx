@@ -43,6 +43,18 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
       return () => clearTimeout(timer);
     }
   }, [showreelUrl, autoPlayStarted]);
+
+  // Handle hover video playback for embed URLs
+  useEffect(() => {
+    if (isHovered && videoRef.current && isVideoUrl(showreelUrl)) {
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(console.error);
+    } else if (!isHovered && videoRef.current && isVideoUrl(showreelUrl)) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [isHovered, showreelUrl]);
   
   // If there's no showreel URL and we're not in edit mode, don't render anything
   if (!showreelUrl && !editMode) {
@@ -82,7 +94,50 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     return (url.includes('.mp4') || url.includes('.webm') || url.includes('.mov')) && !url.includes('<iframe');
   };
 
+  const getEmbedUrl = (url: string): string | null => {
+    if (!url) return null;
+    // YouTube
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    let match = url.match(youtubeRegex);
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}?autoplay=1&mute=1&loop=1&playlist=${match[1]}&controls=0&showinfo=0&autohide=1&modestbranding=1`;
+    }
+    // Vimeo
+    const vimeoRegex = /vimeo\.com\/(?:video\/|)(\d+)/i;
+    match = url.match(vimeoRegex);
+    if (match && match[1]) {
+      return `https://player.vimeo.com/video/${match[1]}?background=1&autoplay=1&autopause=0&muted=1`;
+    }
+    // Direct video link (mp4, webm, etc.)
+    if (url.match(/\.(mp4|webm|ogg)$/i)) {
+      return url;
+    }
+    // Check for iframe embed code
+    const iframeSrcRegex = /<iframe.*?src=["'](.*?)["']/;
+    match = url.match(iframeSrcRegex);
+    if (match && match[1]) {
+      const src = match[1];
+      const urlObj = new URL(src);
+      urlObj.searchParams.set('autoplay', '1');
+      urlObj.searchParams.set('mute', '1');
+      if (src.includes('youtube.com') || src.includes('youtu.be')) {
+        urlObj.searchParams.set('loop', '1');
+        const videoId = src.split('/').pop()?.split('?')[0] || '';
+        if(videoId) urlObj.searchParams.set('playlist', videoId);
+        urlObj.searchParams.set('controls', '0');
+      } else if (src.includes('vimeo.com')) {
+        urlObj.searchParams.set('loop', '1');
+        urlObj.searchParams.set('autopause', '0');
+        urlObj.searchParams.set('controls', '0');
+      }
+      return urlObj.toString();
+    }
+    return null;
+  };
+
   const defaultThumbnail = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f';
+  const effectiveShowreelUrl = getEmbedUrl(showreelUrl);
+  const isDirectVideo = effectiveShowreelUrl && effectiveShowreelUrl.match(/\.(mp4|webm|ogg)$/i);
 
   return (
     <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
@@ -97,34 +152,28 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
           onClick={handleVideoClick}
         >
           <div className="relative w-full h-full overflow-hidden">
-            {isVideoUrl(showreelUrl) ? (
-              <>
-                {/* Video element for direct video URLs */}
+            {(isHovered && effectiveShowreelUrl) ? (
+              isDirectVideo ? (
                 <video
                   ref={videoRef}
+                  src={effectiveShowreelUrl}
                   className="w-full h-full object-cover"
+                  autoPlay
                   muted
                   loop
                   playsInline
-                  preload="metadata"
-                >
-                  <source src={showreelUrl} type="video/mp4" />
-                </video>
-                
-                {/* Thumbnail overlay - only show when video is not playing */}
-                {!isPlaying && (
-                  <div className="absolute inset-0">
-                    <CustomImage 
-                      src={showreelThumbnail || defaultThumbnail} 
-                      alt="Showreel thumbnail" 
-                      className="w-full h-full"
-                      fallbackSrc={defaultThumbnail}
-                    />
-                  </div>
-                )}
-              </>
+                />
+              ) : (
+                <iframe
+                  src={effectiveShowreelUrl}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture; muted"
+                  allowFullScreen
+                  title="Showreel"
+                />
+              )
             ) : (
-              /* Static thumbnail for embed URLs */
               <CustomImage 
                 src={showreelThumbnail || defaultThumbnail} 
                 alt="Showreel thumbnail" 
@@ -133,27 +182,21 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               />
             )}
             
-            {/* Play/Pause button overlay */}
-            <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-              isHovered ? 'bg-black/30' : 'bg-black/0'
-            }`}>
-              {(isHovered || !isPlaying) && (
-                <div className={`rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 ${
-                  isHovered ? 'w-24 h-24 bg-primary' : 'w-20 h-20'
-                }`}>
-                  {isPlaying && isVideoUrl(showreelUrl) ? (
-                    <Pause className="h-10 w-10 text-white" fill="white" />
-                  ) : (
-                    <Play className="h-10 w-10 text-white" fill="white" />
-                  )}
+            {/* Play button overlay */}
+            {!isHovered && (
+              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                isHovered ? 'bg-black/30' : 'bg-black/0'
+              }`}>
+                <div className={`rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 w-20 h-20`}>
+                  <Play className="h-10 w-10 text-white" fill="white" />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Hover effects */}
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1 text-white text-sm">
-                {isVideoUrl(showreelUrl) ? 'Click to play/pause • Click play button for full screen' : 'Click to watch'}
+                {isHovered ? 'Click for full screen' : 'Hover to preview'}
               </div>
             </div>
           </div>
