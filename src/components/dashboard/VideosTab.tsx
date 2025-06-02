@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Film } from 'lucide-react';
 import VideoCardDashboard from './VideoCardDashboard';
-import { useCategories } from '@/hooks/useCategories';
 
 interface VideosTabProps {
   videos: Video[];
@@ -22,11 +21,6 @@ const VideosTab: React.FC<VideosTabProps> = ({
   onUploadClick,
   onDeleteClick
 }) => {
-  const { categories: dbCategories } = useCategories();
-  
-  // Combiner les catégories locales avec celles de la base de données
-  const allCategories = [...categories, ...dbCategories];
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -54,7 +48,7 @@ const VideosTab: React.FC<VideosTabProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {videos.map((video) => {
-        const category = allCategories.find(c => c.id === video.categoryId);
+        const category = categories.find(c => c.id === video.categoryId);
         
         return (
           <VideoCardDashboard 

@@ -15,7 +15,7 @@ import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import VideoEditDialog, { VideoEditFormData } from '@/components/dashboard/VideoEditDialog';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
-import { useCategories } from '@/hooks/useCategories';
+import { categories } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,7 +34,6 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
-  const { categories } = useCategories();
 
   const handleVideoClick = () => {
     setIsVideoDialogOpen(true);

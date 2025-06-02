@@ -18,7 +18,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import useViewTracking from '@/hooks/useViewTracking';
 import { useTranslation } from 'react-i18next';
-import { useCategories } from '@/hooks/useCategories';
 
 import ProfileCard from '@/components/portfolio/ProfileCard';
 import CategoryManager from '@/components/portfolio/CategoryManager';
@@ -82,11 +81,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { t } = useTranslation();
   const userId = isViewOnly ? editorId : currentUser?.id;
   
-  // Utiliser le hook pour récupérer les catégories depuis la base de données
-  const { categories: dbCategories } = useCategories();
-  
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
-  const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
@@ -292,8 +288,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         toast.error('Failed to load videos');
       }
 
-      // Combiner les catégories par défaut avec celles de la base de données
-      const allAvailableCategories = [...defaultCategories, ...dbCategories];
       const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
       let finalUserCategories: Category[] = [];
 
@@ -302,7 +296,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           const parsedSavedCategories = (fetchedPortfolioSettingsData.categories as any[]).map(c => parseJsonToCategory(c));
           finalUserCategories = parsedSavedCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
           
-          allAvailableCategories.forEach(defaultCat => {
+          defaultCategories.forEach(defaultCat => {
             if (uniqueCategoryIdsFromVideos.has(defaultCat.id) && !finalUserCategories.some(fc => fc.id === defaultCat.id)) {
               finalUserCategories.push(defaultCat);
             }
@@ -310,10 +304,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
 
         } catch (e) {
           console.error('Failed to parse saved categories from settings:', e);
-          finalUserCategories = allAvailableCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
+          finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
         }
       } else {
-        finalUserCategories = allAvailableCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
+        finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
       }
       setUserCategories(finalUserCategories);
       
@@ -321,7 +315,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     };
     
     fetchData();
-  }, [userId, isViewOnly, currentUser, dbCategories]);
+  }, [userId, isViewOnly, currentUser]);
 
   useEffect(() => {
     if (isViewOnly && editorId) {
