@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Video } from '@/types';
 import VideoCard from '@/components/VideoCard';
@@ -17,7 +18,7 @@ interface VideoGridProps {
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   toggleHighlight: (videoId: string) => void;
   setAsFeatured: (video: Video) => void;
-  isViewOnly?: boolean; // Added isViewOnly prop
+  isViewOnly?: boolean;
 }
 
 const VideoGrid: React.FC<VideoGridProps> = ({
@@ -27,7 +28,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   updateVideoThumbnail,
   toggleHighlight,
   setAsFeatured,
-  isViewOnly = false, // Added isViewOnly prop with default value
+  isViewOnly = false,
 }) => {
   const navigate = useNavigate();
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
@@ -88,7 +89,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
           <p className="text-muted-foreground mb-6">
             Upload videos from your dashboard to showcase your work in your portfolio.
           </p>
-          {!isViewOnly && ( // Conditionally render upload button
+          {!isViewOnly && (
             <Button onClick={handleUploadClick} className="mx-auto">
               <Upload className="mr-2 h-4 w-4" />
               Upload Videos
@@ -110,7 +111,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({
           >
             <VideoCard video={video} />
             
-            {editMode && !isViewOnly && ( // Added !isViewOnly condition
+            {editMode && !isViewOnly && (
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1" onClick={(e) => e.stopPropagation()}>
                 <Dialog>
                   <DialogTrigger asChild>

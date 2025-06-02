@@ -4,8 +4,6 @@ import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import CategorySlider from '@/components/CategorySlider';
 import { 
-  Category, 
-  categories as defaultCategories, 
   Video, 
   parseJsonToCategory, 
   parseJsonToVideo
@@ -18,6 +16,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import useViewTracking from '@/hooks/useViewTracking';
 import { useTranslation } from 'react-i18next';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 import ProfileCard from '@/components/portfolio/ProfileCard';
 import CategoryManager from '@/components/portfolio/CategoryManager';
@@ -79,10 +78,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams<{ id: string }>();
   const { currentUser, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { categories: allCategories, getCategoryById } = useCategoriesWithFallback();
   const userId = isViewOnly ? editorId : currentUser?.id;
   
-  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
-  const [userCategories, setUserCategories] = useState<Category[]>([...defaultCategories]);
+  const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
+  const [userCategories, setUserCategories] = useState<any[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
@@ -288,34 +288,16 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         toast.error('Failed to load videos');
       }
 
+      // Utiliser les catégories globales filtrées par les vidéos de l'utilisateur
       const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
-      let finalUserCategories: Category[] = [];
-
-      if (fetchedPortfolioSettingsData?.categories && Array.isArray(fetchedPortfolioSettingsData.categories) && fetchedPortfolioSettingsData.categories.length > 0) {
-        try {
-          const parsedSavedCategories = (fetchedPortfolioSettingsData.categories as any[]).map(c => parseJsonToCategory(c));
-          finalUserCategories = parsedSavedCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
-          
-          defaultCategories.forEach(defaultCat => {
-            if (uniqueCategoryIdsFromVideos.has(defaultCat.id) && !finalUserCategories.some(fc => fc.id === defaultCat.id)) {
-              finalUserCategories.push(defaultCat);
-            }
-          });
-
-        } catch (e) {
-          console.error('Failed to parse saved categories from settings:', e);
-          finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
-        }
-      } else {
-        finalUserCategories = defaultCategories.filter(dc => uniqueCategoryIdsFromVideos.has(dc.id));
-      }
+      const finalUserCategories = allCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
       setUserCategories(finalUserCategories);
       
       setIsLoading(false);
     };
     
     fetchData();
-  }, [userId, isViewOnly, currentUser]);
+  }, [userId, isViewOnly, currentUser, allCategories]);
 
   useEffect(() => {
     if (isViewOnly && editorId) {

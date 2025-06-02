@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Video, Category, categories } from '@/types';
+import { Video } from '@/types';
 import { Eye, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 interface VideoCardProps {
   video: Video;
@@ -14,7 +15,8 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const category = categories.find(c => c.id === video.categoryId);
+  const { getCategoryById } = useCategoriesWithFallback();
+  const category = getCategoryById(video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
   return (
@@ -57,6 +59,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
+        {/* Category badge */}
+        {category && (
+          <div className="absolute bottom-3 left-3 z-10">
+            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground backdrop-blur-sm text-xs shadow-lg">
+              {category.name}
+            </Badge>
+          </div>
+        )}
+        
         {/* Play button that appears on hover */}
         <div className={cn(
           "absolute inset-0 flex items-center justify-center transition-all duration-300",
@@ -95,17 +106,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
                 </>
               )}
             </div>
-            {/* Category - only on hover */}
-            {category && (
-              <div className={cn(
-                "transition-all duration-300",
-                isHovering ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-              )}>
-                <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full text-white backdrop-blur-sm">
-                  {category.name}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -135,6 +135,12 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
           </div>
         </div>
+        {/* Category info in stats */}
+        {category && (
+          <div className="text-xs text-muted-foreground">
+            {category.name}
+          </div>
+        )}
       </div>
     </Card>
   );

@@ -7,7 +7,7 @@ import EditorCard from '@/components/EditorCard';
 import VideoCard from '@/components/VideoCard';
 import PricingPlans from '@/components/PricingPlans';
 import { Toaster } from '@/components/Toaster';
-import { Category, categories, User as AppUser } from '@/types';
+import { User as AppUser } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -31,13 +31,15 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useToast } from '@/hooks/use-toast';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 // Define a more specific type for editors, including totalVideoLikes
 type EditorProfile = AppUser & { totalVideoLikes: number };
 
 const Index: React.FC = () => {
   const { t } = useTranslation();
-  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
+  const { categories, getCategoryById } = useCategoriesWithFallback();
+  const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]);
   const [filteredEditors, setFilteredEditors] = useState<EditorProfile[]>([]);
@@ -444,6 +446,7 @@ const Index: React.FC = () => {
             <CategorySlider 
               onSelectCategory={setSelectedCategory}
               selectedCategoryId={selectedCategory?.id}
+              categories={categories}
             />
           </div>
           
