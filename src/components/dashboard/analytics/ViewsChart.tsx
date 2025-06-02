@@ -1,8 +1,8 @@
 
 import React from 'react';
 import {
-  LineChart, // Changé de BarChart
-  Line,    // Changé de Bar
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -24,8 +24,9 @@ const ViewsChart: React.FC<ViewsChartProps> = ({ data }) => {
   const formatXAxis = (tickItem: string) => {
     // tickItem est la date string, ex: "2025-05-27"
     const date = new Date(tickItem + 'T00:00:00'); // Assurer que la date est interprétée en local
-    const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-    return days[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${day}/${month}`;
   };
 
   return (
@@ -42,7 +43,7 @@ const ViewsChart: React.FC<ViewsChartProps> = ({ data }) => {
               <YAxis />
               <Tooltip labelFormatter={(label) => {
                 const date = new Date(label + 'T00:00:00');
-                return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
               }}/>
               <Line type="monotone" dataKey="views" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} name="Vues" />
             </LineChart>

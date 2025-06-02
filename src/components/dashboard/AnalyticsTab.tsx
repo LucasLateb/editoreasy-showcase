@@ -24,6 +24,27 @@ const AnalyticsTab: React.FC = () => {
   const navigate = useNavigate();
   const [timePeriod, setTimePeriod] = useState('7'); // default to 7 days
 
+  // Helper function to generate all dates in a period
+  const generateDateRange = (startDate: Date, endDate: Date) => {
+    const dates = [];
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
+  // Helper function to fill missing dates with zero values
+  const fillMissingDates = (dataMap: Map<string, number>, dateRange: string[]) => {
+    return dateRange.map(date => ({
+      date,
+      views: dataMap.get(date) || 0
+    }));
+  };
+
   const { data: hasPremiumAccess, isLoading: checkingAccess } = useQuery({
     queryKey: ['premiumAccess', currentUser?.id],
     queryFn: async () => {
@@ -36,7 +57,7 @@ const AnalyticsTab: React.FC = () => {
   });
 
   const { data: analyticsData, isLoading: loadingAnalytics } = useQuery({
-    queryKey: ['analytics', currentUser?.id, timePeriod, 'v6_fixed_categories'],
+    queryKey: ['analytics', currentUser?.id, timePeriod, 'v7_with_complete_dates'],
     queryFn: async () => {
       if (!currentUser?.id || !hasPremiumAccess) return null;
 
@@ -48,11 +69,14 @@ const AnalyticsTab: React.FC = () => {
       const currentPeriodStartString = currentPeriodStart.toISOString();
 
       const previousPeriodEnd = new Date(currentPeriodStart);
-      previousPeriodEnd.setDate(previousPeriodEnd.getDate() -1); // End of previous day
+      previousPeriodEnd.setDate(previousPeriodEnd.getDate() -1);
 
       const previousPeriodStart = new Date(currentPeriodStart);
       previousPeriodStart.setDate(currentPeriodStart.getDate() - daysAgo);
       const previousPeriodStartString = previousPeriodStart.toISOString();
+      
+      // Generate complete date ranges
+      const currentDateRange = generateDateRange(currentPeriodStart, currentDate);
       
       // Fetch categories from database
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -178,13 +202,9 @@ const AnalyticsTab: React.FC = () => {
         portfolioViewsByDate.set(date, (portfolioViewsByDate.get(date) || 0) + 1);
       });
 
-      const videoViewsChartData = Array.from(videoViewsByDate.entries())
-        .map(([date, views]) => ({ date, views }))
-        .sort((a, b) => a.date.localeCompare(b.date));
-
-      const portfolioViewsChartData = Array.from(portfolioViewsByDate.entries())
-        .map(([date, views]) => ({ date, views }))
-        .sort((a, b) => a.date.localeCompare(b.date));
+      // Fill missing dates with zero values
+      const videoViewsChartData = fillMissingDates(videoViewsByDate, currentDateRange);
+      const portfolioViewsChartData = fillMissingDates(portfolioViewsByDate, currentDateRange);
 
       // Format videos with category names
       const formattedVideos: Video[] = (videosData || []).map(video => {
@@ -314,6 +334,7 @@ const AnalyticsTab: React.FC = () => {
           </SelectContent>
         </Select>
       </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-background p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3">
