@@ -441,7 +441,7 @@ const Index: React.FC = () => {
           </div>
         </div>
         
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <section className="py-16 px-8 sm:px-10 lg:px-12 max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">Browse Categories</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -449,12 +449,14 @@ const Index: React.FC = () => {
             </p>
           </div>
           
-          <CategorySlider 
-            onSelectCategory={setSelectedCategory}
-            selectedCategoryId={selectedCategory?.id}
-          />
+          <div className="px-4">
+            <CategorySlider 
+              onSelectCategory={setSelectedCategory}
+              selectedCategoryId={selectedCategory?.id}
+            />
+          </div>
           
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 rounded-b-lg overflow-hidden pb-4">
+          <div className="mt-8 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 rounded-b-lg overflow-visible pb-8">
             {isVideosLoading ? (
               Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="aspect-video bg-muted rounded-lg animate-pulse" />
