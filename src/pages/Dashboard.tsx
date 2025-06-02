@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Video, categories, User, Category } from '@/types';
+import { Video, categories, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, UploadCloud, Film, Play, MessageSquare, BarChart3, CreditCard, User as UserIcon, Heart, Video as VideoIcon } from 'lucide-react';
@@ -290,7 +291,6 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   
   const [videos, setVideos] = useState<Video[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -324,48 +324,15 @@ const Dashboard: React.FC = () => {
       if (!isClient) {
         Promise.all([
           fetchUserVideos(),
-          fetchPortfolioSettings(),
-          fetchCategories()
+          fetchPortfolioSettings()
         ]);
       } else {
         fetchPortfolioSettings();
-        fetchCategories();
         setIsLoading(false);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isClient]);
-  
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name')
-        .order('name');
-      
-      if (error) throw error;
-      
-      if (data) {
-        const formattedCategories: Category[] = data.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          description: '',
-          thumbnailUrl: ''
-        }));
-        setCategories(formattedCategories);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      // Fallback to static categories if database fetch fails
-      setCategories([
-        { id: '1', name: 'Animation', description: '', thumbnailUrl: '' },
-        { id: '2', name: 'Commercial', description: '', thumbnailUrl: '' },
-        { id: '3', name: 'Documentary', description: '', thumbnailUrl: '' },
-        { id: '4', name: 'Music Video', description: '', thumbnailUrl: '' },
-        { id: '5', name: 'Short Film', description: '', thumbnailUrl: '' },
-      ]);
-    }
-  };
   
   const fetchPortfolioSettings = async () => {
     if (!currentUser?.id) return;
@@ -604,9 +571,6 @@ const Dashboard: React.FC = () => {
       };
       
       setVideos([newVideo, ...videos]);
-      
-      // Refresh categories in case a new one was created
-      await fetchCategories();
       
       toast({
         title: "Video uploaded successfully",

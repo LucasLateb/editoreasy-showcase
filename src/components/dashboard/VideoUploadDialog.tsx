@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -27,8 +26,7 @@ import {
 import { Category } from '@/types';
 import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast'; // Updated import path
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -55,7 +53,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   categories,
   isUploading
 }) => {
-  // Les données de base pour l'upload
+  const { toast } = useToast();
+
+  // Les données de base pour l’upload
   const [uploadData, setUploadData] = useState<UploadFormData>({
     title: '',
     description: '',
@@ -71,9 +71,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-  
-  // États pour la gestion de la catégorie "Autre"
-  const [customCategoryName, setCustomCategoryName] = useState('');
 
   const predefinedThumbnails = [
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
@@ -92,7 +89,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1 * 1024 * 1024) { // 1MB limit
-        toast.error('Fichier trop volumineux. La miniature doit faire moins de 1Mo.');
+        toast({
+          title: 'Fichier trop volumineux',
+          description: 'La miniature doit faire moins de 1Mo.',
+          variant: 'destructive',
+        });
         e.target.value = ''; // Reset file input
         return;
       }
@@ -107,7 +108,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 500 * 1024 * 1024) {
-        toast.error('Le fichier vidéo doit faire moins de 500Mo');
+        alert('Video file must be less than 500MB');
         return;
       }
       setVideoFile(file);
@@ -115,23 +116,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     }
   };
 
-  const handleCategoryChange = (value: string) => {
-    setUploadData({ ...uploadData, categoryId: value });
-    // Reset custom category name when switching away from "other"
-    if (value !== 'other') {
-      setCustomCategoryName('');
-    }
-  };
-
   const handleSubmit = () => {
     setUploadProgress(0);
-    
-    // If "other" is selected, use the custom category name as categoryId
-    const finalUploadData = uploadData.categoryId === 'other' 
-      ? { ...uploadData, categoryId: customCategoryName }
-      : uploadData;
-    
-    onSubmit(finalUploadData, videoFile, thumbnailFile);
+    onSubmit({ ...uploadData, uploadType, videoSource }, videoFile, thumbnailFile);
 
     if (!isUploading) {
       resetForm();
@@ -152,20 +139,29 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     setUploadType(null);
     setVideoSource(null);
     setUploadProgress(0);
-    setCustomCategoryName('');
   };
 
   const handleClose = () => {
     if (isUploading) {
-      toast.error('Annulation impossible pendant l\'upload', {
-        action: {
-          label: 'Forcer la fermeture',
-          onClick: () => {
-            onClose();
-            resetForm();
-            toast.success('Upload annulé');
-          },
-        },
+      toast({
+        title: 'Cancel upload?',
+        description: 'Are you sure you want to cancel this upload?',
+        action: (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              onClose();
+              resetForm();
+              toast({
+                title: 'Upload cancelled',
+                description: 'Your video upload has been cancelled.',
+              });
+            }}
+          >
+            Yes, cancel
+          </Button>
+        ),
       });
       return;
     }
@@ -199,13 +195,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
             {/* Catégorie */}
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category" >
+                Category
+              </Label>
               <Select
-                onValueChange={handleCategoryChange}
+                // onValueChange met à jour la clé categoryId de uploadData
+                onValueChange={(value) =>
+                  setUploadData((prev) => ({ ...prev, categoryId: value }))
+                }
+                // On utilise la valeur actuelle (uploadData.categoryId)
                 value={uploadData.categoryId}
-                disabled={isUploading}
               >
-                <SelectTrigger>
+                <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,21 +225,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <SelectItem value="5">Short Film</SelectItem>
                     </>
                   )}
-                  <SelectItem value="other">Autre</SelectItem>
                 </SelectContent>
               </Select>
-              
-              {/* Champ de saisie pour catégorie personnalisée */}
-              {uploadData.categoryId === 'other' && (
-                <div className="mt-2">
-                  <Input
-                    placeholder="Nom de la catégorie personnalisée"
-                    value={customCategoryName}
-                    onChange={(e) => setCustomCategoryName(e.target.value)}
-                    disabled={isUploading}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Description */}
@@ -254,7 +242,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               />
             </div>
 
-            {/* Choix du type d'upload (lien ou fichier) */}
+            {/* Choix du type d’upload (lien ou fichier) */}
             <div className="grid gap-2">
               <Label>Video Source</Label>
               <div className="flex gap-4 mt-1">
@@ -354,8 +342,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">YouTube Video</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l'URL. Vous
-                          pouvez aussi récupérer le code d'intégration (embed).
+                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l’URL. Vous
+                          pouvez aussi récupérer le code d’intégration (embed).
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
                           https://youtu.be/XXXXXXXXXXX
@@ -384,11 +372,11 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       <div>
                         <h3 className="font-medium mb-1">Vimeo Video</h3>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Cliquez sur le bouton "Share", allez dans l'onglet "Embed", et copiez tout
-                          le code d'intégration.
+                          Cliquez sur le bouton "Share", allez dans l’onglet "Embed", et copiez tout
+                          le code d’intégration.
                           <span className="block mt-1 text-muted-foreground font-medium">
-                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
-                            qu'elle soit visible.
+                            Assurez-vous que votre vidéo est en « unlisted » ou « public » pour
+                            qu’elle soit visible.
                           </span>
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono overflow-hidden">
@@ -568,7 +556,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
           </div>
         </ScrollArea>
 
-        {/* Barre de progression si c'est en cours d'upload */}
+        {/* Barre de progression si c’est en cours d’upload */}
         {isUploading && (
           <div className="my-4 p-4 bg-secondary rounded-lg">
             <div className="flex items-center justify-between mb-2">
@@ -606,8 +594,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) ||
               (uploadType === 'file' && !videoFile) ||
               !uploadType ||
-              (!uploadData.thumbnailUrl && !thumbnailFile) ||
-              (uploadData.categoryId === 'other' && !customCategoryName.trim())
+              (!uploadData.thumbnailUrl && !thumbnailFile)
             }
           >
             {isUploading ? (
