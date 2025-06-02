@@ -52,9 +52,14 @@ export const useCategoriesWithFallback = (videos?: any[]) => {
           }, {});
 
           // Filtrer les catégories qui ont des vidéos et les trier par nombre de vidéos
-          finalCategories = finalCategories
-            .filter(cat => videosCountByCategory[cat.id] > 0)
-            .sort((a, b) => (videosCountByCategory[b.id] || 0) - (videosCountByCategory[a.id] || 0));
+          const categoriesWithVideos = finalCategories.filter(cat => videosCountByCategory[cat.id] > 0);
+          const categoriesWithoutVideos = finalCategories.filter(cat => !videosCountByCategory[cat.id]);
+          
+          // Trier les catégories avec vidéos par nombre décroissant
+          categoriesWithVideos.sort((a, b) => (videosCountByCategory[b.id] || 0) - (videosCountByCategory[a.id] || 0));
+          
+          // Combiner : catégories avec vidéos d'abord, puis les autres
+          finalCategories = [...categoriesWithVideos, ...categoriesWithoutVideos];
         }
 
         setCategories(finalCategories);
@@ -72,11 +77,12 @@ export const useCategoriesWithFallback = (videos?: any[]) => {
   }, [videos]);
 
   const getCategoryById = (id: string) => {
-    return categories.find(cat => cat.id === id);
+    return categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
   };
 
   const getCategoryByName = (name: string) => {
-    return categories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
+    return categories.find(cat => cat.name.toLowerCase() === name.toLowerCase()) || 
+           localCategories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
   };
 
   return { categories, isLoading, error, getCategoryById, getCategoryByName };

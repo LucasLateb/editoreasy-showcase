@@ -112,7 +112,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
 
   const [links, setLinks] = useState<LinkItem[]>([]);
 
-  // Utiliser le hook avec les vidéos pour le tri des catégories
+  // Utiliser le hook avec les vidéos du portfolio pour le tri des catégories
   const { categories: allCategories, getCategoryById } = useCategoriesWithFallback(videos);
 
   const updatePortfolioTitle = async (title: string) => {

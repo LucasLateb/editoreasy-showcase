@@ -62,7 +62,7 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Utiliser le hook avec les vidéos pour le tri
+  // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
   const { categories, getCategoryById } = useCategoriesWithFallback(videos);
   
   const handleVideoClick = (video: any) => {
