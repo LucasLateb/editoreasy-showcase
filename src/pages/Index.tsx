@@ -64,7 +64,11 @@ const Index: React.FC = () => {
 
   // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
   // et filtrer pour afficher uniquement les catégories qui ont des vidéos
-  const { categories, getCategoryById } = useCategoriesWithFallback(videos, true);
+  // Mais seulement après que les vidéos soient chargées
+  const { categories, getCategoryById } = useCategoriesWithFallback(
+    !isVideosLoading ? videos : undefined, 
+    !isVideosLoading && videos.length > 0
+  );
   
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);
