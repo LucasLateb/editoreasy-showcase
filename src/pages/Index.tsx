@@ -38,6 +38,7 @@ type EditorProfile = AppUser & { totalVideoLikes: number };
 
 const Index: React.FC = () => {
   const { t } = useTranslation();
+  const { categories, getCategoryById } = useCategoriesWithFallback();
   const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]);
@@ -61,13 +62,6 @@ const Index: React.FC = () => {
   const [isLoadingAllEditors, setIsLoadingAllEditors] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Utiliser le hook avec toutes les vidéos pour s'assurer que les catégories sont correctes
-  // Passer les vidéos seulement si elles sont chargées et filtrer pour afficher uniquement les catégories qui ont des vidéos
-  const { categories, getCategoryById } = useCategoriesWithFallback(
-    isVideosLoading ? undefined : videos, 
-    true // Toujours filtrer pour n'afficher que les catégories avec des vidéos
-  );
   
   const handleVideoClick = (video: any) => {
     setSelectedVideo(video);

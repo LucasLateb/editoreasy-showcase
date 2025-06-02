@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -79,9 +80,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams<{ id: string }>();
   const { currentUser, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { categories: allCategories, getCategoryById } = useCategoriesWithFallback();
   const userId = isViewOnly ? editorId : currentUser?.id;
   
   const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
+  const [userCategories, setUserCategories] = useState<any[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [featuredVideo, setFeaturedVideo] = useState<Video>(defaultFeaturedVideo);
   const [editMode, setEditMode] = useState(false);
@@ -111,9 +114,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const [isSavingTitle, setIsSavingTitle] = useState(false);
 
   const [links, setLinks] = useState<LinkItem[]>([]);
-
-  // Utiliser le hook avec les vidéos du portfolio pour le tri des catégories
-  const { categories: allCategories, getCategoryById } = useCategoriesWithFallback(videos);
 
   const updatePortfolioTitle = async (title: string) => {
     if (!currentUser?.id) {
@@ -289,12 +289,17 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         console.error('Error fetching videos:', error);
         toast.error('Failed to load videos');
       }
+
+      // Utiliser les catégories globales filtrées par les vidéos de l'utilisateur
+      const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
+      const finalUserCategories = allCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
+      setUserCategories(finalUserCategories);
       
       setIsLoading(false);
     };
     
     fetchData();
-  }, [userId, isViewOnly, currentUser]);
+  }, [userId, isViewOnly, currentUser, allCategories]);
 
   useEffect(() => {
     if (isViewOnly && editorId) {
@@ -306,20 +311,21 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const moveCategory = useCallback((index: number, direction: 'up' | 'down') => {
     if (
       (direction === 'up' && index === 0) || 
-      (direction === 'down' && index === allCategories.length - 1)
+      (direction === 'down' && index === userCategories.length - 1)
     ) {
       return;
     }
     
-    const newCategories = [...allCategories];
+    const newCategories = [...userCategories];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     const categoryToMove = newCategories[index];
     
     newCategories.splice(index, 1);
     newCategories.splice(newIndex, 0, categoryToMove);
     
+    setUserCategories(newCategories);
     toast.success(`Category "${categoryToMove.name}" moved ${direction}`);
-  }, [allCategories]);
+  }, [userCategories]);
   
   const toggleEditMode = async () => {
     if (editMode) {
@@ -350,7 +356,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
       
       const portfolioData = {
         user_id: currentUser.id,
-        categories: prepareForDatabase(allCategories),
+        categories: prepareForDatabase(userCategories),
         featured_video: prepareForDatabase(featuredVideo),
         highlighted_videos: prepareForDatabase(highlightedVideos),
         about: about,
@@ -573,7 +579,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                 <CopyPortfolioLink />
                 {editMode && !isViewOnly && (
                   <CategoryManager
-                    userCategories={allCategories}
+                    userCategories={userCategories}
                     moveCategory={moveCategory}
                   />
                 )}
@@ -600,7 +606,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
                       <CategorySlider 
                         onSelectCategory={setSelectedCategory}
                         selectedCategoryId={selectedCategory?.id}
-                        categories={allCategories}
+                        categories={userCategories}
                       />
                     </div>
                     
