@@ -14,6 +14,42 @@
     "dark": "🌙",
     "light": "☀️"
   },
+  "HomePage": {
+    "PopularEditors": "Éditeurs Populaires",
+    "PopularEditorsDescription": "Découvrez des monteurs vidéo talentueux avec des portfolios impressionnants",
+    "FindVideoEditors": "Trouver des Monteurs Vidéo",
+    "FindVideoEditorsDescription": "Recherchez des monteurs vidéo professionnels par nom et explorez leurs portfolios",
+    "SearchPlaceholder": "Rechercher des monteurs...",
+    "BrowseCategories": "Parcourir les Catégories",
+    "BrowseCategoriesDescription": "Explorez différents styles de montage vidéo pour trouver le monteur parfait pour votre projet",
+    "NoEditorsFound": "Aucun éditeur Pro trouvé",
+    "NoEditorsFoundDescription": "Essayez de sélectionner une autre spécialisation ou effacez le filtre.",
+    "NoEditorsFoundGeneral": "Revenez plus tard pour découvrir nos éditeurs Pro.",
+    "NoVideosFound": "Aucune vidéo trouvée dans cette catégorie",
+    "NoVideosFoundDescription": "Essayez de sélectionner une catégorie différente ou revenez plus tard",
+    "ReadyToShowcase": "Prêt à Présenter Vos Compétences de Montage Vidéo ?",
+    "ReadyToShowcaseDescription": "Rejoignez des milliers de monteurs vidéo qui utilisent VideoCut pour présenter leur travail, attirer des clients et développer leur entreprise.",
+    "GetStartedToday": "Commencer Aujourd'hui",
+    "Footer": {
+      "Description": "La plateforme portfolio pour les monteurs vidéo.",
+      "Product": "Produit",
+      "Features": "Fonctionnalités",
+      "Pricing": "Tarifs",
+      "Testimonials": "Témoignages",
+      "Resources": "Ressources",
+      "Blog": "Blog",
+      "Community": "Communauté",
+      "Support": "Support",
+      "Company": "Entreprise",
+      "About": "À propos",
+      "Careers": "Carrières",
+      "Contact": "Contact",
+      "Copyright": "© 2025 VideoCut. Tous droits réservés.",
+      "Terms": "Conditions",
+      "Privacy": "Confidentialité",
+      "Cookies": "Cookies"
+    }
+  },
   "Portfolio": {
     "EditPortfolio": "Modifier le Portfolio",
     "SaveChanges": "Sauvegarder les modifications",
@@ -48,5 +84,20 @@
   "Messages": {
     "SendMessage": "Envoyer un message...",
     "Send": "Envoyer"
+  },
+  "Auth": {
+    "ChooseAccountType": "Choisissez votre type de compte :",
+    "EditorDescription": "Pour les monteurs vidéo qui souhaitent présenter leur travail et attirer des clients.",
+    "ClientDescription": "Pour les utilisateurs qui souhaitent trouver et embaucher des monteurs vidéo pour leurs projets.",
+    "AuthenticationLive": "L'authentification est maintenant en ligne avec Supabase ! Vous pouvez créer un vrai compte ou vous connecter.",
+    "CheckEmail": "Vérifiez votre email",
+    "CheckEmailDescription": "Nous avons envoyé un email de confirmation dans votre boîte de réception. Veuillez cliquer sur le lien de vérification pour activer votre compte.",
+    "EmailVerified": "Une fois votre email vérifié, vous pouvez vous connecter et accéder à votre compte.",
+    "BackToLogin": "Retour à la Connexion"
+  },
+  "Errors": {
+    "FailedToLoadEditors": "Échec du chargement des éditeurs",
+    "CouldNotRetrieveEditors": "Impossible de récupérer les profils des éditeurs depuis la base de données.",
+    "NoEditorsFound": "Aucun éditeur trouvé."
   }
 }

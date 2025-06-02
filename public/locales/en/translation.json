@@ -14,6 +14,42 @@
     "dark": "🌙",
     "light": "☀️"
   },
+  "HomePage": {
+    "PopularEditors": "Popular Editors",
+    "PopularEditorsDescription": "Discover talented video editors with impressive portfolios",
+    "FindVideoEditors": "Find Video Editors",
+    "FindVideoEditorsDescription": "Search for professional video editors by name and explore their portfolios",
+    "SearchPlaceholder": "Search for video editors...",
+    "BrowseCategories": "Browse Categories",
+    "BrowseCategoriesDescription": "Explore different styles of video editing to find the perfect editor for your project",
+    "NoEditorsFound": "No Pro editors found",
+    "NoEditorsFoundDescription": "Try selecting another specialization or clear the filter.",
+    "NoEditorsFoundGeneral": "Come back later to discover our Pro editors.",
+    "NoVideosFound": "No videos found in this category",
+    "NoVideosFoundDescription": "Try selecting a different category or check back later",
+    "ReadyToShowcase": "Ready to Showcase Your Video Editing Skills?",
+    "ReadyToShowcaseDescription": "Join thousands of video editors who are using VideoCut to showcase their work, attract clients, and grow their business.",
+    "GetStartedToday": "Get Started Today",
+    "Footer": {
+      "Description": "The portfolio platform for video editors.",
+      "Product": "Product",
+      "Features": "Features",
+      "Pricing": "Pricing",
+      "Testimonials": "Testimonials",
+      "Resources": "Resources",
+      "Blog": "Blog",
+      "Community": "Community",
+      "Support": "Support",
+      "Company": "Company",
+      "About": "About",
+      "Careers": "Careers",
+      "Contact": "Contact",
+      "Copyright": "© 2025 VideoCut. All rights reserved.",
+      "Terms": "Terms",
+      "Privacy": "Privacy",
+      "Cookies": "Cookies"
+    }
+  },
   "Portfolio": {
     "EditPortfolio": "Edit Portfolio",
     "SaveChanges": "Save Changes",
@@ -48,5 +84,20 @@
   "Messages": {
     "SendMessage": "Send message...",
     "Send": "Send"
+  },
+  "Auth": {
+    "ChooseAccountType": "Choose your account type:",
+    "EditorDescription": "For video editors who want to showcase their work and attract clients.",
+    "ClientDescription": "For users who want to find and hire video editors for their projects.",
+    "AuthenticationLive": "Authentication is now live with Supabase! You can create a real account or log in.",
+    "CheckEmail": "Check your email",
+    "CheckEmailDescription": "We've sent a confirmation email to your inbox. Please click the verification link to activate your account.",
+    "EmailVerified": "Once your email is verified, you can log in and access your account.",
+    "BackToLogin": "Back to Login"
+  },
+  "Errors": {
+    "FailedToLoadEditors": "Failed to load editors",
+    "CouldNotRetrieveEditors": "Could not retrieve editor profiles from the database.",
+    "NoEditorsFound": "No editors found."
   }
 }

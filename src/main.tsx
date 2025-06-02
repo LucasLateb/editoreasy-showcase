@@ -3,32 +3,25 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import './i18n'; // Initialize i18next
+import './i18n';
 
-// Find the root element
 const rootElement = document.getElementById("root");
 
-// Add error boundary to catch rendering errors
 if (rootElement) {
-  // Wrap in a try-catch to prevent unhandled exceptions during initialization
   try {
     const root = createRoot(rootElement);
     
-    // Add event listener for unhandled errors
     window.addEventListener('error', (event) => {
       console.error('Unhandled error:', event.error);
     });
 
-    // Add event listener for unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
       console.error('Unhandled promise rejection:', event.reason);
     });
 
-    // Add performance monitoring for initial load
     window.addEventListener('load', () => {
       console.log('Application fully loaded');
       
-      // Report any performance issues after load
       setTimeout(() => {
         const performance = window.performance;
         if (performance && performance.timing) {
@@ -38,7 +31,6 @@ if (rootElement) {
       }, 0);
     });
 
-    // Render the app - ensuring proper React context
     root.render(
       <React.StrictMode>
         <React.Suspense fallback="Loading...">
@@ -49,7 +41,6 @@ if (rootElement) {
   } catch (error) {
     console.error("Error rendering application:", error);
     
-    // Display a fallback UI when an error occurs during initial render
     rootElement.innerHTML = `
       <div style="padding: 20px; text-align: center;">
         <h2>Something went wrong</h2>

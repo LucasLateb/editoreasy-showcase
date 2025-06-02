@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
@@ -8,10 +9,10 @@ import { InfoIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
-  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
@@ -27,7 +28,7 @@ const Login: React.FC = () => {
           <Alert className="mb-6">
             <InfoIcon className="h-4 w-4" />
             <AlertDescription>
-              Authentication is now live with Supabase! You can create a real account or log in.
+              {t('Auth.AuthenticationLive')}
             </AlertDescription>
           </Alert>
           <AuthForm type="login" />

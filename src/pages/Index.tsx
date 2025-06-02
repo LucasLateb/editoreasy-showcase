@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import CategorySlider from '@/components/CategorySlider';
@@ -6,7 +7,7 @@ import EditorCard from '@/components/EditorCard';
 import VideoCard from '@/components/VideoCard';
 import PricingPlans from '@/components/PricingPlans';
 import { Toaster } from '@/components/Toaster';
-import { Category, categories, User as AppUser } from '@/types'; // Renamed User to AppUser to avoid conflict
+import { Category, categories, User as AppUser } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/pagination';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import SpecializationFilter from '@/components/SpecializationFilter';
-import { Search, User as LucideUserIcon } from 'lucide-react'; // Renamed User to LucideUserIcon
+import { Search, User as LucideUserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -35,10 +36,11 @@ import { useToast } from '@/hooks/use-toast';
 type EditorProfile = AppUser & { totalVideoLikes: number };
 
 const Index: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
-  const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]); // Updated type
-  const [filteredEditors, setFilteredEditors] = useState<EditorProfile[]>([]); // Updated type
+  const [popularEditors, setPopularEditors] = useState<EditorProfile[]>([]);
+  const [filteredEditors, setFilteredEditors] = useState<EditorProfile[]>([]);
   const [availableSpecializations, setAvailableSpecializations] = useState<string[]>([]);
   const [showreelData, setShowreelData] = useState<{[key: string]: {
     url?: string, 
@@ -89,7 +91,7 @@ const Index: React.FC = () => {
         
         const editorsData = data.map(profile => ({
           id: profile.id,
-          name: profile.name || 'Unnamed Editor',
+          name: profile.name || t('Errors.NoEditorsFound'),
           subscription_tier: profile.subscription_tier,
           role: profile.role
         }));
@@ -98,8 +100,8 @@ const Index: React.FC = () => {
       } catch (error) {
         console.error('Error fetching all editors:', error);
         toast({
-          title: 'Failed to load editors',
-          description: 'Could not retrieve editor profiles from the database.',
+          title: t('Errors.FailedToLoadEditors'),
+          description: t('Errors.CouldNotRetrieveEditors'),
           variant: 'destructive',
         });
       } finally {
@@ -108,16 +110,15 @@ const Index: React.FC = () => {
     };
 
     fetchAllEditors();
-  }, [toast]);
+  }, [toast, t]);
   
   useEffect(() => {
     const fetchPopularEditors = async () => {
       setIsLoading(true);
       try {
-        // 1. Fetch 'pro' editors
         const { data: proEditorsData, error: editorsError } = await supabase
           .from('profiles')
-          .select('id, name, email, avatar_url, created_at, subscription_tier, likes, bio') // Added 'email' here
+          .select('id, name, email, avatar_url, created_at, subscription_tier, likes, bio')
           .eq('role', 'monteur')
           .eq('subscription_tier', 'pro');
         
@@ -137,7 +138,6 @@ const Index: React.FC = () => {
           return;
         }
 
-        // 2. Fetch video likes for these 'pro' editors
         const editorIds = proEditorsData.map(editor => editor.id);
         const { data: videoLikesData, error: videoLikesError } = await supabase
           .from('videos')
@@ -146,7 +146,6 @@ const Index: React.FC = () => {
             
         if (videoLikesError) {
           console.error('Error fetching video likes:', videoLikesError);
-          // Optionally, inform user or proceed with 0 likes
         }
         
         const totalLikesByEditor: {[key: string]: number} = videoLikesData?.reduce((acc: {[key: string]: number}, video) => {
@@ -154,33 +153,25 @@ const Index: React.FC = () => {
           return acc;
         }, {}) || {};
         
-        // 3. Map and add totalVideoLikes
         const editorsWithVideoLikes: EditorProfile[] = proEditorsData.map(editor => ({
           id: editor.id,
           name: editor.name || 'Éditeur inconnu',
-          email: editor.email || undefined, // email will now exist on editor object (can be null)
+          email: editor.email || undefined,
           avatarUrl: editor.avatar_url,
           bio: editor.bio,
-          subscriptionTier: editor.subscription_tier as 'pro', // We filtered for 'pro'
-          likes: editor.likes || 0, // Profile likes
+          subscriptionTier: editor.subscription_tier as 'pro',
+          likes: editor.likes || 0,
           createdAt: new Date(editor.created_at),
           totalVideoLikes: totalLikesByEditor[editor.id] || 0,
-          role: 'monteur', // Assuming all fetched profiles are 'monteur' as per query
+          role: 'monteur',
         }));
         
-        // 4. Sort 'pro' editors by totalVideoLikes descending
         const sortedProEditors = editorsWithVideoLikes.sort((a, b) => b.totalVideoLikes - a.totalVideoLikes);
-        
-        // 5. Take the top 4
         const top4ProEditors = sortedProEditors.slice(0, 4);
-        
-        // 6. Set these top 4 to popularEditors state
         setPopularEditors(top4ProEditors);
         
-        // 7. Fetch portfolio settings for these top 4 (if there are any)
         if (top4ProEditors.length > 0) {
           const top4EditorIds = top4ProEditors.map(editor => editor.id);
-          // ... keep existing code (fetching portfolio settings for top 4)
           const { data: portfolioData, error: portfolioError } = await supabase
             .from('portfolio_settings')
             .select('user_id, showreel_url, showreel_thumbnail, about, specializations')
@@ -231,7 +222,7 @@ const Index: React.FC = () => {
     };
 
     fetchPopularEditors();
-  }, [toast]); // toast is stable, so this effect runs once on mount
+  }, [toast]);
   
   useEffect(() => {
     if (selectedSpecialization) {
@@ -338,9 +329,9 @@ const Index: React.FC = () => {
         
         <section className="py-16 px-8 sm:px-10 lg:px-12 max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Popular Editors</h2>
+            <h2 className="text-3xl font-bold mb-3">{t('HomePage.PopularEditors')}</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover talented video editors with impressive portfolios
+              {t('HomePage.PopularEditorsDescription')}
             </p>
           </div>
           
@@ -356,7 +347,7 @@ const Index: React.FC = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 rounded-t-lg overflow-visible pt-4 px-4">
             {isLoading ? (
-              Array.from({ length: 4 }).map((_, index) => ( // Changed length from 8 to 4
+              Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="p-5 rounded-2xl bg-background border border-border animate-pulse min-h-[350px]">
                   <div className="flex items-center mb-4">
                     <div className="h-16 w-16 rounded-full bg-muted"></div>
@@ -380,10 +371,8 @@ const Index: React.FC = () => {
             ) : filteredEditors.length > 0 ? (
               filteredEditors.map((editor, index) => {
                 const showreelInfo = showreelData[editor.id] || {};
-                // Ensure editor object matches EditorCardProps, especially User part
                 const editorForCard: AppUser & { totalVideoLikes?: number } = {
-                  ...editor, // Contains id, name, avatarUrl, bio, subscriptionTier, likes, createdAt, totalVideoLikes
-                  // Ensure all fields of AppUser are here or correctly defaulted if optional
+                  ...editor,
                   email: editor.email || undefined, 
                   role: editor.role || 'monteur', 
                   favoritedAt: editor.favoritedAt || undefined,
@@ -402,11 +391,11 @@ const Index: React.FC = () => {
               })
             ) : (
               <div className="col-span-full py-8 text-center">
-                <h3 className="text-lg font-medium mb-2">Aucun éditeur Pro trouvé</h3>
+                <h3 className="text-lg font-medium mb-2">{t('HomePage.NoEditorsFound')}</h3>
                 <p className="text-muted-foreground">
                   {selectedSpecialization 
-                    ? "Essayez de sélectionner une autre spécialisation ou effacez le filtre."
-                    : "Revenez plus tard pour découvrir nos éditeurs Pro."
+                    ? t('HomePage.NoEditorsFoundDescription')
+                    : t('HomePage.NoEditorsFoundGeneral')
                   }
                 </p>
               </div>
@@ -417,9 +406,9 @@ const Index: React.FC = () => {
         <div className="bg-muted/30 py-12 border-y border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
-              <h2 className="text-2xl font-semibold mb-2">Find Video Editors</h2>
+              <h2 className="text-2xl font-semibold mb-2">{t('HomePage.FindVideoEditors')}</h2>
               <p className="text-muted-foreground mb-6">
-                Search for professional video editors by name and explore their portfolios
+                {t('HomePage.FindVideoEditorsDescription')}
               </p>
               <div className="w-full max-w-md">
                 <Button 
@@ -435,7 +424,7 @@ const Index: React.FC = () => {
                 >
                   <Search className="mr-2 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                   <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-                    Search for video editors...
+                    {t('HomePage.SearchPlaceholder')}
                   </span>
                 </Button>
               </div>
@@ -445,9 +434,9 @@ const Index: React.FC = () => {
         
         <section className="py-16 px-8 sm:px-10 lg:px-12 max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Browse Categories</h2>
+            <h2 className="text-3xl font-bold mb-3">{t('HomePage.BrowseCategories')}</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore different styles of video editing to find the perfect editor for your project
+              {t('HomePage.BrowseCategoriesDescription')}
             </p>
           </div>
           
@@ -471,9 +460,9 @@ const Index: React.FC = () => {
               ))
             ) : (
               <div className="col-span-3 py-12 text-center">
-                <h3 className="text-lg font-medium mb-2">No videos found in this category</h3>
+                <h3 className="text-lg font-medium mb-2">{t('HomePage.NoVideosFound')}</h3>
                 <p className="text-muted-foreground">
-                  Try selecting a different category or check back later
+                  {t('HomePage.NoVideosFoundDescription')}
                 </p>
               </div>
             )}
@@ -496,14 +485,13 @@ const Index: React.FC = () => {
         
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6">Ready to Showcase Your Video Editing Skills?</h2>
+            <h2 className="text-3xl font-bold mb-6">{t('HomePage.ReadyToShowcase')}</h2>
             <p className="text-muted-foreground mb-8 text-lg">
-              Join thousands of video editors who are using VideoCut to showcase their work, 
-              attract clients, and grow their business.
+              {t('HomePage.ReadyToShowcaseDescription')}
             </p>
             <div className="inline-block rounded-full bg-primary/10 p-1 backdrop-blur-sm animate-pulse-subtle">
               <button className="rounded-full bg-primary px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-                Get Started Today
+                {t('HomePage.GetStartedToday')}
               </button>
             </div>
           </div>
@@ -514,47 +502,47 @@ const Index: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-medium mb-4">VideoCut</h3>
+              <h3 className="text-lg font-medium mb-4">{t('VideoCut')}</h3>
               <p className="text-sm text-muted-foreground">
-                The portfolio platform for video editors.
+                {t('HomePage.Footer.Description')}
               </p>
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-4">Product</h3>
+              <h3 className="text-lg font-medium mb-4">{t('HomePage.Footer.Product')}</h3>
               <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Features</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Pricing</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Testimonials</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Features')}</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Pricing')}</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Testimonials')}</a></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-4">Resources</h3>
+              <h3 className="text-lg font-medium mb-4">{t('HomePage.Footer.Resources')}</h3>
               <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Community</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Support</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Blog')}</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Community')}</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Support')}</a></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-4">Company</h3>
+              <h3 className="text-lg font-medium mb-4">{t('HomePage.Footer.Company')}</h3>
               <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">About</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Careers</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Contact</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.About')}</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Careers')}</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Contact')}</a></li>
               </ul>
             </div>
           </div>
           
           <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
             <div className="flex flex-col md:flex-row justify-between items-center">
-              <p>© 2025 VideoCut. All rights reserved.</p>
+              <p>{t('HomePage.Footer.Copyright')}</p>
               <div className="flex space-x-6 mt-4 md:mt-0">
-                <a href="#" className="hover:text-foreground">Terms</a>
-                <a href="#" className="hover:text-foreground">Privacy</a>
-                <a href="#" className="hover:text-foreground">Cookies</a>
+                <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Terms')}</a>
+                <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Privacy')}</a>
+                <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Cookies')}</a>
               </div>
             </div>
           </div>
@@ -577,18 +565,18 @@ const Index: React.FC = () => {
       
       <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
         <CommandInput 
-          placeholder="Search for editors..." 
+          placeholder={t('HomePage.SearchPlaceholder')}
           value={searchTerm}
           onValueChange={setSearchTerm}
         />
         <CommandList>
           {isLoadingAllEditors ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-muted-foreground">Loading editors...</p>
+              <p className="text-sm text-muted-foreground">{t('Loading')}</p>
             </div>
           ) : (
             <>
-              <CommandEmpty>No editors found.</CommandEmpty>
+              <CommandEmpty>{t('Errors.NoEditorsFound')}</CommandEmpty>
               <CommandGroup heading="Editors">
                 {filteredSearchEditors.map((editor) => (
                   <CommandItem
@@ -596,7 +584,7 @@ const Index: React.FC = () => {
                     onSelect={() => handleEditorSelect(editor.id)}
                     className="flex items-center"
                   >
-                    <LucideUserIcon className="mr-2 h-4 w-4" /> {/* Changed User to LucideUserIcon */}
+                    <LucideUserIcon className="mr-2 h-4 w-4" />
                     <span>{editor.name}</span>
                     {editor.subscription_tier && editor.subscription_tier !== 'free' && (
                       <span className="ml-2 text-xs text-muted-foreground">
