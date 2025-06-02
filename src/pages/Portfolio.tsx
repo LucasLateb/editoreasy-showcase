@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -80,7 +79,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const { id: editorId } = useParams<{ id: string }>();
   const { currentUser, isAuthenticated } = useAuth();
   const { t } = useTranslation();
-  const { categories: allCategories, getCategoryById } = useCategoriesWithFallback();
+  const { categories: allCategories, getCategoryById, getCategoriesSortedByVideoCount } = useCategoriesWithFallback();
   const userId = isViewOnly ? editorId : currentUser?.id;
   
   const [selectedCategory, setSelectedCategory] = useState<any>(undefined);
@@ -290,16 +289,23 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
         toast.error('Failed to load videos');
       }
 
-      // Utiliser les catégories globales filtrées par les vidéos de l'utilisateur
-      const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
-      const finalUserCategories = allCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
-      setUserCategories(finalUserCategories);
+      // Obtenir les catégories triées par nombre de vidéos pour cet utilisateur
+      try {
+        const sortedCategories = await getCategoriesSortedByVideoCount(userId);
+        setUserCategories(sortedCategories);
+      } catch (error) {
+        console.error('Error getting sorted categories:', error);
+        // Fallback vers les catégories basées sur les vidéos existantes
+        const uniqueCategoryIdsFromVideos = new Set(fetchedVideosData.map(v => v.categoryId));
+        const finalUserCategories = allCategories.filter(cat => uniqueCategoryIdsFromVideos.has(cat.id));
+        setUserCategories(finalUserCategories);
+      }
       
       setIsLoading(false);
     };
     
     fetchData();
-  }, [userId, isViewOnly, currentUser, allCategories]);
+  }, [userId, isViewOnly, currentUser, allCategories, getCategoriesSortedByVideoCount]);
 
   useEffect(() => {
     if (isViewOnly && editorId) {
