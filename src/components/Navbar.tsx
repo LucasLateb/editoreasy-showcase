@@ -135,10 +135,7 @@ const Navbar: React.FC = () => {
           <span className="text-2xl font-semibold bg-clip-text text-foreground">{t('VideoCut')}</span>
         </Link>
 
-        <div className={cn(
-          "hidden md:flex items-center space-x-8",
-          !isAuthenticated && "mx-auto" // Center links when not authenticated
-        )}>
+        <div className="hidden md:flex items-center justify-center space-x-8 flex-1">
           <Link 
             to="/" 
             className={cn(
