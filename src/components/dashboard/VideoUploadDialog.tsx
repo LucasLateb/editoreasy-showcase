@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/select';
 
 import { Category } from '@/types';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, Plus } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,10 +72,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   
-  // États pour la gestion des catégories personnalisées
-  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  // États pour la gestion de la catégorie "Autre"
   const [customCategoryName, setCustomCategoryName] = useState('');
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   const predefinedThumbnails = [
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f',
@@ -116,49 +115,23 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     }
   };
 
-  const handleCreateCustomCategory = async () => {
-    if (!customCategoryName.trim()) {
-      toast.error('Veuillez entrer un nom pour la catégorie.');
-      return;
-    }
-
-    setIsCreatingCategory(true);
-    try {
-      console.log('Creating new category:', customCategoryName.trim());
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([{ name: customCategoryName.trim() }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating category:', error);
-        throw error;
-      }
-
-      console.log('Category created successfully:', data);
-
-      // Mettre à jour la catégorie sélectionnée avec la nouvelle catégorie
-      setUploadData({ ...uploadData, categoryId: data.id });
-      setShowCustomCategory(false);
+  const handleCategoryChange = (value: string) => {
+    setUploadData({ ...uploadData, categoryId: value });
+    // Reset custom category name when switching away from "other"
+    if (value !== 'other') {
       setCustomCategoryName('');
-      
-      toast.success(`La catégorie "${customCategoryName}" a été créée avec succès.`);
-      
-      // Force a page reload to update the categories list
-      window.location.reload();
-    } catch (error: any) {
-      console.error('Error creating category:', error);
-      toast.error(`Impossible de créer la catégorie: ${error.message || 'Erreur inconnue'}`);
-    } finally {
-      setIsCreatingCategory(false);
     }
   };
 
   const handleSubmit = () => {
     setUploadProgress(0);
-    onSubmit({ ...uploadData, uploadType, videoSource }, videoFile, thumbnailFile);
+    
+    // If "other" is selected, use the custom category name as categoryId
+    const finalUploadData = uploadData.categoryId === 'other' 
+      ? { ...uploadData, categoryId: customCategoryName }
+      : uploadData;
+    
+    onSubmit(finalUploadData, videoFile, thumbnailFile);
 
     if (!isUploading) {
       resetForm();
@@ -179,7 +152,6 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     setUploadType(null);
     setVideoSource(null);
     setUploadProgress(0);
-    setShowCustomCategory(false);
     setCustomCategoryName('');
   };
 
@@ -228,89 +200,43 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
             {/* Catégorie */}
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
-              {!showCustomCategory ? (
-                <div className="flex gap-2">
-                  <Select
-                    onValueChange={(value) =>
-                      setUploadData((prev) => ({ ...prev, categoryId: value }))
-                    }
-                    value={uploadData.categoryId}
+              <Select
+                onValueChange={handleCategoryChange}
+                value={uploadData.categoryId}
+                disabled={isUploading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="1">Animation</SelectItem>
+                      <SelectItem value="2">Commercial</SelectItem>
+                      <SelectItem value="3">Documentary</SelectItem>
+                      <SelectItem value="4">Music Video</SelectItem>
+                      <SelectItem value="5">Short Film</SelectItem>
+                    </>
+                  )}
+                  <SelectItem value="other">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Champ de saisie pour catégorie personnalisée */}
+              {uploadData.categoryId === 'other' && (
+                <div className="mt-2">
+                  <Input
+                    placeholder="Nom de la catégorie personnalisée"
+                    value={customCategoryName}
+                    onChange={(e) => setCustomCategoryName(e.target.value)}
                     disabled={isUploading}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.length > 0 ? (
-                        categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <>
-                          <SelectItem value="1">Animation</SelectItem>
-                          <SelectItem value="2">Commercial</SelectItem>
-                          <SelectItem value="3">Documentary</SelectItem>
-                          <SelectItem value="4">Music Video</SelectItem>
-                          <SelectItem value="5">Short Film</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowCustomCategory(true)}
-                    disabled={isUploading}
-                    title="Créer une nouvelle catégorie"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nom de la nouvelle catégorie"
-                      value={customCategoryName}
-                      onChange={(e) => setCustomCategoryName(e.target.value)}
-                      disabled={isCreatingCategory}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && customCategoryName.trim()) {
-                          handleCreateCustomCategory();
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleCreateCustomCategory}
-                      disabled={isCreatingCategory || !customCategoryName.trim()}
-                      size="sm"
-                    >
-                      {isCreatingCategory ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Créer'
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCustomCategory(false);
-                        setCustomCategoryName('');
-                      }}
-                      disabled={isCreatingCategory}
-                      size="sm"
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Créez une nouvelle catégorie personnalisée pour votre vidéo.
-                  </p>
+                  />
                 </div>
               )}
             </div>
@@ -680,7 +606,8 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
               (uploadType === 'link' && (!uploadData.videoUrl || !videoSource)) ||
               (uploadType === 'file' && !videoFile) ||
               !uploadType ||
-              (!uploadData.thumbnailUrl && !thumbnailFile)
+              (!uploadData.thumbnailUrl && !thumbnailFile) ||
+              (uploadData.categoryId === 'other' && !customCategoryName.trim())
             }
           >
             {isUploading ? (
