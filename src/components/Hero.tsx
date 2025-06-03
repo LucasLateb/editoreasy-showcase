@@ -70,7 +70,7 @@ const Hero: React.FC = () => {
         <div className="flex flex-col items-center text-center">
           <div className="animate-slide-in-down opacity-0" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
             <span className="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary">
-              The Portfolio Platform for Video Editorss
+              The Portfolio Platform for Video Editors
             </span>
           </div>
           
