@@ -162,7 +162,7 @@ const EditorCard: React.FC<EditorCardProps> = ({
                     <Star className="h-3 w-3 text-yellow-500 mr-1" fill="currentColor" />
                   </span>
                 )}
-                <span>Joined {editor.createdAt.toLocaleDateString()}</span>
+                <span>{editor.createdAt.toLocaleDateString()}</span>
                 
               </div>
             </div>
