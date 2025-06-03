@@ -28,8 +28,8 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
             const dbCategories = data.map(cat => ({
               id: cat.id,
               name: cat.name,
-              description: cat.description || '',
-              thumbnailUrl: cat.thumbnailUrl || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
+              description: '', // Default empty since not in DB
+              thumbnailUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d' // Default thumbnail
             }));
 
             // Use database categories first, then add any missing local categories
