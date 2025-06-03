@@ -132,7 +132,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         </div>
         {/* Category info in stats - Always show if available using fallback */}
         {category && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground font-medium">
             {category.name}
           </div>
         )}

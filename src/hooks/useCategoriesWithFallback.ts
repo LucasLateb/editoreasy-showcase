@@ -18,7 +18,7 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
 
         try {
           // Try to fetch from database, but don't fail if it doesn't work
-          // Remove auth requirement to make this work for all users
+          // This works for both authenticated and non-authenticated users
           const { data, error } = await supabase
             .from('categories')
             .select('*')
@@ -100,7 +100,7 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
     console.log('getCategoryById - looking for id:', id);
     console.log('getCategoryById - available categories:', categories);
     
-    // Check current categories first, then local categories as fallback
+    // Check current categories first, then local categories as absolute fallback
     const found = categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
     console.log('getCategoryById - found category:', found);
     
