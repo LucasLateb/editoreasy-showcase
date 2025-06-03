@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -8,6 +9,10 @@ import NotFound from '@/pages/NotFound';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import CheckEmail from '@/pages/CheckEmail';
+import Blog from '@/pages/Blog';
+import Community from '@/pages/Community';
+import Support from '@/pages/Support';
+import About from '@/pages/About';
 
 // Lazy load non-critical pages to improve initial loading performance
 const Index = lazy(() => import('@/pages/Index'));
@@ -107,10 +112,10 @@ export default function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/check-email" element={<CheckEmail />} />
-                <Route path="/blog" element={<lazy(() => import('@/pages/Blog'))} />
-                <Route path="/community" element={<lazy(() => import('@/pages/Community'))} />
-                <Route path="/support" element={<lazy(() => import('@/pages/Support'))} />
-                <Route path="/about" element={<lazy(() => import('@/pages/About'))} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/about" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
