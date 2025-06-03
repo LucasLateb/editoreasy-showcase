@@ -1,16 +1,80 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VideoCut</title>
-    <meta name="description" content="Video Editor's Portfolio Platform" />
+    <title>VideoCut - Plateforme Portfolio pour Éditeurs Vidéo | Monteurs Professionnels</title>
+    <meta name="description" content="VideoCut est la plateforme de référence pour les éditeurs vidéo. Découvrez des monteurs professionnels, explorez leurs portfolios et trouvez le créateur parfait pour vos projets vidéo." />
+    <meta name="keywords" content="éditeur vidéo, monteur vidéo, portfolio vidéo, création vidéo, montage professionnel, vidéaste, post-production" />
     <meta name="author" content="Lucas Lateb" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://videocut.lovable.app" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://videocut.lovable.app" />
+    <meta property="og:title" content="VideoCut - Plateforme Portfolio pour Éditeurs Vidéo" />
+    <meta property="og:description" content="Découvrez des monteurs vidéo professionnels et explorez leurs portfolios créatifs. La plateforme de référence pour connecter créateurs et clients." />
     <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="VideoCut" />
+    <meta property="og:locale" content="fr_FR" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://videocut.lovable.app" />
+    <meta name="twitter:title" content="VideoCut - Plateforme Portfolio pour Éditeurs Vidéo" />
+    <meta name="twitter:description" content="Découvrez des monteurs vidéo professionnels et explorez leurs portfolios créatifs." />
+    <meta name="twitter:image" content="/og-image.png" />
+    
+    <!-- Structured Data for Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "VideoCut",
+      "url": "https://videocut.lovable.app",
+      "logo": "/og-image.png",
+      "description": "Plateforme portfolio pour éditeurs vidéo professionnels",
+      "foundingDate": "2024",
+      "founder": {
+        "@type": "Person",
+        "name": "Lucas Lateb"
+      },
+      "sameAs": []
+    }
+    </script>
+    
+    <!-- Structured Data for WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "VideoCut",
+      "url": "https://videocut.lovable.app",
+      "description": "Plateforme de portfolios pour éditeurs vidéo",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://videocut.lovable.app/explore?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Theme and Mobile Optimization -->
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
     <!-- Préchargement des ressources critiques -->
     <link rel="preload" href="/placeholder.svg" as="image" />
-    <!-- Import Inter font from Google Fonts with display=swap pour optimiser le chargement -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Import Inter font from Google Fonts avec display=swap pour optimiser le chargement -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
     <noscript>
