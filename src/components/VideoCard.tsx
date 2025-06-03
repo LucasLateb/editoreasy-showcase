@@ -62,8 +62,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        
-        
         {/* Play button that appears on hover */}
         <div className={cn(
           "absolute inset-0 flex items-center justify-center transition-all duration-300",
@@ -131,7 +129,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
           </div>
         </div>
-        {/* Category info in stats */}
+        {/* Category info in stats - Always show if available */}
         {category && (
           <div className="text-xs text-muted-foreground">
             {category.name}

@@ -12,75 +12,76 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*')
-          .order('name');
-
-        if (error) throw error;
-
+        
+        // Always start with local categories as fallback
         let finalCategories = [...localCategories];
 
-        if (data && data.length > 0) {
-          // Mapper les catégories de la base de données
-          const dbCategories = data.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            description: '',
-            thumbnailUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
-          }));
+        try {
+          // Try to fetch from database, but don't fail if it doesn't work
+          const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('name');
 
-          // Fusionner avec les catégories locales existantes
-          const mergedCategories = [...dbCategories];
-          
-          // Ajouter les catégories locales qui ne sont pas dans la DB
-          localCategories.forEach(localCat => {
-            if (!dbCategories.find(dbCat => dbCat.id === localCat.id)) {
-              mergedCategories.push(localCat);
-            }
-          });
+          if (!error && data && data.length > 0) {
+            // Map database categories
+            const dbCategories = data.map(cat => ({
+              id: cat.id,
+              name: cat.name,
+              description: '',
+              thumbnailUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
+            }));
 
-          finalCategories = mergedCategories;
+            // Merge with local categories
+            const mergedCategories = [...dbCategories];
+            
+            // Add local categories that are not in the DB
+            localCategories.forEach(localCat => {
+              if (!dbCategories.find(dbCat => dbCat.id === localCat.id)) {
+                mergedCategories.push(localCat);
+              }
+            });
+
+            finalCategories = mergedCategories;
+          }
+        } catch (dbError) {
+          // If database fetch fails, just use local categories
+          console.warn('Database categories fetch failed, using local categories:', dbError);
         }
 
         console.log('useCategoriesWithFallback - finalCategories:', finalCategories);
 
-        // Appliquer le filtre onlyWithVideos seulement si des vidéos sont fournies ET chargées
+        // Apply filtering if needed and videos are available
         if (videos && onlyWithVideos && videos.length > 0) {
-          // Créer un Set des catégories qui ont des vidéos pour une recherche plus rapide
           const categoriesWithVideos = new Set(videos.map(video => video.categoryId));
           finalCategories = finalCategories.filter(cat => categoriesWithVideos.has(cat.id));
         }
 
-        // Si des vidéos sont fournies, trier les catégories par nombre de vidéos
+        // Sort categories by video count if videos are provided
         if (videos && videos.length > 0) {
-          // Compter le nombre de vidéos par catégorie
           const videosCountByCategory = videos.reduce((acc: {[key: string]: number}, video) => {
             acc[video.categoryId] = (acc[video.categoryId] || 0) + 1;
             return acc;
           }, {});
           
-          // Séparer les catégories avec et sans vidéos
           const categoriesWithVideos = finalCategories.filter(cat => videosCountByCategory[cat.id] > 0);
           const categoriesWithoutVideos = finalCategories.filter(cat => !videosCountByCategory[cat.id]);
           
-          // Trier les catégories avec vidéos par nombre décroissant
           categoriesWithVideos.sort((a, b) => (videosCountByCategory[b.id] || 0) - (videosCountByCategory[a.id] || 0));
           
-          // Combiner : catégories avec vidéos d'abord, puis les autres (seulement si onlyWithVideos est false)
           finalCategories = onlyWithVideos ? categoriesWithVideos : [...categoriesWithVideos, ...categoriesWithoutVideos];
         }
 
         setCategories(finalCategories);
+        setError(null);
       } catch (err) {
-        console.error('Error fetching categories:', err);
+        console.error('Error in useCategoriesWithFallback:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch categories');
         
-        // Fallback vers les catégories locales en cas d'erreur
+        // Always fallback to local categories
         let fallbackCategories = localCategories;
         
         if (onlyWithVideos && videos && videos.length > 0) {
-          // Filtrer les catégories locales qui ont des vidéos
           const categoriesWithVideos = new Set(videos.map(video => video.categoryId));
           fallbackCategories = localCategories.filter(cat => categoriesWithVideos.has(cat.id));
         }
@@ -98,6 +99,7 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
     console.log('getCategoryById - looking for id:', id);
     console.log('getCategoryById - available categories:', categories);
     
+    // Always check both current categories and local categories
     const found = categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
     console.log('getCategoryById - found category:', found);
     

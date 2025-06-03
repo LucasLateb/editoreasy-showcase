@@ -27,7 +27,7 @@ import ExploreEditorCard, { ExploreEditorCardData } from '@/components/ExploreEd
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Category, Video as VideoType, categories } from '@/types';
+import { Category, Video as VideoType, categories as localCategories } from '@/types';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
@@ -101,10 +101,9 @@ const Explore: React.FC = () => {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("videos");
 
-  // Utiliser le hook avec toutes les vidéos pour les catégories, mais seulement quand elles sont chargées
-  // Filtrer pour afficher uniquement celles avec des vidéos seulement si les vidéos sont chargées
-  const { categories: availableCategories } = useCategoriesWithFallback(
-    !isLoadingVideos ? allVideos : undefined, 
+  // Use the hook with all videos for categories, ensuring categories are always available
+  const { categories: availableCategories, isLoading: categoriesLoading } = useCategoriesWithFallback(
+    allVideos.length > 0 ? allVideos : undefined, 
     !isLoadingVideos && allVideos.length > 0
   );
 
@@ -144,18 +143,20 @@ const Explore: React.FC = () => {
         
         let profilesMap: Record<string, any> = {};
         if (userIds.length > 0) {
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, name, avatar_url, subscription_tier')
-            .in('id', userIds);
-            
-          if (profilesError) {
-            console.error('Error fetching profiles for videos:', profilesError);
-          } else if (profilesData) {
-            profilesMap = profilesData.reduce((acc, profile) => {
-              acc[profile.id] = profile;
-              return acc;
-            }, {});
+          try {
+            const { data: profilesData, error: profilesError } = await supabase
+              .from('profiles')
+              .select('id, name, avatar_url, subscription_tier')
+              .in('id', userIds);
+              
+            if (!profilesError && profilesData) {
+              profilesMap = profilesData.reduce((acc, profile) => {
+                acc[profile.id] = profile;
+                return acc;
+              }, {});
+            }
+          } catch (profileError) {
+            console.warn('Failed to fetch profiles, continuing without profile data:', profileError);
           }
         }
         
@@ -187,7 +188,7 @@ const Explore: React.FC = () => {
         
         setAllVideos(formattedVideos);
         
-        // Filtrer selon la catégorie sélectionnée
+        // Filter by selected category
         if (selectedCategory) {
           const filteredVideos = formattedVideos.filter(video => video.categoryId === selectedCategory.id);
           setVideos(filteredVideos);
@@ -212,7 +213,7 @@ const Explore: React.FC = () => {
     fetchAllVideos();
   }, [toast]);
 
-  // Effet séparé pour filtrer les vidéos quand la catégorie change
+  // Filter videos when category changes
   useEffect(() => {
     if (selectedCategory) {
       const filteredVideos = allVideos.filter(video => video.categoryId === selectedCategory.id);

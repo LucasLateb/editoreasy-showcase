@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Category } from '@/types';
+import { Category, categories as localCategories } from '@/types';
 
 interface CategorySearchProps {
   categories: Category[];
@@ -25,9 +25,12 @@ const CategorySearch: React.FC<CategorySearchProps> = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
 
-  const selectedCategory = categories.find(category => category.id === selectedCategoryId);
+  // Always check both provided categories and local categories as fallback
+  const allCategories = categories.length > 0 ? categories : localCategories;
+  const selectedCategory = allCategories.find(category => category.id === selectedCategoryId) ||
+                          localCategories.find(category => category.id === selectedCategoryId);
 
-  const filteredCategories = categories.filter(category =>
+  const filteredCategories = allCategories.filter(category =>
     category.name.toLowerCase().includes(searchValue.toLowerCase())
   );
 
