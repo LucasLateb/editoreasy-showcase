@@ -8,7 +8,6 @@ import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface VideoCardProps {
   video: Video;
@@ -16,7 +15,6 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const { isAuthenticated } = useAuth();
   // Use the fallback hook for all users to ensure consistent category display
   const { getCategoryById } = useCategoriesWithFallback();
   const category = getCategoryById(video.categoryId);
@@ -107,7 +105,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         </div>
       </div>
       
-      {/* Stats section - Always show the same for all users */}
+      {/* Stats section */}
       <div className="p-3 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center text-xs text-muted-foreground">
@@ -115,26 +113,21 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             <span>{video.views}</span>
           </div>
           <div 
-            className={cn(
-              "flex items-center text-xs transition-all duration-300",
-              isAuthenticated ? "cursor-pointer hover:scale-110" : "cursor-default"
-            )}
+            className="flex items-center text-xs cursor-pointer transition-all duration-300 hover:scale-110" 
             onClick={(e) => {
               e.stopPropagation();
-              if (isAuthenticated && !isLoading) {
-                toggleLike();
-              }
+              toggleLike();
             }}
           >
             <Heart 
               className={cn(
                 "h-3 w-3 mr-1 transition-all duration-300", 
-                isLiked && isAuthenticated ? "text-red-500 scale-110" : "text-muted-foreground",
-                isAuthenticated && !isLoading && "hover:text-red-400"
+                isLiked ? "text-red-500 scale-110" : "text-muted-foreground",
+                !isLoading && "hover:text-red-400"
               )} 
-              fill={isLiked && isAuthenticated ? "currentColor" : "none"} 
+              fill={isLiked ? "currentColor" : "none"} 
             />
-            <span className={cn(isLiked && isAuthenticated ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
+            <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
           </div>
         </div>
         {/* Category info in stats - Always show if available using fallback */}
