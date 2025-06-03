@@ -17,33 +17,30 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
         let finalCategories = [...localCategories];
 
         try {
-          // Try to fetch from database, but don't fail if it doesn't work
-          // This works for both authenticated and non-authenticated users
+          // Try to fetch from database - this should work for both authenticated and non-authenticated users
           const { data, error } = await supabase
             .from('categories')
             .select('*')
             .order('name');
 
           if (!error && data && data.length > 0) {
-            // Map database categories
+            // Map database categories to match our Category interface
             const dbCategories = data.map(cat => ({
               id: cat.id,
               name: cat.name,
-              description: '',
-              thumbnailUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
+              description: cat.description || '',
+              thumbnailUrl: cat.thumbnailUrl || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
             }));
 
-            // Merge with local categories - prioritize DB categories
-            const mergedCategories = [...dbCategories];
+            // Use database categories first, then add any missing local categories
+            finalCategories = [...dbCategories];
             
             // Add local categories that are not in the DB
             localCategories.forEach(localCat => {
               if (!dbCategories.find(dbCat => dbCat.id === localCat.id)) {
-                mergedCategories.push(localCat);
+                finalCategories.push(localCat);
               }
             });
-
-            finalCategories = mergedCategories;
           }
         } catch (dbError) {
           // If database fetch fails, just use local categories
@@ -100,10 +97,16 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
     console.log('getCategoryById - looking for id:', id);
     console.log('getCategoryById - available categories:', categories);
     
-    // Check current categories first, then local categories as absolute fallback
-    const found = categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
-    console.log('getCategoryById - found category:', found);
+    // First check in current categories state
+    let found = categories.find(cat => cat.id === id);
     
+    // If not found in state, check local categories as absolute fallback
+    if (!found) {
+      found = localCategories.find(cat => cat.id === id);
+      console.log('getCategoryById - fallback to local categories, found:', found);
+    }
+    
+    console.log('getCategoryById - final result:', found);
     return found;
   };
 

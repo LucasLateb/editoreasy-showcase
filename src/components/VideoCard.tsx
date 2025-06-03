@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
-import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
+import { categories as localCategories } from '@/types';
 
 interface VideoCardProps {
   video: Video;
@@ -15,9 +15,10 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
-  // Use the fallback hook for all users to ensure consistent category display
-  const { getCategoryById } = useCategoriesWithFallback();
-  const category = getCategoryById(video.categoryId);
+  
+  // Get category directly from local categories to ensure it works for all users
+  const category = localCategories.find(cat => cat.id === video.categoryId);
+  
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
   console.log('VideoCard - video.categoryId:', video.categoryId);
@@ -130,7 +131,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
           </div>
         </div>
-        {/* Category info in stats - Always show if available using fallback */}
+        {/* Category info in stats - Always show if available */}
         {category && (
           <div className="text-xs text-muted-foreground font-medium">
             {category.name}
