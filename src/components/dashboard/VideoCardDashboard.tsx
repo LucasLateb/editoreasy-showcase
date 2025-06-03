@@ -14,7 +14,7 @@ import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import VideoEditDialog, { VideoEditFormData } from '@/components/dashboard/VideoEditDialog';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { cn } from '@/lib/utils';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Image } from '@/components/ui/image';
@@ -34,7 +34,8 @@ const VideoCardDashboard: React.FC<VideoCardDashboardProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
-  const { categories } = useCategories();
+  // Use the fallback hook for consistency across all components
+  const { categories } = useCategoriesWithFallback();
 
   const handleVideoClick = () => {
     setIsVideoDialogOpen(true);

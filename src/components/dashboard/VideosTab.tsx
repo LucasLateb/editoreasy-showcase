@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Film } from 'lucide-react';
 import VideoCardDashboard from './VideoCardDashboard';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 interface VideosTabProps {
   videos: Video[];
@@ -20,7 +20,8 @@ const VideosTab: React.FC<VideosTabProps> = ({
   onUploadClick,
   onDeleteClick
 }) => {
-  const { categories } = useCategories();
+  // Use the fallback hook instead of the regular one for consistency
+  const { categories } = useCategoriesWithFallback();
 
   if (isLoading) {
     return (

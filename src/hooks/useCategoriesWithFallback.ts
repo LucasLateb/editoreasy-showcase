@@ -18,6 +18,7 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
 
         try {
           // Try to fetch from database, but don't fail if it doesn't work
+          // Remove auth requirement to make this work for all users
           const { data, error } = await supabase
             .from('categories')
             .select('*')
@@ -32,7 +33,7 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
               thumbnailUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
             }));
 
-            // Merge with local categories
+            // Merge with local categories - prioritize DB categories
             const mergedCategories = [...dbCategories];
             
             // Add local categories that are not in the DB
@@ -99,7 +100,7 @@ export const useCategoriesWithFallback = (videos?: any[], onlyWithVideos: boolea
     console.log('getCategoryById - looking for id:', id);
     console.log('getCategoryById - available categories:', categories);
     
-    // Always check both current categories and local categories
+    // Check current categories first, then local categories as fallback
     const found = categories.find(cat => cat.id === id) || localCategories.find(cat => cat.id === id);
     console.log('getCategoryById - found category:', found);
     

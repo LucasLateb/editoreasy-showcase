@@ -15,6 +15,7 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
+  // Use the fallback hook for all users to ensure consistent category display
   const { getCategoryById } = useCategoriesWithFallback();
   const category = getCategoryById(video.categoryId);
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
@@ -129,7 +130,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
           </div>
         </div>
-        {/* Category info in stats - Always show if available */}
+        {/* Category info in stats - Always show if available using fallback */}
         {category && (
           <div className="text-xs text-muted-foreground">
             {category.name}
