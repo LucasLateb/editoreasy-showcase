@@ -107,6 +107,10 @@ export default function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/check-email" element={<CheckEmail />} />
+                <Route path="/blog" element={<lazy(() => import('@/pages/Blog'))} />
+                <Route path="/community" element={<lazy(() => import('@/pages/Community'))} />
+                <Route path="/support" element={<lazy(() => import('@/pages/Support'))} />
+                <Route path="/about" element={<lazy(() => import('@/pages/About'))} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
