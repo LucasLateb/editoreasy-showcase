@@ -133,14 +133,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* Category badge - always show if available */}
-        {category && (
-          <div className="absolute bottom-3 left-3 z-10">
-            <div className="bg-primary/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
-              {category.name}
-            </div>
-          </div>
-        )}
+        
         
         {/* Play button that appears on hover - only for non-YouTube or when not in view */}
         {(!isYoutube || !isInView) && (
