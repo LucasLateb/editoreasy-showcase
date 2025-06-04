@@ -1,9 +1,12 @@
+
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useViewTracking } from '@/hooks/useViewTracking';
 import { getEmbedUrl, isEmbedCode } from '@/lib/videoUtils';
+import { useNavigate } from 'react-router-dom';
 
 interface VideoPlayerDialogProps {
   isOpen: boolean;
@@ -29,12 +32,20 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   editorAvatar
 }) => {
   const { recordVideoView } = useViewTracking();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen && videoId) {
       recordVideoView(videoId);
     }
   }, [isOpen, videoId, recordVideoView]);
+
+  const handleEditorClick = () => {
+    if (editorId) {
+      navigate(`/portfolio/${editorId}`);
+      onClose();
+    }
+  };
 
   const renderVideo = () => {
     if (!videoUrl) {
@@ -86,8 +97,8 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-full h-[80vh] p-0 overflow-hidden">
-        <div className="relative w-full h-full bg-black">
+      <DialogContent className="max-w-6xl w-full h-[85vh] p-0 overflow-hidden">
+        <div className="relative w-full h-full bg-black flex flex-col">
           <Button
             variant="ghost"
             size="icon"
@@ -97,18 +108,53 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
             <X className="h-4 w-4" />
           </Button>
           
-          <div className="w-full h-full">
+          {/* Video Player Section */}
+          <div className="w-full h-[60%] bg-black">
             {renderVideo()}
           </div>
           
-          {(title || description) && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-              <h3 className="text-white font-semibold text-lg mb-2">{title}</h3>
-              {description && (
-                <p className="text-white/80 text-sm">{description}</p>
-              )}
-            </div>
-          )}
+          {/* Content Section */}
+          <div className="flex-1 bg-background p-6 overflow-y-auto">
+            {/* Video Title */}
+            <h2 className="text-2xl font-bold mb-4">{title}</h2>
+            
+            {/* Editor Information */}
+            {(editorName || editorId) && (
+              <div className="flex items-center gap-3 mb-6 p-4 bg-muted/50 rounded-lg">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={editorAvatar} alt={editorName} />
+                  <AvatarFallback>
+                    {editorName ? editorName.charAt(0).toUpperCase() : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-semibold text-lg">{editorName || 'Unknown Editor'}</p>
+                  <p className="text-sm text-muted-foreground">Creator</p>
+                </div>
+                {editorId && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleEditorClick}
+                    className="ml-auto"
+                  >
+                    View Portfolio
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {/* Description Section */}
+            {description && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Description</h3>
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {description}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
