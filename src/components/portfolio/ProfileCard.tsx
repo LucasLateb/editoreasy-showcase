@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart, Bookmark } from 'lucide-react';
+import { Mail, User, Briefcase, Edit, X, PlusCircle, Film, Heart, Bookmark, Share2 } from 'lucide-react';
 import { useProfileLikes } from '@/hooks/useLikes';
 import { useEditorFavorites } from '@/hooks/useEditorFavorites';
 import { cn } from '@/lib/utils';
@@ -97,6 +97,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       toast.success(`Conversation with ${displayUser.name} started! Redirecting...`);
       navigate('/dashboard?tab=messaging');
     }
+  };
+
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/editor/${displayUser.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${displayUser.name} - Video Editor Profile`,
+        url: shareUrl,
+      }).catch(err => {
+        console.error('Error sharing:', err);
+        copyToClipboard(shareUrl);
+      });
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Profile link copied to clipboard');
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+      toast.error('Could not copy link to clipboard');
+    });
   };
   
   return (
@@ -246,22 +271,33 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </Button>
 
           {isViewOnly && (
-            <Button
-              variant={isLiked ? "outline" : "default"}
-              className="w-full"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleLike();
-              }}
-              disabled={isLoading}
-            >
-              <Heart
-                className={cn("mr-2 h-4 w-4", isLiked && "text-red-500")}
-                fill={isLiked ? "currentColor" : "none"}
-              />
-              {isLiked ? "Unlike Portfolio" : "Like this Portfolio"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleLike();
+                }}
+                disabled={isLoading}
+              >
+                <Heart
+                  className={cn("mr-2 h-4 w-4", isLiked && "text-red-500")}
+                  fill={isLiked ? "currentColor" : "none"}
+                />
+                {isLiked ? "Unlike" : "Like"}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="flex-1" 
+                onClick={handleShare}
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </Button>
+            </div>
           )}
           
           {isViewOnly && isClient && (
