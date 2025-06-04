@@ -14,11 +14,11 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({
-  title = "VideoCut - Plateforme Portfolio pour Éditeurs Vidéo",
+  title = "VideoCut - Portfolio pour Éditeurs Vidéo",
   description = "Découvrez des monteurs vidéo professionnels et explorez leurs portfolios créatifs. La plateforme de référence pour connecter créateurs et clients.",
-  keywords = "éditeur vidéo, monteur vidéo, portfolio vidéo, création vidéo, montage professionnel",
+  keywords = "éditeur vidéo, monteur vidéo, portfolio vidéo, création vidéo, montage professionnel, créateur de contenu, créateur vidéo, freelance vidéo, vidéaste, réalisateur, motion designer, vidéographe, monteur freelance, vidéo editor, video creator, content creator, video freelancer, filmmaker, videographer, video producer, video specialist, director, video artist, post-production specialist, montage vidéo, création de vidéos sur mesure, editing vidéo, production audiovisuelle, retouche vidéo, étalonnage vidéo, montage aftermovie, bande démo, showreel, videography services, video editing, video post-production, color grading, after effects editing, cinematic editing, motion graphics, sound design, transitions vidéo, storytelling vidéo, visual storytelling, galerie vidéo, site portfolio, site créatif, présentation vidéo, portfolio en ligne, portfolio de monteur, video portfolio, video showcase, reel portfolio, demo reel, online video portfolio, creative portfolio, editing portfolio, showreel website, plateforme pour monteurs vidéo, outil pour monteur vidéo, outil de présentation vidéo, solution vidéo créative, SaaS vidéo, vidéo cloud, portfolio SaaS, video SaaS, video tool, creative video tool, online video solution, editor platform, creative showcase tool, portfolio builder, portfolio software, visibilité des monteurs, trouver un monteur vidéo, recruter un monteur, outil pour créateur, référencement créatif, CV vidéo, carte de visite vidéo, creative resume, hire a video editor, find video editor, video editing service, video editor portfolio, creative online presence, get clients video editing, promote video work, creative talent platform, freelancer showcase, portfolio pour freelance",
   image = "/og-image.png",
-  url = "https://videocut.lovable.app",
+  url = "https://videocut.fr",
   type = "website",
   structuredData,
   noIndex = false
