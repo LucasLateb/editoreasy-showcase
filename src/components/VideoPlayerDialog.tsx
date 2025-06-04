@@ -1,12 +1,19 @@
-
-import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+  DialogDescription
+} from '@/components/ui/dialog';
+import { X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useViewTracking } from '@/hooks/useViewTracking';
-import { getEmbedUrl, isEmbedCode } from '@/lib/videoUtils';
+import useViewTracking from '@/hooks/useViewTracking';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
+import { Image } from '@/components/ui/image';
+import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VideoPlayerDialogProps {
   isOpen: boolean;
@@ -20,10 +27,10 @@ interface VideoPlayerDialogProps {
   editorAvatar?: string;
 }
 
-const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  videoUrl, 
+const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
+  isOpen,
+  onClose,
+  videoUrl,
   title,
   videoId,
   description,
@@ -31,207 +38,195 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   editorName,
   editorAvatar
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { recordVideoView } = useViewTracking();
+  const viewTrackedRef = useRef(false);
   const navigate = useNavigate();
-  const [videoAspectRatio, setVideoAspectRatio] = useState<'wide' | 'standard' | 'vertical' | 'square'>('standard');
+  const [editorData, setEditorData] = useState<any | null>(null);
+
+  // Fetch editor data if not provided but we have the editorId
+  useEffect(() => {
+    const fetchEditorData = async () => {
+      if (isOpen && editorId && !editorName) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('name, avatar_url')
+            .eq('id', editorId)
+            .single();
+          
+          if (!error && data) {
+            setEditorData({
+              name: data.name,
+              avatarUrl: data.avatar_url
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching editor data:', error);
+        }
+      }
+    };
+    
+    fetchEditorData();
+  }, [isOpen, editorId, editorName]);
 
   useEffect(() => {
-    if (isOpen && videoId) {
+    // Only track the view once when the dialog opens
+    if (isOpen && videoId && !viewTrackedRef.current) {
+      console.log('Tracking video view for:', videoId);
       recordVideoView(videoId);
+      viewTrackedRef.current = true;
+    }
+    
+    // Reset the tracking ref when dialog closes
+    if (!isOpen) {
+      viewTrackedRef.current = false;
     }
   }, [isOpen, videoId, recordVideoView]);
 
-  // Detect video aspect ratio from URL patterns or iframe content
   useEffect(() => {
-    if (videoUrl) {
-      const embedUrl = getEmbedUrl(videoUrl);
-      
-      // YouTube Shorts detection
-      if (embedUrl.includes('youtube.com/embed') && videoUrl.includes('shorts')) {
-        setVideoAspectRatio('vertical');
-      }
-      // Instagram/TikTok vertical content patterns
-      else if (videoUrl.includes('instagram.com') || videoUrl.includes('tiktok.com')) {
-        setVideoAspectRatio('vertical');
-      }
-      // Default to standard for most content
-      else {
-        setVideoAspectRatio('standard');
-      }
+    if (isOpen && videoRef.current) {
+      videoRef.current.play().catch(err => {
+        console.error('Error auto-playing video:', err);
+      });
     }
-  }, [videoUrl]);
+  }, [isOpen]);
 
-  const handleEditorClick = () => {
+  const getYouTubeEmbedUrl = (url: string): string | null => {
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const match = url.match(youtubeRegex);
+    
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    
+    return null;
+  };
+  
+  const getVimeoEmbedUrl = (url: string): string | null => {
+    const vimeoRegex = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|)(\d+)(?:|\/\?)/i;
+    const match = url.match(vimeoRegex);
+    
+    if (match && match[1]) {
+      return `https://player.vimeo.com/video/${match[1]}`;
+    }
+    
+    return null;
+  };
+  
+  const getEmbedSrc = (embedCode: string): string | null => {
+    const srcMatch = embedCode.match(/src=["']([^"']+)["']/i);
+    return srcMatch && srcMatch[1] ? srcMatch[1] : null;
+  };
+  
+  const determineVideoSource = () => {
+    if (!videoUrl) return { type: 'none', src: null };
+    
+    if (videoUrl.includes('<iframe')) {
+      const src = getEmbedSrc(videoUrl);
+      return { type: 'embed', src };
+    }
+    
+    const youtubeEmbed = getYouTubeEmbedUrl(videoUrl);
+    if (youtubeEmbed) {
+      return { type: 'youtube', src: youtubeEmbed };
+    }
+    
+    const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
+    if (vimeoEmbed) {
+      return { type: 'vimeo', src: vimeoEmbed };
+    }
+    
+    return { type: 'video', src: videoUrl };
+  };
+  
+  const navigateToEditor = () => {
+    onClose();
     if (editorId) {
-      navigate(`/portfolio/${editorId}`);
-      onClose();
+      navigate(`/editor/${editorId}`);
     }
   };
+  
+  const videoSource = determineVideoSource();
+  const displayEditorName = editorName || editorData?.name || 'Unknown Editor';
+  const displayEditorAvatar = editorAvatar || editorData?.avatarUrl;
 
-  const renderVideo = () => {
-    if (!videoUrl) {
-      return (
-        <div className="flex items-center justify-center h-full bg-muted">
-          <p className="text-muted-foreground">Video not available</p>
-        </div>
-      );
-    }
-
-    const embedUrl = getEmbedUrl(videoUrl);
-    
-    // Handle Vimeo embed codes
-    if (isEmbedCode(embedUrl)) {
-      return (
-        <div 
-          className="w-full h-full flex items-center justify-center"
-          dangerouslySetInnerHTML={{ __html: embedUrl }}
-        />
-      );
-    }
-    
-    // Handle YouTube, Google Drive, and other direct URLs
-    if (embedUrl.includes('youtube.com/embed') || 
-        embedUrl.includes('drive.google.com/file') ||
-        embedUrl.includes('vimeo.com')) {
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <iframe
-            src={embedUrl}
-            title={title}
-            className={`${getVideoSizeClasses()} border-0`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      );
-    }
-    
-    // Handle direct video files
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <video
-          src={embedUrl}
-          title={title}
-          className={getVideoSizeClasses()}
-          controls
-          autoPlay
-        />
-      </div>
-    );
-  };
-
-  const getVideoSizeClasses = () => {
-    switch (videoAspectRatio) {
-      case 'vertical':
-        return 'h-full max-h-[70vh] w-auto max-w-[40vw]';
-      case 'square':
-        return 'h-full max-h-[60vh] w-auto aspect-square';
-      case 'wide':
-        return 'w-full h-auto max-h-[70vh]';
-      default:
-        return 'w-full h-full max-h-[70vh]';
-    }
-  };
-
-  const getDialogClasses = () => {
-    switch (videoAspectRatio) {
-      case 'vertical':
-        return 'max-w-7xl w-[95vw] h-[95vh]';
-      case 'square':
-        return 'max-w-5xl w-[90vw] h-[90vh]';
-      case 'wide':
-        return 'max-w-[95vw] w-[95vw] h-[90vh]';
-      default:
-        return 'max-w-6xl w-[90vw] h-[85vh]';
-    }
-  };
-
-  const getLayoutClasses = () => {
-    if (videoAspectRatio === 'vertical') {
-      return 'flex flex-row';
-    }
-    return 'flex flex-col';
-  };
-
-  const getVideoContainerClasses = () => {
-    if (videoAspectRatio === 'vertical') {
-      return 'flex-1 bg-black flex items-center justify-center min-h-0';
-    }
-    return 'w-full bg-black flex items-center justify-center' + 
-           (videoAspectRatio === 'wide' ? ' h-[65%]' : ' h-[60%]');
-  };
-
-  const getContentClasses = () => {
-    if (videoAspectRatio === 'vertical') {
-      return 'w-80 bg-background p-6 overflow-y-auto border-l';
-    }
-    return 'flex-1 bg-background p-6 overflow-y-auto';
-  };
-
+  if (videoSource.type === 'none' || !videoSource.src) {
+    return null;
+  }
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${getDialogClasses()} p-0 overflow-hidden`}>
-        <div className={`relative w-full h-full bg-black ${getLayoutClasses()}`}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          
-          {/* Video Player Section */}
-          <div className={getVideoContainerClasses()}>
-            {renderVideo()}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-6xl w-[95vw] p-1 overflow-auto max-h-[95vh]">
+        <DialogDescription className="sr-only">
+          Video player for {title}
+        </DialogDescription>
+        
+        <div className="absolute top-2 right-2 z-10">
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/60 backdrop-blur-sm">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
+          </DialogClose>
+        </div>
+        
+        <div className="flex flex-col">
+          {/* Video Section */}
+          <div className="w-full overflow-hidden rounded">
+            {(videoSource.type === 'embed' || videoSource.type === 'youtube' || videoSource.type === 'vimeo') ? (
+              <div className="w-full aspect-video">
+                <iframe 
+                  src={videoSource.src}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                  allowFullScreen
+                  title={title}
+                />
+              </div>
+            ) : (
+              <video 
+                ref={videoRef}
+                src={videoSource.src} 
+                controls
+                autoPlay
+                className="w-full aspect-video"
+                playsInline
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
           </div>
           
-          {/* Content Section */}
-          <div className={getContentClasses()}>
-            {/* Video Title */}
-            <h2 className={`font-bold mb-4 ${videoAspectRatio === 'vertical' ? 'text-lg' : 'text-2xl'}`}>
-              {title}
-            </h2>
+          {/* Info Section */}
+          <div className="p-4 lg:p-6">
+            <DialogTitle className="text-xl font-bold mb-2">{title}</DialogTitle>
             
-            {/* Editor Information */}
-            {(editorName || editorId) && (
-              <div className={`flex items-center gap-3 mb-6 p-4 bg-muted/50 rounded-lg ${videoAspectRatio === 'vertical' ? 'flex-col text-center' : ''}`}>
-                <Avatar className={videoAspectRatio === 'vertical' ? 'h-10 w-10' : 'h-12 w-12'}>
-                  <AvatarImage src={editorAvatar} alt={editorName} />
-                  <AvatarFallback>
-                    {editorName ? editorName.charAt(0).toUpperCase() : 'U'}
-                  </AvatarFallback>
+            {editorId && (
+              <div 
+                onClick={navigateToEditor}
+                className="flex items-center mb-4 cursor-pointer hover:bg-primary/5 p-2 rounded-md transition-colors"
+              >
+                <Avatar className="h-10 w-10 mr-2">
+                  {displayEditorAvatar ? (
+                    <AvatarImage src={displayEditorAvatar} alt={displayEditorName} />
+                  ) : (
+                    <AvatarFallback>{displayEditorName.charAt(0)}</AvatarFallback>
+                  )}
                 </Avatar>
-                <div className={`flex-1 ${videoAspectRatio === 'vertical' ? 'text-center' : ''}`}>
-                  <p className={`font-semibold ${videoAspectRatio === 'vertical' ? 'text-base' : 'text-lg'}`}>
-                    {editorName || 'Unknown Editor'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Creator</p>
+                <div className="flex items-center">
+                  <span className="font-medium">{displayEditorName}</span>
+                  <ExternalLink className="h-4 w-4 ml-1 text-muted-foreground" />
                 </div>
-                {editorId && (
-                  <Button 
-                    variant="outline" 
-                    onClick={handleEditorClick}
-                    className={`${videoAspectRatio === 'vertical' ? 'w-full mt-2' : 'ml-auto'}`}
-                    size={videoAspectRatio === 'vertical' ? 'sm' : 'default'}
-                  >
-                    View Portfolio
-                  </Button>
-                )}
               </div>
             )}
             
-            {/* Description Section */}
+            <Separator className="my-3" />
+            
             {description && (
-              <div className="space-y-3">
-                <h3 className={`font-semibold ${videoAspectRatio === 'vertical' ? 'text-base' : 'text-lg'}`}>
-                  Description
-                </h3>
-                <div className="prose prose-sm max-w-none">
-                  <p className={`text-muted-foreground leading-relaxed whitespace-pre-wrap ${videoAspectRatio === 'vertical' ? 'text-sm' : ''}`}>
-                    {description}
-                  </p>
-                </div>
+              <div className="max-h-60 overflow-y-auto pr-2 text-sm text-muted-foreground">
+                <p className="whitespace-pre-wrap">{description}</p>
               </div>
             )}
           </div>
