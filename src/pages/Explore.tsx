@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -80,6 +81,20 @@ type EditorProfileType = {
   showreel_url?: string | null;
   showreel_thumbnail?: string | null;
   about?: string | null;
+};
+
+// Function to sort by subscription tier priority
+const sortBySubscriptionTier = (a: any, b: any) => {
+  const tierOrder = { 'pro': 3, 'premium': 2, 'free': 1 };
+  const aTier = tierOrder[a.editorTier] || tierOrder[a.subscription_tier] || 0;
+  const bTier = tierOrder[b.editorTier] || tierOrder[b.subscription_tier] || 0;
+  
+  if (aTier !== bTier) {
+    return bTier - aTier; // Higher tier first
+  }
+  
+  // If same tier, sort by creation date (newest first)
+  return new Date(b.createdAt || b.created_at || 0).getTime() - new Date(a.createdAt || a.created_at || 0).getTime();
 };
 
 const Explore: React.FC = () => {
@@ -186,14 +201,17 @@ const Explore: React.FC = () => {
           } as VideoType;
         });
         
-        setAllVideos(formattedVideos);
+        // Sort videos by subscription tier priority
+        const sortedVideos = formattedVideos.sort(sortBySubscriptionTier);
+        
+        setAllVideos(sortedVideos);
         
         // Filter by selected category
         if (selectedCategory) {
-          const filteredVideos = formattedVideos.filter(video => video.categoryId === selectedCategory.id);
+          const filteredVideos = sortedVideos.filter(video => video.categoryId === selectedCategory.id);
           setVideos(filteredVideos);
         } else {
-          setVideos(formattedVideos);
+          setVideos(sortedVideos);
         }
         
       } catch (error) {
@@ -217,9 +235,13 @@ const Explore: React.FC = () => {
   useEffect(() => {
     if (selectedCategory) {
       const filteredVideos = allVideos.filter(video => video.categoryId === selectedCategory.id);
-      setVideos(filteredVideos);
+      // Apply sorting by tier even after filtering
+      const sortedFilteredVideos = filteredVideos.sort(sortBySubscriptionTier);
+      setVideos(sortedFilteredVideos);
     } else {
-      setVideos(allVideos);
+      // Apply sorting by tier to all videos
+      const sortedVideos = [...allVideos].sort(sortBySubscriptionTier);
+      setVideos(sortedVideos);
     }
   }, [selectedCategory, allVideos]);
 
@@ -270,11 +292,14 @@ const Explore: React.FC = () => {
             specializations: settings.specializations || [],
             showreel_url: settings.showreel_url,
             showreel_thumbnail: settings.showreel_thumbnail,
-            about: settings.about || null, // S'assurer que about est transmis
+            about: settings.about || null,
           };
         });
         
-        setEditors(combinedEditorsData);
+        // Sort editors by subscription tier priority
+        const sortedEditors = combinedEditorsData.sort(sortBySubscriptionTier);
+        
+        setEditors(sortedEditors);
       } catch (error) {
         console.error('Error fetching editor profiles:', error);
         toast({
