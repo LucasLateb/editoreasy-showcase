@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HelmetProvider } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import CategorySlider from '@/components/CategorySlider';
@@ -575,16 +576,16 @@ const Index: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4">{t('HomePage.Footer.Resources')}</h3>
                 <ul className="space-y-3 text-sm">
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Blog')}</a></li>
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Community')}</a></li>
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Support')}</a></li>
+                  <li><Link to="/blog" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Blog')}</Link></li>
+                  <li><Link to="/community" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Community')}</Link></li>
+                  <li><Link to="/support" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Support')}</Link></li>
                 </ul>
               </div>
               
               <div>
                 <h3 className="text-lg font-medium mb-4">{t('HomePage.Footer.Company')}</h3>
                 <ul className="space-y-3 text-sm">
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.About')}</a></li>
+                  <li><Link to="/about" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.About')}</Link></li>
                   <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Careers')}</a></li>
                   <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Contact')}</a></li>
                 </ul>
@@ -595,8 +596,8 @@ const Index: React.FC = () => {
               <div className="flex flex-col md:flex-row justify-between items-center">
                 <p>{t('HomePage.Footer.Copyright')}</p>
                 <div className="flex space-x-6 mt-4 md:mt-0">
-                  <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Terms')}</a>
-                  <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Privacy')}</a>
+                  <Link to="/terms" className="hover:text-foreground">{t('HomePage.Footer.Terms')}</Link>
+                  <Link to="/privacy" className="hover:text-foreground">{t('HomePage.Footer.Privacy')}</Link>
                   <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Cookies')}</a>
                 </div>
               </div>
