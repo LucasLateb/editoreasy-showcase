@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -289,14 +288,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                 {isLiked ? "Unlike" : "Like"}
               </Button>
               
-              <Button 
-                variant="outline" 
-                className="flex-1" 
-                onClick={handleShare}
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                Share
-              </Button>
+              
             </div>
           )}
           
