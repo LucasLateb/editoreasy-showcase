@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '@/types';
 import { Eye, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,19 +13,72 @@ interface VideoCardProps {
   video: Video;
 }
 
+// Helper function to extract YouTube video ID from URL
+const getYouTubeVideoId = (url: string): string | null => {
+  const patterns = [
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&\n?#]+)/,
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^&\n?#]+)/,
+    /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^&\n?#]+)/,
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^&\n?#]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+};
+
+// Helper function to check if URL is Vimeo
+const isVimeoUrl = (url: string): boolean => {
+  return url.includes('vimeo.com');
+};
+
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   
   // Get category directly from local categories to ensure it works for all users
   const category = localCategories.find(cat => cat.id === video.categoryId);
   
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
+  // Check if video is YouTube
+  const youtubeVideoId = getYouTubeVideoId(video.videoUrl);
+  const isYoutube = !!youtubeVideoId;
+  const isVimeo = isVimeoUrl(video.videoUrl);
+  
   console.log('VideoCard - video.categoryId:', video.categoryId);
   console.log('VideoCard - found category:', category);
+  console.log('VideoCard - YouTube video ID:', youtubeVideoId);
+  console.log('VideoCard - Is YouTube:', isYoutube);
+  
+  // Intersection Observer to detect when video enters viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the video is visible
+      }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, []);
   
   return (
     <Card 
+      ref={cardRef}
       className={cn(
         "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
@@ -35,16 +88,28 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       onMouseLeave={() => setIsHovering(false)}
     >
       <div className="video-card relative aspect-video">
-        {/* Video Thumbnail */}
-        <Image
-          src={video.thumbnailUrl}
-          alt={video.title}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-          loading="lazy"
-        />
+        {/* Video Content - YouTube autoplay or regular thumbnail */}
+        {isYoutube && isInView ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
+            className="w-full h-full object-cover"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <Image
+            src={video.thumbnailUrl}
+            alt={video.title}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+          />
+        )}
         
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80"></div>
+        {/* Overlay gradient - only show on non-YouTube or when not in view */}
+        {(!isYoutube || !isInView) && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80"></div>
+        )}
         
         {/* Pro badge if editor is pro */}
         {video.editorTier === 'pro' && (
@@ -64,46 +129,50 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* Play button that appears on hover */}
-        <div className={cn(
-          "absolute inset-0 flex items-center justify-center transition-all duration-300",
-          isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
-        )}>
-          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-2xl">
-            <Play className="h-8 w-8 text-white drop-shadow-lg" fill="white" />
-          </div>
-        </div>
-        
-        {/* Video content overlay */}
-        <div className="video-card-content absolute bottom-0 left-0 right-0 p-4">
-          {/* Video title - only on hover */}
+        {/* Play button that appears on hover - only for non-YouTube or when not in view */}
+        {(!isYoutube || !isInView) && (
           <div className={cn(
-            "transition-all duration-300 mb-3",
-            isHovering ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            "absolute inset-0 flex items-center justify-center transition-all duration-300",
+            isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
           )}>
-            <h3 className="font-medium text-base line-clamp-1 text-white drop-shadow-lg">{video.title}</h3>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {/* Editor info */}
-              {video.editorName && (
-                <>
-                  <div className="w-6 h-6 rounded-full bg-accent overflow-hidden shadow-md">
-                    {video.editorAvatar ? (
-                      <Image src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
-                        {video.editorName.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-white/90 font-medium drop-shadow-md">{video.editorName}</span>
-                </>
-              )}
+            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-2xl">
+              <Play className="h-8 w-8 text-white drop-shadow-lg" fill="white" />
             </div>
           </div>
-        </div>
+        )}
+        
+        {/* Video content overlay - only show on non-YouTube or when not in view */}
+        {(!isYoutube || !isInView) && (
+          <div className="video-card-content absolute bottom-0 left-0 right-0 p-4">
+            {/* Video title - only on hover */}
+            <div className={cn(
+              "transition-all duration-300 mb-3",
+              isHovering ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            )}>
+              <h3 className="font-medium text-base line-clamp-1 text-white drop-shadow-lg">{video.title}</h3>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {/* Editor info */}
+                {video.editorName && (
+                  <>
+                    <div className="w-6 h-6 rounded-full bg-accent overflow-hidden shadow-md">
+                      {video.editorAvatar ? (
+                        <Image src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
+                          {video.editorName.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-white/90 font-medium drop-shadow-md">{video.editorName}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Stats section */}
