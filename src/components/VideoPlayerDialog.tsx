@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
@@ -14,6 +13,8 @@ interface VideoPlayerDialogProps {
   videoId?: string;
   description?: string;
   editorId?: string;
+  editorName?: string;
+  editorAvatar?: string;
 }
 
 const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({ 
@@ -23,15 +24,17 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   title,
   videoId,
   description,
-  editorId 
+  editorId,
+  editorName,
+  editorAvatar
 }) => {
-  const { trackView } = useViewTracking();
+  const { recordVideoView } = useViewTracking();
 
   useEffect(() => {
     if (isOpen && videoId) {
-      trackView(videoId);
+      recordVideoView(videoId);
     }
-  }, [isOpen, videoId, trackView]);
+  }, [isOpen, videoId, recordVideoView]);
 
   const renderVideo = () => {
     if (!videoUrl) {
