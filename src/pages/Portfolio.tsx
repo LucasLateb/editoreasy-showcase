@@ -500,10 +500,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
   const displayUser = isViewOnly ? editorData : currentUser;
   
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-secondary">
       <Navbar />
       
-      <main className="pt-24 pb-12">
+      <main className="pt-24">
         {!isViewOnly && (
           <div className="fixed bottom-6 right-6 z-50">
             <Button 
@@ -536,8 +536,8 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           </div>
         )}
         
-        <section className="bg-secondary">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">
                 <ProfileCard
