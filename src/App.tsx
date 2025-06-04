@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -14,6 +15,9 @@ import Support from '@/pages/Support';
 import About from '@/pages/About';
 import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
+import Features from '@/pages/Features';
+import Contact from '@/pages/Contact';
+import Cookies from '@/pages/Cookies';
 
 // Lazy load non-critical pages to improve initial loading performance
 const Index = lazy(() => import('@/pages/Index'));
@@ -119,6 +123,9 @@ export default function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/cookies" element={<Cookies />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

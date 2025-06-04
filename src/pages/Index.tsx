@@ -567,8 +567,8 @@ const Index: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4">{t('HomePage.Footer.Product')}</h3>
                 <ul className="space-y-3 text-sm">
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Features')}</a></li>
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Pricing')}</a></li>
+                  <li><Link to="/features" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Features')}</Link></li>
+                  <li><Link to="/pricing" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Pricing')}</Link></li>
                   <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Testimonials')}</a></li>
                 </ul>
               </div>
@@ -587,7 +587,7 @@ const Index: React.FC = () => {
                 <ul className="space-y-3 text-sm">
                   <li><Link to="/about" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.About')}</Link></li>
                   <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Careers')}</a></li>
-                  <li><a href="#" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Contact')}</a></li>
+                  <li><Link to="/contact" className="text-muted-foreground hover:text-foreground">{t('HomePage.Footer.Contact')}</Link></li>
                 </ul>
               </div>
             </div>
@@ -598,7 +598,7 @@ const Index: React.FC = () => {
                 <div className="flex space-x-6 mt-4 md:mt-0">
                   <Link to="/terms" className="hover:text-foreground">{t('HomePage.Footer.Terms')}</Link>
                   <Link to="/privacy" className="hover:text-foreground">{t('HomePage.Footer.Privacy')}</Link>
-                  <a href="#" className="hover:text-foreground">{t('HomePage.Footer.Cookies')}</a>
+                  <Link to="/cookies" className="hover:text-foreground">{t('HomePage.Footer.Cookies')}</Link>
                 </div>
               </div>
             </div>
