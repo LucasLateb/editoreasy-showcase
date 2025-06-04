@@ -503,7 +503,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     <div className="min-h-screen">
       <Navbar />
       
-      <main>
+      <main className="py-12">
         {!isViewOnly && (
           <div className="fixed bottom-6 right-6 z-50">
             <Button 
@@ -536,23 +536,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
           </div>
         )}
         
-        <HeaderSection 
-          featuredVideo={featuredVideo}
-          currentUser={displayUser}
-          editMode={editMode && !isViewOnly}
-          updateVideoThumbnail={updateVideoThumbnail}
-          title={portfolioTitle}
-          setTitle={(title: string) => {
-            setPortfolioTitle(title);
-            if (!isViewOnly) updatePortfolioTitle(title);
-          }}
-          description={portfolioDescription}
-          setDescription={setPortfolioDescription}
-          isSavingTitle={isSavingTitle && !isViewOnly}
-          isViewOnly={isViewOnly}
-        />
-        
-        <section className="py-12 bg-secondary">
+        <section className="bg-secondary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="md:w-1/3">

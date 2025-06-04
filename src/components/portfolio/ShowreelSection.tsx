@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause } from 'lucide-react';
@@ -144,13 +145,17 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   const isDirectVideo = effectiveShowreelUrl && effectiveShowreelUrl.match(/\.(mp4|webm|ogg)$/i);
 
   return (
-    <div className="mb-8 mt-2 bg-background border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="flex justify-between items-center p-4 border-b border-border">
-        <h3 className="text-lg font-medium">My Showreel</h3>
-      </div>
+    <div className="mb-8 mt-2">
+      {/* Simple showreel indicator */}
+      {showreelUrl && (
+        <div className="mb-3">
+          <h3 className="text-lg font-medium text-muted-foreground">My Showreel</h3>
+        </div>
+      )}
+      
       {showreelUrl ? (
         <div 
-          className="aspect-video relative group cursor-pointer"
+          className="aspect-video relative group cursor-pointer rounded-lg overflow-hidden"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onClick={handleVideoClick}
@@ -204,7 +209,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
           </div>
         </div>
       ) : editMode ? (
-        <div className="aspect-video bg-muted flex items-center justify-center">
+        <div className="aspect-video bg-muted flex items-center justify-center rounded-lg">
           <p className="text-muted-foreground">No showreel added yet.</p>
         </div>
       ) : null}
