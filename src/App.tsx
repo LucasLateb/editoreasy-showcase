@@ -13,6 +13,7 @@ import Community from '@/pages/Community';
 import Support from '@/pages/Support';
 import About from '@/pages/About';
 import Privacy from '@/pages/Privacy';
+import Terms from '@/pages/Terms';
 
 // Lazy load non-critical pages to improve initial loading performance
 const Index = lazy(() => import('@/pages/Index'));
@@ -117,6 +118,7 @@ export default function App() {
                 <Route path="/support" element={<Support />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
