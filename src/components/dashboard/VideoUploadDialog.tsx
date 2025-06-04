@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -53,8 +52,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     title: '',
     description: '',
     videoUrl: '',
-    // Initialisation de la catégorie
-    categoryId: '',
+    categoryId: '', // S'assurer que c'est bien initialisé
     thumbnailUrl: '',
   });
 
@@ -110,6 +108,17 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   };
 
   const handleSubmit = () => {
+    // Validation avant soumission
+    if (!uploadData.categoryId) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez sélectionner une catégorie.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('Submitting video with category:', uploadData.categoryId);
     setUploadProgress(0);
     onSubmit({ ...uploadData, uploadType, videoSource }, videoFile, thumbnailFile);
 
@@ -162,6 +171,12 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
     onClose();
   };
 
+  // Fonction pour gérer la sélection de catégorie
+  const handleCategorySelect = (categoryId: string) => {
+    console.log('Category selected:', categoryId);
+    setUploadData(prev => ({ ...prev, categoryId }));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
@@ -188,7 +203,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
 
             {/* Category with search */}
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">Category *</Label>
               {categoriesLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -198,12 +213,15 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                 <CategorySearch
                   categories={categories}
                   selectedCategoryId={uploadData.categoryId}
-                  onCategorySelect={(categoryId) => 
-                    setUploadData((prev) => ({ ...prev, categoryId }))
-                  }
+                  onCategorySelect={handleCategorySelect}
                   placeholder="Search and select a category..."
                   disabled={isUploading}
                 />
+              )}
+              {uploadData.categoryId && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {categories.find(c => c.id === uploadData.categoryId)?.name || 'Unknown'}
+                </p>
               )}
             </div>
 

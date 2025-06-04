@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
-import { categories as localCategories } from '@/types';
+import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
 
 interface VideoCardProps {
   video: Video;
@@ -39,8 +39,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isInView, setIsInView] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   
-  // Get category directly from local categories to ensure it works for all users
-  const category = localCategories.find(cat => cat.id === video.categoryId);
+  // Use the fallback hook to get categories
+  const { categories } = useCategoriesWithFallback();
+  
+  // Find category by ID - now using the categories from the hook
+  const category = categories.find(cat => cat.id === video.categoryId);
   
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
@@ -51,6 +54,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   
   console.log('VideoCard - video.categoryId:', video.categoryId);
   console.log('VideoCard - found category:', category);
+  console.log('VideoCard - available categories:', categories);
   console.log('VideoCard - YouTube video ID:', youtubeVideoId);
   console.log('VideoCard - Is YouTube:', isYoutube);
   
@@ -125,6 +129,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           <div className="absolute top-3 left-3 z-10">
             <div className="bg-brand-500 text-white px-2 py-1 rounded-full text-xs font-medium">
               En vedette
+            </div>
+          </div>
+        )}
+        
+        {/* Category badge - always show if available */}
+        {category && (
+          <div className="absolute bottom-3 left-3 z-10">
+            <div className="bg-primary/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+              {category.name}
             </div>
           </div>
         )}
