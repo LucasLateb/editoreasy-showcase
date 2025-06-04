@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   Dialog,
@@ -114,6 +115,18 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
     return null;
   };
   
+  const getGoogleDriveEmbedUrl = (url: string): string | null => {
+    // Handle Google Drive share links
+    const driveRegex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i;
+    const match = url.match(driveRegex);
+    
+    if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    
+    return null;
+  };
+  
   const getEmbedSrc = (embedCode: string): string | null => {
     const srcMatch = embedCode.match(/src=["']([^"']+)["']/i);
     return srcMatch && srcMatch[1] ? srcMatch[1] : null;
@@ -135,6 +148,11 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
     const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
     if (vimeoEmbed) {
       return { type: 'vimeo', src: vimeoEmbed };
+    }
+    
+    const googleDriveEmbed = getGoogleDriveEmbedUrl(videoUrl);
+    if (googleDriveEmbed) {
+      return { type: 'googledrive', src: googleDriveEmbed };
     }
     
     return { type: 'video', src: videoUrl };
@@ -174,7 +192,7 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
         <div className="flex flex-col">
           {/* Video Section */}
           <div className="w-full overflow-hidden rounded">
-            {(videoSource.type === 'embed' || videoSource.type === 'youtube' || videoSource.type === 'vimeo') ? (
+            {(videoSource.type === 'embed' || videoSource.type === 'youtube' || videoSource.type === 'vimeo' || videoSource.type === 'googledrive') ? (
               <div className="w-full aspect-video">
                 <iframe 
                   src={videoSource.src}

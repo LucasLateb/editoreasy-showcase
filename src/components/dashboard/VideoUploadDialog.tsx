@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -17,7 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import CategorySearch from '@/components/CategorySearch';
 
 import { useCategories } from '@/hooks/useCategories';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,7 +36,7 @@ export interface UploadFormData {
   categoryId: string;
   thumbnailUrl: string;
   uploadType?: 'link' | 'file' | null;
-  videoSource?: 'youtube' | 'vimeo' | 'other' | null;
+  videoSource?: 'youtube' | 'vimeo' | 'googledrive' | null;
 }
 
 const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
@@ -58,7 +59,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   });
 
   const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
-  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'other' | null>(null);
+  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'googledrive' | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -260,7 +261,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   <RadioGroup
                     value={videoSource || ''}
                     onValueChange={(value) =>
-                      setVideoSource(value as 'youtube' | 'vimeo' | 'other' | null)
+                      setVideoSource(value as 'youtube' | 'vimeo' | 'googledrive' | null)
                     }
                     className="grid grid-cols-3 gap-4"
                   >
@@ -294,18 +295,18 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       </Label>
                     </div>
 
-                    {/* Autre */}
+                    {/* Google Drive */}
                     <div>
-                      <RadioGroupItem value="other" id="other" className="peer sr-only" />
+                      <RadioGroupItem value="googledrive" id="googledrive" className="peer sr-only" />
                       <Label
-                        htmlFor="other"
+                        htmlFor="googledrive"
                         className={cn(
                           'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer',
-                          videoSource === 'other' ? 'border-primary' : ''
+                          videoSource === 'googledrive' ? 'border-primary' : ''
                         )}
                       >
-                        <LinkIcon className="mb-2 h-6 w-6 text-gray-600" />
-                        <span className="text-sm font-medium">Other</span>
+                        <HardDrive className="mb-2 h-6 w-6 text-green-600" />
+                        <span className="text-sm font-medium">Google Drive</span>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -374,20 +375,37 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   </div>
                 )}
 
-                {/* Autre plateforme */}
-                {videoSource === 'other' && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="videoUrl">Video URL</Label>
+                {/* Google Drive */}
+                {videoSource === 'googledrive' && (
+                  <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
+                    <div className="flex items-start gap-3">
+                      <HardDrive className="h-6 w-6 text-green-600 mt-1" />
+                      <div>
+                        <h3 className="font-medium mb-1">Google Drive Video</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Pour intégrer une vidéo depuis Google Drive :
+                        </p>
+                        <ol className="text-sm text-muted-foreground mb-3 space-y-1 list-decimal list-inside">
+                          <li>Ouvrez votre fichier vidéo dans Google Drive</li>
+                          <li>Cliquez sur "Partager" et assurez-vous que le lien est accessible à "Tous les utilisateurs avec le lien"</li>
+                          <li>Cliquez sur "Copier le lien" et collez-le ci-dessous</li>
+                        </ol>
+                        <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
+                          https://drive.google.com/file/d/1XXXXXXXXXXXXX/view?usp=sharing
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          <strong>Important :</strong> Assurez-vous que votre vidéo est partagée publiquement pour qu'elle puisse être lue.
+                        </p>
+                      </div>
+                    </div>
+                    <Label htmlFor="googledrive-url">Enter Google Drive Share Link</Label>
                     <Input
-                      id="videoUrl"
+                      id="googledrive-url"
                       value={uploadData.videoUrl}
                       onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
-                      placeholder="Enter video URL or embed code"
+                      placeholder="https://drive.google.com/file/d/1XXXXXXXXXXXXX/view?usp=sharing"
                       disabled={isUploading}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Supports direct video URLs or embed codes from other video hosting platforms
-                    </p>
                   </div>
                 )}
 
