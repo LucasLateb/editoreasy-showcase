@@ -512,28 +512,13 @@ const Dashboard: React.FC = () => {
         thumbnailUrl = thumbnailUrlData.publicUrl;
       }
       
-      if (uploadData.uploadType === 'file' && videoFile) {
-        const fileExt = videoFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `videos/${currentUser.id}/${fileName}`;
-        
-        const { error: videoError } = await supabase.storage
-          .from('videos')
-          .upload(filePath, videoFile, {
-            cacheControl: '3600',
-            upsert: false
-          });
-        
-        if (videoError) {
-          console.error('Video upload error:', videoError);
-          throw new Error(`Error uploading video: ${videoError.message}`);
+      // Convert Google Drive sharing link to direct link for video playback
+      if (uploadData.videoSource === 'googledrive' && videoUrl.includes('drive.google.com')) {
+        const fileIdMatch = videoUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch) {
+          const fileId = fileIdMatch[1];
+          videoUrl = `https://drive.google.com/file/d/${fileId}/preview`;
         }
-        
-        const { data: videoUrlData } = supabase.storage
-          .from('videos')
-          .getPublicUrl(filePath);
-        
-        videoUrl = videoUrlData.publicUrl;
       }
       
       const newVideoData = {
