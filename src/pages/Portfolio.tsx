@@ -503,7 +503,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ isViewOnly = false }) => {
     <div className="min-h-screen">
       <Navbar />
       
-      <main className="py-12">
+      <main className="pt-24 pb-12">
         {!isViewOnly && (
           <div className="fixed bottom-6 right-6 z-50">
             <Button 
