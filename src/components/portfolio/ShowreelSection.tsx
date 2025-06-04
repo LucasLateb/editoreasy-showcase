@@ -21,6 +21,7 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoPlayStarted, setAutoPlayStarted] = useState(false);
+  const [showIframe, setShowIframe] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   
   // Simplified approach - we'll trust the Image component to handle loading
@@ -30,9 +31,17 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     }
   }, [showreelThumbnail]);
 
-  // Auto-play video when component mounts (like YouTube)
+  // Auto-play video when component mounts for YouTube videos
   useEffect(() => {
-    if (videoRef.current && isVideoUrl(showreelUrl) && !autoPlayStarted) {
+    if (showreelUrl && isYouTubeUrl(showreelUrl)) {
+      // Pour YouTube, on montre directement l'iframe avec autoplay
+      const timer = setTimeout(() => {
+        setShowIframe(true);
+        setAutoPlayStarted(true);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    } else if (videoRef.current && isVideoUrl(showreelUrl) && !autoPlayStarted) {
       const timer = setTimeout(() => {
         videoRef.current?.play().then(() => {
           setIsPlaying(true);
@@ -44,13 +53,13 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     }
   }, [showreelUrl, autoPlayStarted]);
 
-  // Handle hover video playback for embed URLs (but not Vimeo)
+  // Handle hover video playback for embed URLs (but not Vimeo or YouTube in autoplay mode)
   useEffect(() => {
-    if (isHovered && videoRef.current && isVideoUrl(showreelUrl) && !isVimeoUrl(showreelUrl)) {
+    if (isHovered && videoRef.current && isVideoUrl(showreelUrl) && !isVimeoUrl(showreelUrl) && !isYouTubeUrl(showreelUrl)) {
       videoRef.current.play().then(() => {
         setIsPlaying(true);
       }).catch(console.error);
-    } else if (!isHovered && videoRef.current && isVideoUrl(showreelUrl)) {
+    } else if (!isHovered && videoRef.current && isVideoUrl(showreelUrl) && !isYouTubeUrl(showreelUrl)) {
       videoRef.current.pause();
       setIsPlaying(false);
     }
@@ -92,6 +101,11 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
     if (!url) return false;
     // Check if it's a direct video URL (mp4, webm, etc.) and not an embed code
     return (url.includes('.mp4') || url.includes('.webm') || url.includes('.mov')) && !url.includes('<iframe');
+  };
+
+  const isYouTubeUrl = (url: string) => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
   const isVimeoUrl = (url: string) => {
@@ -161,7 +175,8 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
           onClick={handleVideoClick}
         >
           <div className="relative w-full h-full overflow-hidden">
-            {(isHovered && effectiveShowreelUrl && !isVimeoUrl(showreelUrl)) ? (
+            {/* Pour YouTube, on affiche directement l'iframe avec autoplay */}
+            {(showIframe && isYouTubeUrl(showreelUrl)) || (isHovered && effectiveShowreelUrl && !isVimeoUrl(showreelUrl) && !isYouTubeUrl(showreelUrl)) ? (
               isDirectVideo ? (
                 <video
                   ref={videoRef}
@@ -200,12 +215,14 @@ const ShowreelSection: React.FC<ShowreelSectionProps> = ({
               </div>
             )}
 
-            {/* Hover effects */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1 text-white text-sm">
-                {isHovered ? 'Click for full screen' : 'Hover to preview'}
+            {/* Hover effects - only show for non-YouTube videos or when YouTube isn't autoplaying */}
+            {(!isYouTubeUrl(showreelUrl) || !showIframe) && (
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1 text-white text-sm">
+                  {isHovered ? 'Click for full screen' : 'Hover to preview'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       ) : editMode ? (
