@@ -74,14 +74,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
         video.isHighlighted && "rounded-xl",
-        isVertical ? "max-w-[280px] mx-auto" : "w-full"
+        isVertical ? "w-full h-full" : "w-full"
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
       <div className={cn(
         "video-card relative",
-        isVertical ? "aspect-[9/16]" : "aspect-video"
+        isVertical ? "aspect-[9/16]" : "aspect-[4/3]"
       )}>
         {/* Video Content - Check if we can autoplay or show thumbnail */}
         {isYoutube && isInView ? (
