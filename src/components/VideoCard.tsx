@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '@/types';
 import { Eye, Heart, Play } from 'lucide-react';
@@ -74,7 +73,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
         video.isHighlighted && "rounded-xl",
-        isVertical ? "max-w-[260px] mx-auto" : "w-full max-w-[420px]"
+        isVertical ? "max-w-[260px] mx-auto" : "w-full max-w-[480px]"
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
