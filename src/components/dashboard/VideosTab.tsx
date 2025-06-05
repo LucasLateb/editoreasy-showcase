@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Film } from 'lucide-react';
 import VideoCardDashboard from './VideoCardDashboard';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
+import { getVideoAspectRatio } from '@/utils/videoHelpers';
 
 interface VideosTabProps {
   videos: Video[];
@@ -47,20 +48,51 @@ const VideosTab: React.FC<VideosTabProps> = ({
     );
   }
 
+  // Group videos by aspect ratio
+  const verticalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'vertical');
+  const horizontalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'horizontal');
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {videos.map((video) => {
-        const category = categories.find(c => c.id === video.categoryId);
-        
-        return (
-          <VideoCardDashboard 
-            key={video.id}
-            video={video}
-            category={category}
-            onDelete={onDeleteClick}
-          />
-        );
-      })}
+    <div className="flex gap-6">
+      {/* Left side: Horizontal videos in grid */}
+      <div className="flex-1">
+        {horizontalVideos.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {horizontalVideos.map((video) => {
+              const category = categories.find(c => c.id === video.categoryId);
+              
+              return (
+                <VideoCardDashboard 
+                  key={video.id}
+                  video={video}
+                  category={category}
+                  onDelete={onDeleteClick}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+      
+      {/* Right side: Vertical videos in single column */}
+      {verticalVideos.length > 0 && (
+        <div className="w-[300px] flex-shrink-0">
+          <div className="space-y-4">
+            {verticalVideos.map((video) => {
+              const category = categories.find(c => c.id === video.categoryId);
+              
+              return (
+                <VideoCardDashboard 
+                  key={video.id}
+                  video={video}
+                  category={category}
+                  onDelete={onDeleteClick}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

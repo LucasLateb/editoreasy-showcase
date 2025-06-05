@@ -107,168 +107,172 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   
   return (
     <>
-      {/* Horizontal videos in standard grid */}
-      {horizontalVideos.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {horizontalVideos.map((video) => (
-            <div 
-              key={video.id} 
-              className="relative group cursor-pointer" 
-              onClick={() => handleVideoClick(video)}
-            >
-              <VideoCard video={video} />
-              
-              {editMode && !isViewOnly && (
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1" onClick={(e) => e.stopPropagation()}>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Edit Video</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 mt-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          {thumbnailOptions.map(thumbnail => (
-                            <Card 
-                              key={thumbnail.id} 
-                              className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                              onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
-                            >
-                              <CardContent className="p-2">
-                                <div className="aspect-video relative overflow-hidden rounded">
-                                  <img 
-                                    src={thumbnail.url} 
-                                    alt={`Thumbnail option ${thumbnail.id}`} 
-                                    className="w-full h-full object-cover" 
-                                  />
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                        <div className="flex justify-between">
-                          <Button 
-                            variant={video.isHighlighted ? "destructive" : "outline"}
-                            onClick={() => handleToggleHighlight(video.id)}
-                            disabled={isUpdating === video.id}
-                          >
-                            {video.isHighlighted ? (
-                              <>
-                                <X className="mr-2 h-4 w-4" />
-                                Remove Highlight
-                              </>
-                            ) : (
-                              <>
-                                <Star className="mr-2 h-4 w-4" />
-                                Highlight Video
-                              </>
-                            )}
+      {/* New mixed layout: horizontal videos on the left, vertical videos on the right */}
+      <div className="flex gap-6">
+        {/* Left side: Horizontal videos in grid */}
+        <div className="flex-1">
+          {horizontalVideos.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {horizontalVideos.map((video) => (
+                <div 
+                  key={video.id} 
+                  className="relative group cursor-pointer" 
+                  onClick={() => handleVideoClick(video)}
+                >
+                  <VideoCard video={video} />
+                  
+                  {editMode && !isViewOnly && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex space-x-1" onClick={(e) => e.stopPropagation()}>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
+                            <Edit className="h-4 w-4" />
                           </Button>
-                          
-                          <Button 
-                            variant="default"
-                            onClick={() => setAsFeatured(video)}
-                            disabled={isUpdating === video.id}
-                          >
-                            Set as Featured
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {/* Vertical videos in separate, special grid */}
-      {verticalVideos.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-medium mb-4">Vidéos Verticales</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {verticalVideos.map((video) => (
-              <div 
-                key={video.id} 
-                className="relative group cursor-pointer"
-                onClick={() => handleVideoClick(video)}
-              >
-                <VideoCard video={video} />
-                
-                {editMode && !isViewOnly && (
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="icon" variant="outline" className="h-7 w-7 bg-background/80 backdrop-blur-sm">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edit Video</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            {thumbnailOptions.map(thumbnail => (
-                              <Card 
-                                key={thumbnail.id} 
-                                className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                                onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Video</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 mt-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              {thumbnailOptions.map(thumbnail => (
+                                <Card 
+                                  key={thumbnail.id} 
+                                  className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                                  onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
+                                >
+                                  <CardContent className="p-2">
+                                    <div className="aspect-video relative overflow-hidden rounded">
+                                      <img 
+                                        src={thumbnail.url} 
+                                        alt={`Thumbnail option ${thumbnail.id}`} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                            <div className="flex justify-between">
+                              <Button 
+                                variant={video.isHighlighted ? "destructive" : "outline"}
+                                onClick={() => handleToggleHighlight(video.id)}
+                                disabled={isUpdating === video.id}
                               >
-                                <CardContent className="p-2">
-                                  <div className="aspect-[9/16] relative overflow-hidden rounded">
-                                    <img 
-                                      src={thumbnail.url} 
-                                      alt={`Thumbnail option ${thumbnail.id}`} 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
+                                {video.isHighlighted ? (
+                                  <>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Remove Highlight
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="mr-2 h-4 w-4" />
+                                    Highlight Video
+                                  </>
+                                )}
+                              </Button>
+                              
+                              <Button 
+                                variant="default"
+                                onClick={() => setAsFeatured(video)}
+                                disabled={isUpdating === video.id}
+                              >
+                                Set as Featured
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <Button 
-                              variant={video.isHighlighted ? "destructive" : "outline"}
-                              onClick={() => handleToggleHighlight(video.id)}
-                              disabled={isUpdating === video.id}
-                            >
-                              {video.isHighlighted ? (
-                                <>
-                                  <X className="mr-2 h-4 w-4" />
-                                  Remove
-                                </>
-                              ) : (
-                                <>
-                                  <Star className="mr-2 h-4 w-4" />
-                                  Highlight
-                                </>
-                              )}
-                            </Button>
-                            
-                            <Button 
-                              variant="default"
-                              onClick={() => setAsFeatured(video)}
-                              disabled={isUpdating === video.id}
-                            >
-                              Set as Featured
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+        
+        {/* Right side: Vertical videos in single column */}
+        {verticalVideos.length > 0 && (
+          <div className="w-[300px] flex-shrink-0">
+            <div className="space-y-4">
+              {verticalVideos.map((video) => (
+                <div 
+                  key={video.id} 
+                  className="relative group cursor-pointer"
+                  onClick={() => handleVideoClick(video)}
+                >
+                  <VideoCard video={video} />
+                  
+                  {editMode && !isViewOnly && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="icon" variant="outline" className="h-7 w-7 bg-background/80 backdrop-blur-sm">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Video</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 mt-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              {thumbnailOptions.map(thumbnail => (
+                                <Card 
+                                  key={thumbnail.id} 
+                                  className="cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                                  onClick={() => updateVideoThumbnail(video.id, thumbnail.url)}
+                                >
+                                  <CardContent className="p-2">
+                                    <div className="aspect-[9/16] relative overflow-hidden rounded">
+                                      <img 
+                                        src={thumbnail.url} 
+                                        alt={`Thumbnail option ${thumbnail.id}`} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                            <div className="flex justify-between">
+                              <Button 
+                                variant={video.isHighlighted ? "destructive" : "outline"}
+                                onClick={() => handleToggleHighlight(video.id)}
+                                disabled={isUpdating === video.id}
+                              >
+                                {video.isHighlighted ? (
+                                  <>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Remove
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="mr-2 h-4 w-4" />
+                                    Highlight
+                                  </>
+                                )}
+                              </Button>
+                              
+                              <Button 
+                                variant="default"
+                                onClick={() => setAsFeatured(video)}
+                                disabled={isUpdating === video.id}
+                              >
+                                Set as Featured
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       
       {selectedVideo && (
         <VideoPlayerDialog

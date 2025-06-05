@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
@@ -31,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Category, Video as VideoType, categories as localCategories } from '@/types';
 import VideoPlayerDialog from '@/components/VideoPlayerDialog';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
+import { getVideoAspectRatio } from '@/utils/videoHelpers';
 
 const Footer = () => {
   return (
@@ -402,13 +402,41 @@ const Explore: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {videos.map((video) => (
-                        <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
-                          <VideoCard video={video} />
+                    (() => {
+                      // Group videos by aspect ratio
+                      const verticalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'vertical');
+                      const horizontalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'horizontal');
+                      
+                      return (
+                        <div className="flex gap-6">
+                          {/* Left side: Horizontal videos in grid */}
+                          <div className="flex-1">
+                            {horizontalVideos.length > 0 && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {horizontalVideos.map((video) => (
+                                  <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                                    <VideoCard video={video} />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Right side: Vertical videos in single column */}
+                          {verticalVideos.length > 0 && (
+                            <div className="w-[300px] flex-shrink-0">
+                              <div className="space-y-4">
+                                {verticalVideos.map((video) => (
+                                  <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                                    <VideoCard video={video} />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })()
                   )}
                 </TabsContent>
                 <TabsContent value="editors">
