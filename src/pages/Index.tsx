@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/command";
 import { useToast } from '@/hooks/use-toast';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
+import { getVideoAspectRatio } from '@/utils/videoHelpers';
 
 // Define a more specific type for editors, including totalVideoLikes
 type EditorProfile = AppUser & { totalVideoLikes: number };
@@ -503,17 +504,49 @@ const Index: React.FC = () => {
               />
             </div>
             
-            <div className="mt-8 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 rounded-b-lg overflow-visible pb-8">
+            <div className="mt-8 px-4">
               {isVideosLoading ? (
-                Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="aspect-video bg-muted rounded-lg animate-pulse" />
-                ))
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 rounded-b-lg overflow-visible pb-8">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="aspect-video bg-muted rounded-lg animate-pulse" />
+                  ))}
+                </div>
               ) : videos.length > 0 ? (
-                videos.map((video) => (
-                  <div key={video.id} onClick={() => handleVideoClick(video)}>
-                    <VideoCard key={video.id} video={video} />
-                  </div>
-                ))
+                (() => {
+                  // Group videos by aspect ratio
+                  const verticalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'vertical');
+                  const horizontalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'horizontal');
+                  
+                  return (
+                    <div className="flex gap-6">
+                      {/* Left side: Horizontal videos in grid */}
+                      <div className="flex-1">
+                        {horizontalVideos.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {horizontalVideos.map((video) => (
+                              <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                                <VideoCard video={video} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Right side: Vertical videos in single column */}
+                      {verticalVideos.length > 0 && (
+                        <div className="w-[300px] flex-shrink-0">
+                          <div className="space-y-4">
+                            {verticalVideos.map((video) => (
+                              <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                                <VideoCard video={video} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="col-span-3 py-12 text-center">
                   <h3 className="text-lg font-medium mb-2">{t('HomePage.NoVideosFound')}</h3>
