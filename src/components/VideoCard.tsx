@@ -8,31 +8,11 @@ import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
+import { getYouTubeVideoId, isVimeoUrl, isTikTokEmbed, getVideoAspectRatio } from '@/utils/videoHelpers';
 
 interface VideoCardProps {
   video: Video;
 }
-
-// Helper function to extract YouTube video ID from URL
-const getYouTubeVideoId = (url: string): string | null => {
-  const patterns = [
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&\n?#]+)/,
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^&\n?#]+)/,
-    /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^&\n?#]+)/,
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^&\n?#]+)/
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-};
-
-// Helper function to check if URL is Vimeo
-const isVimeoUrl = (url: string): boolean => {
-  return url.includes('vimeo.com');
-};
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
@@ -47,16 +27,21 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
-  // Check if video is YouTube
+  // Check video platform types
   const youtubeVideoId = getYouTubeVideoId(video.videoUrl);
   const isYoutube = !!youtubeVideoId;
   const isVimeo = isVimeoUrl(video.videoUrl);
+  const isTikTok = isTikTokEmbed(video.videoUrl);
+  const videoAspectRatio = getVideoAspectRatio(video.videoUrl);
+  const isVertical = videoAspectRatio === 'vertical';
   
   console.log('VideoCard - video.categoryId:', video.categoryId);
   console.log('VideoCard - found category:', category);
   console.log('VideoCard - available categories:', categories);
   console.log('VideoCard - YouTube video ID:', youtubeVideoId);
   console.log('VideoCard - Is YouTube:', isYoutube);
+  console.log('VideoCard - Is TikTok:', isTikTok);
+  console.log('VideoCard - Is Vertical:', isVertical);
   
   // Intersection Observer to detect when video enters viewport
   useEffect(() => {
@@ -86,13 +71,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       className={cn(
         "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
-        video.isHighlighted && "rounded-xl" 
+        video.isHighlighted && "rounded-xl",
+        isVertical ? "max-w-[280px] mx-auto" : "w-full"
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="video-card relative aspect-video">
-        {/* Video Content - YouTube autoplay or regular thumbnail */}
+      <div className={cn(
+        "video-card relative",
+        isVertical ? "aspect-[9/16]" : "aspect-video"
+      )}>
+        {/* Video Content - Check if we can autoplay or show thumbnail */}
         {isYoutube && isInView ? (
           <iframe
             src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
@@ -100,6 +89,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+          />
+        ) : isTikTok && isInView ? (
+          <div 
+            className="w-full h-full"
+            dangerouslySetInnerHTML={{ __html: video.videoUrl }}
           />
         ) : (
           <Image
@@ -110,8 +104,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           />
         )}
         
-        {/* Overlay gradient - only show on non-YouTube or when not in view */}
-        {(!isYoutube || !isInView) && (
+        {/* Overlay gradient - only show on non-embedded videos or when not in view */}
+        {((!isYoutube && !isTikTok) || !isInView) && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80"></div>
         )}
         
@@ -133,10 +127,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
+        {/* TikTok indicator for vertical videos */}
+        {isTikTok && (
+          <div className="absolute bottom-3 right-3 z-10">
+            <div className="bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+              TikTok
+            </div>
+          </div>
+        )}
         
-        
-        {/* Play button that appears on hover - only for non-YouTube or when not in view */}
-        {(!isYoutube || !isInView) && (
+        {/* Play button that appears on hover - only for non-embedded or when not in view */}
+        {((!isYoutube && !isTikTok) || !isInView) && (
           <div className={cn(
             "absolute inset-0 flex items-center justify-center transition-all duration-300",
             isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
@@ -147,8 +148,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* Video content overlay - only show on non-YouTube or when not in view */}
-        {(!isYoutube || !isInView) && (
+        {/* Video content overlay - only show on non-embedded or when not in view */}
+        {((!isYoutube && !isTikTok) || !isInView) && (
           <div className="video-card-content absolute bottom-0 left-0 right-0 p-4">
             {/* Video title - only on hover */}
             <div className={cn(

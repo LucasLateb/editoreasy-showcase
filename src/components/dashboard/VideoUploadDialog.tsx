@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import CategorySearch from '@/components/CategorySearch';
 
 import { useCategories } from '@/hooks/useCategories';
-import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, HardDrive } from 'lucide-react';
+import { UploadCloud, LinkIcon, FileVideo, Image, Youtube, Video, Loader2, X, HardDrive, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,7 +35,7 @@ export interface UploadFormData {
   categoryId: string;
   thumbnailUrl: string;
   uploadType?: 'link' | 'file' | null;
-  videoSource?: 'youtube' | 'vimeo' | 'googledrive' | null;
+  videoSource?: 'youtube' | 'vimeo' | 'googledrive' | 'tiktok' | null;
 }
 
 const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
@@ -57,7 +57,7 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
   });
 
   const [uploadType, setUploadType] = useState<'link' | 'file' | null>(null);
-  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'googledrive' | null>(null);
+  const [videoSource, setVideoSource] = useState<'youtube' | 'vimeo' | 'googledrive' | 'tiktok' | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -279,9 +279,9 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                   <RadioGroup
                     value={videoSource || ''}
                     onValueChange={(value) =>
-                      setVideoSource(value as 'youtube' | 'vimeo' | 'googledrive' | null)
+                      setVideoSource(value as 'youtube' | 'vimeo' | 'googledrive' | 'tiktok' | null)
                     }
-                    className="grid grid-cols-3 gap-4"
+                    className="grid grid-cols-2 gap-4"
                   >
                     {/* YouTube */}
                     <div>
@@ -325,6 +325,21 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       >
                         <HardDrive className="mb-2 h-6 w-6 text-green-600" />
                         <span className="text-sm font-medium">Google Drive</span>
+                      </Label>
+                    </div>
+
+                    {/* TikTok */}
+                    <div>
+                      <RadioGroupItem value="tiktok" id="tiktok" className="peer sr-only" />
+                      <Label
+                        htmlFor="tiktok"
+                        className={cn(
+                          'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer',
+                          videoSource === 'tiktok' ? 'border-primary' : ''
+                        )}
+                      >
+                        <Play className="mb-2 h-6 w-6 text-black" />
+                        <span className="text-sm font-medium">TikTok</span>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -422,6 +437,41 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                       value={uploadData.videoUrl}
                       onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
                       placeholder="https://drive.google.com/file/d/1XXXXXXXXXXXXX/view?usp=sharing"
+                      disabled={isUploading}
+                    />
+                  </div>
+                )}
+
+                {/* TikTok */}
+                {videoSource === 'tiktok' && (
+                  <div className="grid gap-2 bg-muted/30 p-4 rounded-md border">
+                    <div className="flex items-start gap-3">
+                      <Play className="h-6 w-6 text-black mt-1" />
+                      <div>
+                        <h3 className="font-medium mb-1">TikTok Video</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Pour intégrer une vidéo TikTok :
+                        </p>
+                        <ol className="text-sm text-muted-foreground mb-3 space-y-1 list-decimal list-inside">
+                          <li>Ouvrez votre vidéo TikTok</li>
+                          <li>Cliquez sur "Intégrer" (Embed)</li>
+                          <li>Copiez tout le code d'intégration et collez-le ci-dessous</li>
+                        </ol>
+                        <div className="mb-2 bg-background p-2 rounded border text-xs font-mono overflow-hidden">
+                          &lt;blockquote class="tiktok-embed"&gt;&lt;a href="https://www.tiktok.com/@username/video/..."&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="https://www.tiktok.com/embed.js"&gt;&lt;/script&gt;
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          <strong>Important :</strong> Assurez-vous que votre vidéo TikTok est publique pour qu'elle puisse être intégrée.
+                        </p>
+                      </div>
+                    </div>
+                    <Label htmlFor="tiktok-embed">Enter TikTok Embed Code</Label>
+                    <Textarea
+                      id="tiktok-embed"
+                      value={uploadData.videoUrl}
+                      onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
+                      placeholder="<blockquote class='tiktok-embed'><a href='https://www.tiktok.com/@username/video/...'></a></blockquote><script async src='https://www.tiktok.com/embed.js'></script>"
+                      rows={3}
                       disabled={isUploading}
                     />
                   </div>
