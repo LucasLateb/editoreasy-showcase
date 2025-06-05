@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '@/types';
-import { Eye, Heart, Play, Tag } from 'lucide-react';
+import { Eye, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
@@ -34,28 +34,6 @@ const isVimeoUrl = (url: string): boolean => {
   return url.includes('vimeo.com');
 };
 
-// Helper function to check if URL is TikTok
-const isTikTokUrl = (url: string): boolean => {
-  return url.includes('tiktok.com');
-};
-
-// Helper function to extract TikTok embed code
-const getTikTokEmbedCode = (url: string): string | null => {
-  // Si c'est déjà du code d'intégration, le retourner
-  if (url.includes('<blockquote') && url.includes('tiktok-embed')) {
-    return url;
-  }
-  
-  // Si c'est un lien TikTok, essayer d'extraire l'ID
-  const match = url.match(/tiktok\.com\/@[^\/]+\/video\/(\d+)/);
-  if (match) {
-    const videoId = match[1];
-    return `<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@user/video/${videoId}" data-video-id="${videoId}" style="max-width: 605px;min-width: 325px;"><section></section></blockquote><script async src="https://www.tiktok.com/embed.js"></script>`;
-  }
-  
-  return null;
-};
-
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -69,12 +47,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
-  // Check video types
+  // Check if video is YouTube
   const youtubeVideoId = getYouTubeVideoId(video.videoUrl);
   const isYoutube = !!youtubeVideoId;
   const isVimeo = isVimeoUrl(video.videoUrl);
-  const isTikTok = isTikTokUrl(video.videoUrl);
-  const tikTokEmbedCode = isTikTok ? getTikTokEmbedCode(video.videoUrl) : null;
+  
+  console.log('VideoCard - video.categoryId:', video.categoryId);
+  console.log('VideoCard - found category:', category);
+  console.log('VideoCard - available categories:', categories);
+  console.log('VideoCard - YouTube video ID:', youtubeVideoId);
+  console.log('VideoCard - Is YouTube:', isYoutube);
   
   // Intersection Observer to detect when video enters viewport
   useEffect(() => {
@@ -83,7 +65,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         setIsInView(entry.isIntersecting);
       },
       {
-        threshold: 0.5,
+        threshold: 0.5, // Trigger when 50% of the video is visible
       }
     );
 
@@ -104,18 +86,13 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       className={cn(
         "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
-        video.isHighlighted && "rounded-xl",
-        // Format vertical pour TikTok
-        isTikTok ? "aspect-[9/16] max-w-[280px]" : "aspect-video"
+        video.isHighlighted && "rounded-xl" 
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className={cn(
-        "video-card relative", 
-        isTikTok ? "aspect-[9/16]" : "aspect-video"
-      )}>
-        {/* Video Content - YouTube autoplay, TikTok embed, or regular thumbnail */}
+      <div className="video-card relative aspect-video">
+        {/* Video Content - YouTube autoplay or regular thumbnail */}
         {isYoutube && isInView ? (
           <iframe
             src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
@@ -123,11 +100,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-          />
-        ) : isTikTok && tikTokEmbedCode && isInView ? (
-          <div 
-            className="w-full h-full flex items-center justify-center bg-black"
-            dangerouslySetInnerHTML={{ __html: tikTokEmbedCode }}
           />
         ) : (
           <Image
@@ -138,8 +110,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           />
         )}
         
-        {/* Overlay gradient - only show on non-YouTube/TikTok or when not in view */}
-        {((!isYoutube && !isTikTok) || !isInView) && (
+        {/* Overlay gradient - only show on non-YouTube or when not in view */}
+        {(!isYoutube || !isInView) && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80"></div>
         )}
         
@@ -161,18 +133,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* TikTok indicator */}
-        {isTikTok && (
-          <div className="absolute top-3 left-3 z-10">
-            <div className="bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-              <span className="text-white">♪</span>
-              TikTok
-            </div>
-          </div>
-        )}
         
-        {/* Play button that appears on hover - only for non-YouTube/TikTok or when not in view */}
-        {((!isYoutube && !isTikTok) || !isInView) && (
+        
+        {/* Play button that appears on hover - only for non-YouTube or when not in view */}
+        {(!isYoutube || !isInView) && (
           <div className={cn(
             "absolute inset-0 flex items-center justify-center transition-all duration-300",
             isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
@@ -183,8 +147,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* Video content overlay - only show on non-YouTube/TikTok or when not in view */}
-        {((!isYoutube && !isTikTok) || !isInView) && (
+        {/* Video content overlay - only show on non-YouTube or when not in view */}
+        {(!isYoutube || !isInView) && (
           <div className="video-card-content absolute bottom-0 left-0 right-0 p-4">
             {/* Video title - only on hover */}
             <div className={cn(
@@ -217,48 +181,37 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         )}
       </div>
       
-      {/* Stats section - Maintenant amélioré pour afficher les vues, likes et catégorie */}
-      <div className="p-3 bg-card">
-        {/* Titre de la vidéo pour clarté */}
-        <h3 className="font-medium text-sm mb-2 line-clamp-1">{video.title}</h3>
-        
-        {/* Statistiques et catégorie */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {/* Compteur de vues */}
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Eye className="h-3.5 w-3.5 mr-1" />
-              <span>{video.views}</span>
-            </div>
-            
-            {/* Compteur de likes */}
-            <div 
-              className="flex items-center text-xs cursor-pointer transition-all duration-300 hover:scale-110" 
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleLike();
-              }}
-            >
-              <Heart 
-                className={cn(
-                  "h-3.5 w-3.5 mr-1 transition-all duration-300", 
-                  isLiked ? "text-red-500 scale-110" : "text-muted-foreground",
-                  !isLoading && "hover:text-red-400"
-                )} 
-                fill={isLiked ? "currentColor" : "none"} 
-              />
-              <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
-            </div>
+      {/* Stats section */}
+      <div className="p-3 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Eye className="h-3 w-3 mr-1" />
+            <span>{video.views}</span>
           </div>
-          
-          {/* Affichage de la catégorie */}
-          {category && (
-            <div className="flex items-center text-xs bg-muted px-2 py-0.5 rounded-full">
-              <Tag className="h-3 w-3 mr-1 text-muted-foreground" />
-              <span className="text-muted-foreground font-medium">{category.name}</span>
-            </div>
-          )}
+          <div 
+            className="flex items-center text-xs cursor-pointer transition-all duration-300 hover:scale-110" 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike();
+            }}
+          >
+            <Heart 
+              className={cn(
+                "h-3 w-3 mr-1 transition-all duration-300", 
+                isLiked ? "text-red-500 scale-110" : "text-muted-foreground",
+                !isLoading && "hover:text-red-400"
+              )} 
+              fill={isLiked ? "currentColor" : "none"} 
+            />
+            <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
+          </div>
         </div>
+        {/* Category info in stats - Always show if available */}
+        {category && (
+          <div className="text-xs text-muted-foreground font-medium">
+            {category.name}
+          </div>
+        )}
       </div>
     </Card>
   );
