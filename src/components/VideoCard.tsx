@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '@/types';
-import { Eye, Heart, Play } from 'lucide-react';
+import { Eye, Heart, Play, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useVideoLikes } from '@/hooks/useLikes';
@@ -75,13 +75,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const isVimeo = isVimeoUrl(video.videoUrl);
   const isTikTok = isTikTokUrl(video.videoUrl);
   const tikTokEmbedCode = isTikTok ? getTikTokEmbedCode(video.videoUrl) : null;
-  
-  console.log('VideoCard - video.categoryId:', video.categoryId);
-  console.log('VideoCard - found category:', category);
-  console.log('VideoCard - available categories:', categories);
-  console.log('VideoCard - YouTube video ID:', youtubeVideoId);
-  console.log('VideoCard - Is YouTube:', isYoutube);
-  console.log('VideoCard - Is TikTok:', isTikTok);
   
   // Intersection Observer to detect when video enters viewport
   useEffect(() => {
@@ -224,37 +217,48 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         )}
       </div>
       
-      {/* Stats section */}
-      <div className="p-3 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Eye className="h-3 w-3 mr-1" />
-            <span>{video.views}</span>
+      {/* Stats section - Maintenant amélioré pour afficher les vues, likes et catégorie */}
+      <div className="p-3 bg-card">
+        {/* Titre de la vidéo pour clarté */}
+        <h3 className="font-medium text-sm mb-2 line-clamp-1">{video.title}</h3>
+        
+        {/* Statistiques et catégorie */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {/* Compteur de vues */}
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              <span>{video.views}</span>
+            </div>
+            
+            {/* Compteur de likes */}
+            <div 
+              className="flex items-center text-xs cursor-pointer transition-all duration-300 hover:scale-110" 
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLike();
+              }}
+            >
+              <Heart 
+                className={cn(
+                  "h-3.5 w-3.5 mr-1 transition-all duration-300", 
+                  isLiked ? "text-red-500 scale-110" : "text-muted-foreground",
+                  !isLoading && "hover:text-red-400"
+                )} 
+                fill={isLiked ? "currentColor" : "none"} 
+              />
+              <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
+            </div>
           </div>
-          <div 
-            className="flex items-center text-xs cursor-pointer transition-all duration-300 hover:scale-110" 
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleLike();
-            }}
-          >
-            <Heart 
-              className={cn(
-                "h-3 w-3 mr-1 transition-all duration-300", 
-                isLiked ? "text-red-500 scale-110" : "text-muted-foreground",
-                !isLoading && "hover:text-red-400"
-              )} 
-              fill={isLiked ? "currentColor" : "none"} 
-            />
-            <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
-          </div>
+          
+          {/* Affichage de la catégorie */}
+          {category && (
+            <div className="flex items-center text-xs bg-muted px-2 py-0.5 rounded-full">
+              <Tag className="h-3 w-3 mr-1 text-muted-foreground" />
+              <span className="text-muted-foreground font-medium">{category.name}</span>
+            </div>
+          )}
         </div>
-        {/* Category info in stats - Always show if available */}
-        {category && (
-          <div className="text-xs text-muted-foreground font-medium">
-            {category.name}
-          </div>
-        )}
       </div>
     </Card>
   );
