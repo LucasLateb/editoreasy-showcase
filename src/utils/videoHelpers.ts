@@ -38,3 +38,16 @@ export const getVideoAspectRatio = (videoUrl: string): 'vertical' | 'horizontal'
   }
   return 'horizontal';
 };
+
+// Additional helper functions for compatibility
+export const isYouTubeVideo = (url: string): boolean => {
+  return !!getYouTubeVideoId(url);
+};
+
+export const isTikTokVideo = (url: string): boolean => {
+  return isTikTokEmbed(url);
+};
+
+export const extractYouTubeVideoId = (url: string): string | null => {
+  return getYouTubeVideoId(url);
+};

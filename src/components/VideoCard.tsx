@@ -8,10 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useVideoLikes } from '@/hooks/useLikes';
 import { 
-  isYouTubeVideo, 
-  isTikTokVideo, 
+  isTikTokEmbed, 
+  getYouTubeVideoId,
   isYouTubeShorts,
-  extractYouTubeVideoId,
   getVideoAspectRatio 
 } from '@/utils/videoHelpers';
 
@@ -27,12 +26,13 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, className }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
 
-  const isYoutube = isYouTubeVideo(video.videoUrl);
-  const isTiktok = isTikTokVideo(video.videoUrl);
+  const videoId = getYouTubeVideoId(video.videoUrl);
+  const isYoutube = !!videoId;
+  const isTiktok = isTikTokEmbed(video.videoUrl);
   const isYoutubeShorts = isYouTubeShorts(video.videoUrl);
   const isVertical = getVideoAspectRatio(video.videoUrl) === 'vertical';
   
-  console.log('VideoCard - YouTube video ID:', extractYouTubeVideoId(video.videoUrl));
+  console.log('VideoCard - YouTube video ID:', videoId);
   console.log('VideoCard - Is YouTube:', isYoutube);
   console.log('VideoCard - Is YouTube Shorts:', isYoutubeShorts);
   console.log('VideoCard - Is TikTok:', isTiktok);
@@ -62,20 +62,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, className }) => {
   };
 
   const renderVideoContent = () => {
-    if (isPlaying && (isYoutube || isYoutubeShorts)) {
-      const videoId = extractYouTubeVideoId(video.videoUrl);
-      if (videoId) {
-        return (
-          <iframe
-            ref={iframeRef}
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}`}
-            className="absolute inset-0 w-full h-full"
-            frameBorder="0"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-          />
-        );
-      }
+    if (isPlaying && (isYoutube || isYoutubeShorts) && videoId) {
+      return (
+        <iframe
+          ref={iframeRef}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}`}
+          className="absolute inset-0 w-full h-full"
+          frameBorder="0"
+          allow="autoplay; encrypted-media"
+          allowFullScreen
+        />
+      );
     }
 
     if (isPlaying && isTiktok) {
