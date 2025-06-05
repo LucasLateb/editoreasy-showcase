@@ -34,6 +34,28 @@ const isVimeoUrl = (url: string): boolean => {
   return url.includes('vimeo.com');
 };
 
+// Helper function to check if URL is TikTok
+const isTikTokUrl = (url: string): boolean => {
+  return url.includes('tiktok.com');
+};
+
+// Helper function to extract TikTok embed code
+const getTikTokEmbedCode = (url: string): string | null => {
+  // Si c'est déjà du code d'intégration, le retourner
+  if (url.includes('<blockquote') && url.includes('tiktok-embed')) {
+    return url;
+  }
+  
+  // Si c'est un lien TikTok, essayer d'extraire l'ID
+  const match = url.match(/tiktok\.com\/@[^\/]+\/video\/(\d+)/);
+  if (match) {
+    const videoId = match[1];
+    return `<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@user/video/${videoId}" data-video-id="${videoId}" style="max-width: 605px;min-width: 325px;"><section></section></blockquote><script async src="https://www.tiktok.com/embed.js"></script>`;
+  }
+  
+  return null;
+};
+
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -47,16 +69,19 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   
   const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
   
-  // Check if video is YouTube
+  // Check video types
   const youtubeVideoId = getYouTubeVideoId(video.videoUrl);
   const isYoutube = !!youtubeVideoId;
   const isVimeo = isVimeoUrl(video.videoUrl);
+  const isTikTok = isTikTokUrl(video.videoUrl);
+  const tikTokEmbedCode = isTikTok ? getTikTokEmbedCode(video.videoUrl) : null;
   
   console.log('VideoCard - video.categoryId:', video.categoryId);
   console.log('VideoCard - found category:', category);
   console.log('VideoCard - available categories:', categories);
   console.log('VideoCard - YouTube video ID:', youtubeVideoId);
   console.log('VideoCard - Is YouTube:', isYoutube);
+  console.log('VideoCard - Is TikTok:', isTikTok);
   
   // Intersection Observer to detect when video enters viewport
   useEffect(() => {
@@ -65,7 +90,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         setIsInView(entry.isIntersecting);
       },
       {
-        threshold: 0.5, // Trigger when 50% of the video is visible
+        threshold: 0.5,
       }
     );
 
@@ -86,13 +111,18 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       className={cn(
         "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
-        video.isHighlighted && "rounded-xl" 
+        video.isHighlighted && "rounded-xl",
+        // Format vertical pour TikTok
+        isTikTok ? "aspect-[9/16] max-w-[280px]" : "aspect-video"
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="video-card relative aspect-video">
-        {/* Video Content - YouTube autoplay or regular thumbnail */}
+      <div className={cn(
+        "video-card relative", 
+        isTikTok ? "aspect-[9/16]" : "aspect-video"
+      )}>
+        {/* Video Content - YouTube autoplay, TikTok embed, or regular thumbnail */}
         {isYoutube && isInView ? (
           <iframe
             src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
@@ -100,6 +130,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+          />
+        ) : isTikTok && tikTokEmbedCode && isInView ? (
+          <div 
+            className="w-full h-full flex items-center justify-center bg-black"
+            dangerouslySetInnerHTML={{ __html: tikTokEmbedCode }}
           />
         ) : (
           <Image
@@ -110,8 +145,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           />
         )}
         
-        {/* Overlay gradient - only show on non-YouTube or when not in view */}
-        {(!isYoutube || !isInView) && (
+        {/* Overlay gradient - only show on non-YouTube/TikTok or when not in view */}
+        {((!isYoutube && !isTikTok) || !isInView) && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80"></div>
         )}
         
@@ -133,10 +168,18 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
+        {/* TikTok indicator */}
+        {isTikTok && (
+          <div className="absolute top-3 left-3 z-10">
+            <div className="bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+              <span className="text-white">♪</span>
+              TikTok
+            </div>
+          </div>
+        )}
         
-        
-        {/* Play button that appears on hover - only for non-YouTube or when not in view */}
-        {(!isYoutube || !isInView) && (
+        {/* Play button that appears on hover - only for non-YouTube/TikTok or when not in view */}
+        {((!isYoutube && !isTikTok) || !isInView) && (
           <div className={cn(
             "absolute inset-0 flex items-center justify-center transition-all duration-300",
             isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
@@ -147,8 +190,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* Video content overlay - only show on non-YouTube or when not in view */}
-        {(!isYoutube || !isInView) && (
+        {/* Video content overlay - only show on non-YouTube/TikTok or when not in view */}
+        {((!isYoutube && !isTikTok) || !isInView) && (
           <div className="video-card-content absolute bottom-0 left-0 right-0 p-4">
             {/* Video title - only on hover */}
             <div className={cn(
