@@ -8,7 +8,7 @@ import { useVideoLikes } from '@/hooks/useLikes';
 import { Image } from '@/components/ui/image';
 import { Card } from '@/components/ui/card';
 import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
-import { getYouTubeVideoId, isVimeoUrl, isTikTokEmbed, getVideoAspectRatio } from '@/utils/videoHelpers';
+import { getYouTubeVideoId, isVimeoUrl, isTikTokEmbed, getVideoAspectRatio, isYouTubeShorts } from '@/utils/videoHelpers';
 
 interface VideoCardProps {
   video: Video;
@@ -30,6 +30,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   // Check video platform types
   const youtubeVideoId = getYouTubeVideoId(video.videoUrl);
   const isYoutube = !!youtubeVideoId;
+  const isYoutubeShorts = isYouTubeShorts(video.videoUrl);
   const isVimeo = isVimeoUrl(video.videoUrl);
   const isTikTok = isTikTokEmbed(video.videoUrl);
   const videoAspectRatio = getVideoAspectRatio(video.videoUrl);
@@ -40,6 +41,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   console.log('VideoCard - available categories:', categories);
   console.log('VideoCard - YouTube video ID:', youtubeVideoId);
   console.log('VideoCard - Is YouTube:', isYoutube);
+  console.log('VideoCard - Is YouTube Shorts:', isYoutubeShorts);
   console.log('VideoCard - Is TikTok:', isTikTok);
   console.log('VideoCard - Is Vertical:', isVertical);
   
@@ -127,11 +129,19 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
         )}
         
-        {/* TikTok indicator for vertical videos */}
+        {/* Platform indicators for vertical videos */}
         {isTikTok && (
           <div className="absolute bottom-3 right-3 z-10">
             <div className="bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
               TikTok
+            </div>
+          </div>
+        )}
+        
+        {isYoutubeShorts && (
+          <div className="absolute bottom-3 right-3 z-10">
+            <div className="bg-red-600/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+              Shorts
             </div>
           </div>
         )}

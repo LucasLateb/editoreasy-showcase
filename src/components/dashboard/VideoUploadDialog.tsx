@@ -351,10 +351,10 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                     <div className="flex items-start gap-3">
                       <Youtube className="h-6 w-6 text-red-600 mt-1" />
                       <div>
-                        <h3 className="font-medium mb-1">YouTube Video</h3>
+                        <h3 className="font-medium mb-1">YouTube Video / Shorts</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l'URL. Vous
-                          pouvez aussi récupérer le code d'intégration (embed).
+                          Cliquez sur le bouton "Partager" sous la vidéo, puis copiez l'URL. Fonctionne
+                          avec les vidéos YouTube classiques et les Shorts.
                         </p>
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
                           https://youtu.be/XXXXXXXXXXX
@@ -362,14 +362,20 @@ const VideoUploadDialog: React.FC<VideoUploadDialogProps> = ({
                         <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
                           https://www.youtube.com/watch?v=XXXXXXXXXXX
                         </div>
+                        <div className="mb-2 bg-background p-2 rounded border text-xs font-mono">
+                          https://www.youtube.com/shorts/XXXXXXXXXXX
+                        </div>
+                        <p className="text-xs text-amber-600 mt-2">
+                          <strong>Note :</strong> Les YouTube Shorts seront automatiquement affichés en format vertical.
+                        </p>
                       </div>
                     </div>
-                    <Label htmlFor="youtube-url">Enter YouTube URL</Label>
+                    <Label htmlFor="youtube-url">Enter YouTube URL (Videos & Shorts)</Label>
                     <Input
                       id="youtube-url"
                       value={uploadData.videoUrl}
                       onChange={(e) => setUploadData({ ...uploadData, videoUrl: e.target.value })}
-                      placeholder="https://youtu.be/XXXXXXXXXXX"
+                      placeholder="https://youtu.be/XXXXXXXXXXX or https://www.youtube.com/shorts/XXXXXXXXXXX"
                       disabled={isUploading}
                     />
                   </div>

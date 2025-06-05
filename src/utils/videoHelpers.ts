@@ -9,7 +9,8 @@ export const getYouTubeVideoId = (url: string): string | null => {
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&\n?#]+)/,
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^&\n?#]+)/,
     /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^&\n?#]+)/,
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^&\n?#]+)/
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([^&\n?#]+)/,
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([^&\n?#]+)/ // YouTube Shorts pattern
   ];
   
   for (const pattern of patterns) {
@@ -17,6 +18,10 @@ export const getYouTubeVideoId = (url: string): string | null => {
     if (match) return match[1];
   }
   return null;
+};
+
+export const isYouTubeShorts = (url: string): boolean => {
+  return url.includes('/shorts/');
 };
 
 export const isVimeoUrl = (url: string): boolean => {
@@ -28,7 +33,7 @@ export const isGoogleDriveUrl = (url: string): boolean => {
 };
 
 export const getVideoAspectRatio = (videoUrl: string): 'vertical' | 'horizontal' => {
-  if (isTikTokEmbed(videoUrl)) {
+  if (isTikTokEmbed(videoUrl) || isYouTubeShorts(videoUrl)) {
     return 'vertical';
   }
   return 'horizontal';
