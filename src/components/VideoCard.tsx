@@ -1,229 +1,188 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '@/types';
-import { Eye, Heart, Play } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Heart, Eye, Play, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 import { useVideoLikes } from '@/hooks/useLikes';
-import { Image } from '@/components/ui/image';
-import { Card } from '@/components/ui/card';
-import { useCategoriesWithFallback } from '@/hooks/useCategoriesWithFallback';
-import { getYouTubeVideoId, isVimeoUrl, isTikTokEmbed, getVideoAspectRatio, isYouTubeShorts } from '@/utils/videoHelpers';
+import { 
+  isYouTubeVideo, 
+  isTikTokVideo, 
+  isYouTubeShorts,
+  extractYouTubeVideoId,
+  getVideoAspectRatio 
+} from '@/utils/videoHelpers';
 
 interface VideoCardProps {
   video: Video;
+  className?: string;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
-  const [isHovering, setIsHovering] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  
-  // Use the fallback hook to get categories
-  const { categories } = useCategoriesWithFallback();
-  
-  // Find category by ID - now using the categories from the hook
-  const category = categories.find(cat => cat.id === video.categoryId);
-  
-  const { isLiked, likesCount, isLoading, toggleLike } = useVideoLikes(video.id, video.likes);
-  
-  // Check video platform types
-  const youtubeVideoId = getYouTubeVideoId(video.videoUrl);
-  const isYoutube = !!youtubeVideoId;
+const VideoCard: React.FC<VideoCardProps> = ({ video, className }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showThumbnail, setShowThumbnail] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { isLiked, likesCount, toggleLike } = useVideoLikes(video.id, video.likes);
+
+  const isYoutube = isYouTubeVideo(video.videoUrl);
+  const isTiktok = isTikTokVideo(video.videoUrl);
   const isYoutubeShorts = isYouTubeShorts(video.videoUrl);
-  const isVimeo = isVimeoUrl(video.videoUrl);
-  const isTikTok = isTikTokEmbed(video.videoUrl);
-  const videoAspectRatio = getVideoAspectRatio(video.videoUrl);
-  const isVertical = videoAspectRatio === 'vertical';
+  const isVertical = getVideoAspectRatio(video.videoUrl) === 'vertical';
   
-  console.log('VideoCard - video.categoryId:', video.categoryId);
-  console.log('VideoCard - found category:', category);
-  console.log('VideoCard - available categories:', categories);
-  console.log('VideoCard - YouTube video ID:', youtubeVideoId);
+  console.log('VideoCard - YouTube video ID:', extractYouTubeVideoId(video.videoUrl));
   console.log('VideoCard - Is YouTube:', isYoutube);
   console.log('VideoCard - Is YouTube Shorts:', isYoutubeShorts);
-  console.log('VideoCard - Is TikTok:', isTikTok);
+  console.log('VideoCard - Is TikTok:', isTiktok);
   console.log('VideoCard - Is Vertical:', isVertical);
-  
-  // Intersection Observer to detect when video enters viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsInView(entry.isIntersecting);
-      },
-      {
-        threshold: 0.5, // Trigger when 50% of the video is visible
-      }
-    );
 
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if ((isYoutube || isTiktok || isYoutubeShorts) && !isPlaying) {
+      setTimeout(() => {
+        setIsPlaying(true);
+        setShowThumbnail(false);
+      }, 500);
     }
+  };
 
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
-  
-  return (
-    <Card 
-      ref={cardRef}
-      className={cn(
-        "overflow-hidden border-0 shadow-lg transition-all duration-500 ease-out transform-gpu cursor-pointer",
-        "hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/25 hover:-translate-y-2",
-        video.isHighlighted && "rounded-xl",
-        isVertical ? "max-w-[280px] mx-auto" : "w-full"
-      )}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
-      <div className={cn(
-        "video-card relative",
-        isVertical ? "aspect-[9/16]" : "aspect-video"
-      )}>
-        {/* Video Content - Check if we can autoplay or show thumbnail */}
-        {isYoutube && isInView ? (
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (isPlaying) {
+      setIsPlaying(false);
+      setShowThumbnail(true);
+    }
+  };
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLike();
+  };
+
+  const renderVideoContent = () => {
+    if (isPlaying && (isYoutube || isYoutubeShorts)) {
+      const videoId = extractYouTubeVideoId(video.videoUrl);
+      if (videoId) {
+        return (
           <iframe
-            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
-            className="w-full h-full object-cover"
+            ref={iframeRef}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}`}
+            className="absolute inset-0 w-full h-full"
             frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="autoplay; encrypted-media"
             allowFullScreen
           />
-        ) : isTikTok && isInView ? (
-          <div 
-            className="w-full h-full"
-            dangerouslySetInnerHTML={{ __html: video.videoUrl }}
-          />
-        ) : (
-          <Image
-            src={video.thumbnailUrl}
-            alt={video.title}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-            loading="lazy"
-          />
+        );
+      }
+    }
+
+    if (isPlaying && isTiktok) {
+      return (
+        <iframe
+          ref={iframeRef}
+          src={`${video.videoUrl}?autoplay=1&muted=1`}
+          className="absolute inset-0 w-full h-full"
+          frameBorder="0"
+          allow="autoplay; encrypted-media"
+          allowFullScreen
+        />
+      );
+    }
+
+    return (
+      <>
+        <img 
+          src={video.thumbnailUrl} 
+          alt={video.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        {isHovered && (
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+            <div className="bg-white/90 rounded-full p-3 transform scale-110">
+              <Play className="h-6 w-6 text-black fill-current" />
+            </div>
+          </div>
         )}
+      </>
+    );
+  };
+
+  return (
+    <Card 
+      className={cn(
+        "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1", 
+        className
+      )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={cn(
+        "relative overflow-hidden",
+        // Increased height for horizontal videos to better match vertical proportions
+        isVertical ? "aspect-[9/16]" : "aspect-[16/10]" // Changed from aspect-video (16/9) to 16/10 for more height
+      )}>
+        {renderVideoContent()}
         
-        {/* Overlay gradient - only show on non-embedded videos or when not in view */}
-        {((!isYoutube && !isTikTok) || !isInView) && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80"></div>
-        )}
-        
-        {/* Pro badge if editor is pro */}
-        {video.editorTier === 'pro' && (
-          <div className="absolute top-3 right-3 z-10">
-            <Badge variant="default" className="bg-amber-500 text-white font-semibold shadow-lg">
-              PRO
+        {(isYoutubeShorts || isTiktok) && (
+          <div className="absolute top-2 left-2">
+            <Badge variant="secondary" className="bg-red-500 text-white text-xs">
+              {isYoutubeShorts ? 'Shorts' : 'TikTok'}
             </Badge>
           </div>
         )}
         
-        {/* Highlight indicator */}
-        {video.isHighlighted && (
-          <div className="absolute top-3 left-3 z-10">
-            <div className="bg-brand-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-              En vedette
-            </div>
-          </div>
-        )}
-        
-        {/* Platform indicators for vertical videos */}
-        {isTikTok && (
-          <div className="absolute bottom-3 right-3 z-10">
-            <div className="bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-              TikTok
-            </div>
-          </div>
-        )}
-        
-        {isYoutubeShorts && (
-          <div className="absolute bottom-3 right-3 z-10">
-            <div className="bg-red-600/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-              Shorts
-            </div>
-          </div>
-        )}
-        
-        {/* Play button that appears on hover - only for non-embedded or when not in view */}
-        {((!isYoutube && !isTikTok) || !isInView) && (
-          <div className={cn(
-            "absolute inset-0 flex items-center justify-center transition-all duration-300",
-            isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
-          )}>
-            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-2xl">
-              <Play className="h-8 w-8 text-white drop-shadow-lg" fill="white" />
-            </div>
-          </div>
-        )}
-        
-        {/* Video content overlay - only show on non-embedded or when not in view */}
-        {((!isYoutube && !isTikTok) || !isInView) && (
-          <div className="video-card-content absolute bottom-0 left-0 right-0 p-4">
-            {/* Video title - only on hover */}
-            <div className={cn(
-              "transition-all duration-300 mb-3",
-              isHovering ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-            )}>
-              <h3 className="font-medium text-base line-clamp-1 text-white drop-shadow-lg">{video.title}</h3>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {/* Editor info */}
-                {video.editorName && (
-                  <>
-                    <div className="w-6 h-6 rounded-full bg-accent overflow-hidden shadow-md">
-                      {video.editorAvatar ? (
-                        <Image src={video.editorAvatar} alt={video.editorName} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs text-primary-foreground">
-                          {video.editorName.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-xs text-white/90 font-medium drop-shadow-md">{video.editorName}</span>
-                  </>
-                )}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+          <div className="flex items-center justify-between text-white text-sm">
+            <div className="flex items-center space-x-3">
+              <div 
+                className="flex items-center space-x-1 cursor-pointer hover:scale-110 transition-transform" 
+                onClick={handleLikeClick}
+              >
+                <Heart 
+                  className={cn(
+                    "h-4 w-4",
+                    isLiked ? "text-red-500 fill-current" : "text-white"
+                  )} 
+                />
+                <span>{likesCount}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Eye className="h-4 w-4" />
+                <span>{video.views}</span>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Stats section */}
-      <div className="p-3 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Eye className="h-3 w-3 mr-1" />
-            <span>{video.views}</span>
-          </div>
-          <div 
-            className="flex items-center text-xs cursor-pointer transition-all duration-300 hover:scale-110" 
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleLike();
-            }}
-          >
-            <Heart 
-              className={cn(
-                "h-3 w-3 mr-1 transition-all duration-300", 
-                isLiked ? "text-red-500 scale-110" : "text-muted-foreground",
-                !isLoading && "hover:text-red-400"
-              )} 
-              fill={isLiked ? "currentColor" : "none"} 
-            />
-            <span className={cn(isLiked ? "text-red-500" : "text-muted-foreground")}>{likesCount}</span>
+            
+            {video.editorTier && video.editorTier !== 'free' && (
+              <Badge variant="secondary" className={cn(
+                "text-xs",
+                video.editorTier === 'pro' ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
+              )}>
+                {video.editorTier.toUpperCase()}
+              </Badge>
+            )}
           </div>
         </div>
-        {/* Category info in stats - Always show if available */}
-        {category && (
-          <div className="text-xs text-muted-foreground font-medium">
-            {category.name}
+      </div>
+      
+      <CardContent className="p-4">
+        <h3 className="font-medium mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+          {video.title}
+        </h3>
+        
+        {video.editorName && (
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={video.editorAvatar} />
+              <AvatarFallback>
+                <Users className="h-3 w-3" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate">{video.editorName}</span>
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 };
