@@ -83,8 +83,14 @@ const VideoGrid: React.FC<VideoGridProps> = ({
   };
   
   // Group videos by aspect ratio
-  const verticalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'vertical');
-  const horizontalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'horizontal');
+  const isVerticalCategory = editMode; // En mode édition, on peut voir tous les formats
+  
+  // Si pas en mode édition et si la catégorie actuelle n'est pas pour les formats verticaux, filtrer
+  const shouldShowVertical = isVerticalCategory || isViewOnly;
+  const shouldShowHorizontal = !isVerticalCategory || isViewOnly;
+  
+  const verticalVideos = shouldShowVertical ? videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'vertical') : [];
+  const horizontalVideos = shouldShowHorizontal ? videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'horizontal') : [];
   
   if (videos.length === 0) {
     return (

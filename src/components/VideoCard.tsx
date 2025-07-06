@@ -83,7 +83,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         isVertical ? "aspect-[9/16]" : "aspect-[16/10]"
       )}>
         {/* Video Content - Check if we can autoplay or show thumbnail */}
-        {isYoutube && isInView && !isVertical ? (
+        {isYoutube && isInView ? (
           <iframe
             src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
             className="w-full h-full object-cover"
@@ -91,7 +91,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
-        ) : isTikTok && isInView && !isVertical ? (
+        ) : isTikTok && isInView ? (
           <div 
             className="w-full h-full"
             dangerouslySetInnerHTML={{ __html: video.videoUrl }}

@@ -403,35 +403,49 @@ const Explore: React.FC = () => {
                     </div>
                   ) : (
                     (() => {
+                      // Check if current category is for vertical formats
+                      const isVerticalCategory = selectedCategory && (
+                        selectedCategory.name.toLowerCase().includes('vertical') ||
+                        selectedCategory.name.toLowerCase().includes('tiktok') ||
+                        selectedCategory.name.toLowerCase().includes('shorts') ||
+                        selectedCategory.name.toLowerCase().includes('reels')
+                      );
+                      
                       // Group videos by aspect ratio
                       const verticalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'vertical');
                       const horizontalVideos = videos.filter(video => getVideoAspectRatio(video.videoUrl) === 'horizontal');
                       
-                      return (
-                        <div className="flex gap-6">
-                          {/* Left side: Horizontal videos in grid */}
-                          <div className="flex-1">
-                            {horizontalVideos.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {horizontalVideos.map((video) => (
-                                  <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
-                                    <VideoCard video={video} />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                      // If vertical category is selected, show only vertical videos
+                      if (isVerticalCategory) {
+                        return (
+                          <div className="w-[300px] mx-auto">
+                            <div className="space-y-4">
+                              {verticalVideos.map((video) => (
+                                <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                                  <VideoCard video={video} />
+                                </div>
+                              ))}
+                              {verticalVideos.length === 0 && (
+                                <div className="text-center py-12">
+                                  <p className="text-muted-foreground">Aucune vidéo verticale trouvée dans cette catégorie.</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          
-                          {/* Right side: Vertical videos in single column */}
-                          {verticalVideos.length > 0 && (
-                            <div className="w-[300px] flex-shrink-0">
-                              <div className="space-y-4">
-                                {verticalVideos.map((video) => (
-                                  <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
-                                    <VideoCard video={video} />
-                                  </div>
-                                ))}
-                              </div>
+                        );
+                      }
+                      
+                      // For other categories, show only horizontal videos
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {horizontalVideos.map((video) => (
+                            <div key={video.id} onClick={() => handleVideoClick(video)} className="cursor-pointer">
+                              <VideoCard video={video} />
+                            </div>
+                          ))}
+                          {horizontalVideos.length === 0 && (
+                            <div className="text-center py-12 col-span-full">
+                              <p className="text-muted-foreground">Aucune vidéo horizontale trouvée dans cette catégorie.</p>
                             </div>
                           )}
                         </div>
